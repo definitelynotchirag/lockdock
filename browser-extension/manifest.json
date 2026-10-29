@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "lockdock URL bridge",
+  "version": "1.0.0",
+  "description": "Reports the active tab URL to the local lockdock daemon so browser windows are judged by URL.",
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "background": { "service_worker": "background.js", "scripts": ["background.js"] },
+  "options_ui": { "page": "options.html", "open_in_tab": false },
+  "icons": { "48": "icon48.png", "128": "icon128.png" },
+  "action": { "default_icon": { "48": "icon48.png" }, "default_title": "lockdock URL bridge" },
+  "browser_specific_settings": { "gecko": { "id": "url-bridge@lockdock.local" } }
+}

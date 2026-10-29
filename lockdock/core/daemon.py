@@ -37,6 +37,7 @@ class Daemon:
                                   else _NullEvents())
         self.snapshot_builder = StateSnapshot()
         self.config_listeners: list[Callable[[Config], None]] = []
+        self.window_enrichers: list[Callable[[WindowInfo], WindowInfo]] = []
         self.modes = ModeManager(lambda: self.cfg, clock, runner, self.events, self._on_switch,
                                  self.publish, spawn)
         self.judge = ActivityJudge(lambda: self.cfg, lambda: self.modes.cur, classifier, clock, self.events,
@@ -59,7 +60,20 @@ class Daemon:
         self.judge.schedule()
 
     def on_focus(self, window: WindowInfo) -> None:
+        for enrich in self.window_enrichers:
+            window = enrich(window)
         self.judge.on_focus(window)
+
+    def is_browser(self, cls: str) -> bool:
+        """Whether a window class is one of Config.browsers."""
+        return bool(cls) and any(b.lower() in cls.lower() for b in self.cfg.browsers)
+
+    def on_url(self, browser: str, url: str) -> bool:
+        """A browser reported its active tab URL. If a browser window is focused, attach the URL
+        and re-judge. Returns whether the focused window took it."""
+        if not self.is_browser(self.judge.focus.cls):
+            return False
+        return self.judge.set_url(url)
 
     # ---------- state ----------
     def register_section(self, name: str, provider: SectionProvider) -> None:

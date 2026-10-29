@@ -19,7 +19,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | port | methods | adapter |
 |---|---|---|
 | `WindowSource` | `async watch(on_focus(WindowInfo))`, `current() -> WindowInfo` | `adapters/hyprland.py` `HyprlandWindowSource` (also `clients()`, `pid_for_class()`) |
-| `UrlSource` | `async watch(on_url(browser_class, url))` | none yet |
+| `UrlSource` | `async watch(on_url(browser_class, url))` | `adapters/http_url_source.py` `HttpUrlSource` (127.0.0.1 HTTP; fed by `browser-extension/`) |
 | `NotificationObserver` | `async watch(on_notify(Notification), on_reply(cookie, id, sender))` | `adapters/dbus_notifications.py` `BusctlNotificationObserver` |
 | `NotificationSink` | `close(id)`, `send(app, summary, body, desktop_entry="", urgency=1, timeout_ms=-1)` | `BusctlNotificationSink` |
 | `Classifier` | `async activity(mode, window) -> (Verdict, reason)`, `async notification(mode, n) -> (action, reason)` | `adapters/claude_cli.py` `ClaudeCliClassifier` |
@@ -55,10 +55,15 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | `activity` | `{verdict, reason, app, title}` (+ `url` when a UrlSource supplied one) |
 | `held` | last 50 held notifications `{app, summary, body, urgency, ts, id}` |
 | `held_count` | number held |
+| `browser` | `{enabled, url, connected, last_seen_ms}` from `features/browser_urls.py` |
 | `agents` | reserved: list, empty until a feature registers it |
 | `pet` | reserved: dict, empty until a feature registers it |
 | `theme` | reserved: dict, empty until a feature registers it |
 | `updated_ms` | write time |
+
+`Daemon.window_enrichers` (callables `WindowInfo -> WindowInfo` applied on every focus
+change) and `Daemon.on_url(browser, url)` (attach a URL to the focused browser window and re-judge)
+let a UrlSource feature work without touching core.
 
 `Daemon.register_section(name, provider)` makes `provider()` (a dict or list)
 appear under `name` in every snapshot. Core keys cannot be overridden.

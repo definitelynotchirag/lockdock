@@ -7,7 +7,7 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
-from ..core.models import DEFAULT_BROWSERS, Config, Mode, NotificationRules
+from ..core.models import DEFAULT_BROWSERS, BrowserBridge, Config, Mode, NotificationRules
 
 EXAMPLE = Path(__file__).resolve().parents[2] / "modes.example.json"
 
@@ -29,10 +29,13 @@ def config_from_dict(raw: dict) -> Config:
             on_enter=m.get("on_enter", []), on_exit=m.get("on_exit", []),
         ))
     llm = raw.get("llm", {})
+    bb = raw.get("browser_bridge", {})
+    bridge = BrowserBridge(enabled=bool(bb.get("enabled", True)), port=int(bb.get("port", 47231)),
+                           token=str(bb.get("token", "")))
     return Config(modes=modes, default_mode=raw.get("default_mode", modes[0].id),
                   llm_enabled=llm.get("enabled", True), llm_model=llm.get("model", "haiku"),
                   dwell_s=float(raw.get("dwell_s", 2.0)),
-                  browsers=raw.get("browsers", list(DEFAULT_BROWSERS)))
+                  browsers=raw.get("browsers", list(DEFAULT_BROWSERS)), browser_bridge=bridge)
 
 
 class JsonConfigLoader:

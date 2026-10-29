@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 
 from .events import EventSink
 from .models import Config, Mode, Verdict, WindowInfo
@@ -15,7 +16,7 @@ def rule_activity(mode: Mode, window: WindowInfo, browsers: list[str] | tuple[st
                   ) -> tuple[Verdict, str] | None:
     """Decide by rules alone; None means "ask the classifier"."""
     cls = window.cls
-    text = f"{cls}|{window.title}"
+    text = f"{cls}|{window.title}|{window.url or ''}"
     if p := matches(mode.off_task, text):
         return Verdict.OFF, f"matches off_task rule '{p}'"
     if p := matches(mode.on_task, text):
@@ -35,7 +36,7 @@ def rule_activity(mode: Mode, window: WindowInfo, browsers: list[str] | tuple[st
 class ActivityJudge:
     """Tracks the focused window and publishes a verdict once it has been focused for dwell_s.
 
-    `activity` is the dict published in state.json: verdict, reason, app, title.
+    `activity` is the dict published in state.json: verdict, reason, app, title (+ url).
     """
 
     def __init__(self, config: Callable[[], Config], mode: Callable[[], Mode], classifier: Classifier,
@@ -58,6 +59,14 @@ class ActivityJudge:
         """Focus changed: restart the dwell timer."""
         self.focus = window
         self.schedule()
+
+    def set_url(self, url: str) -> bool:
+        """The focused window's URL changed: re-judge. False when there is nothing to change."""
+        if not self.focus.cls or self.focus.url == url:
+            return False
+        self.focus = replace(self.focus, url=url)
+        self.schedule()
+        return True
 
     def schedule(self) -> None:
         """(Re)judge the current focus after the dwell time."""

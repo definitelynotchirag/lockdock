@@ -2,6 +2,7 @@
   "default_mode": "free",
   "dwell_s": 2.0,
   "llm": { "enabled": true, "model": "haiku" },
+  "browser_bridge": { "enabled": true, "port": 47231, "token": "" },
   "browsers": ["helium", "chrom", "firefox", "zen", "brave", "vivaldi", "librewolf"],
   "modes": [
     {

@@ -6,6 +6,7 @@
   lockdock cancel            cancel a pending switch
   lockdock status [--json]   current mode, activity verdict, held notifications
   lockdock modes             list modes from modes.json
+  lockdock url               last browser URL and bridge health (browser extension)
   lockdock held              list held notifications
   lockdock release           re-deliver held notifications now
   lockdock reload            reload modes.json (also happens automatically)
@@ -40,6 +41,20 @@ def _status(rest: list[str]) -> None:
     print(f"held notifications: {st.get('held_count', 0)}")
 
 
+def _url(b: dict) -> None:
+    if not isinstance(b, dict):
+        print(b)
+        return
+    if not b.get("enabled"):
+        state = "disabled"
+    else:
+        state = f"listening on 127.0.0.1:{b.get('port')}" if b.get("listening") else "enabled, NOT listening"
+    print(f"bridge: {state}")
+    seen = f"last seen {b['age_s']}s ago" if b.get("age_s") is not None else "never seen"
+    print(f"connected: {'yes' if b.get('connected') else 'no'}  ({seen})")
+    print(f"url: {b.get('url') or '(none)'}")
+
+
 def main(argv: list[str] | None = None) -> None:
     args = argv if argv is not None else sys.argv[1:]
     if not args or args[0] in ("-h", "--help"):
@@ -63,6 +78,8 @@ def main(argv: list[str] | None = None) -> None:
         raw = json.loads(MODES_FILE.read_text())
         for m in raw["modes"]:
             print(f"{m['id']:<12} {m.get('icon', '')} {m.get('label', '')}: {m.get('description', '')}")
+    elif cmd == "url":
+        _url(call("url"))
     elif cmd == "held":
         for n in call("status").get("held", []):
             print(f"[{n['app']}] {n['summary']} — {n['body'][:80]}")

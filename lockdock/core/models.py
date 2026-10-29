@@ -48,6 +48,15 @@ class Mode:
 
 
 @dataclass
+class BrowserBridge:
+    """The `browser_bridge` block: the local HTTP endpoint the browser extension posts to."""
+
+    enabled: bool = True
+    port: int = 47231
+    token: str = ""
+
+
+@dataclass
 class Config:
     """The whole modes.json, parsed."""
 
@@ -57,6 +66,7 @@ class Config:
     llm_model: str = "haiku"
     dwell_s: float = 2.0
     browsers: list[str] = field(default_factory=lambda: list(DEFAULT_BROWSERS))
+    browser_bridge: BrowserBridge = field(default_factory=BrowserBridge)
 
     def get(self, mode_id: str | None) -> Mode | None:
         """The mode with this id, or None."""

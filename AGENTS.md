@@ -16,7 +16,7 @@ hot-reloads it within 2 s. Per mode:
 | `id`, `label`, `icon`, `color` | identity; `icon` is a text glyph (emoji / unicode) |
 | `description` | one or two sentences; **this is the prompt the classifier sees**, write it like a brief |
 | `apps` | desktop-entry ids shown in the dock for this mode (`ls /usr/share/applications`) |
-| `on_task` / `off_task` | regexes (case-insensitive) matched against `class\|title`; off wins |
+| `on_task` / `off_task` | regexes (case-insensitive) matched against `class\|title\|url`; off wins |
 | `unknown` | `ask` (LLM decides), `neutral`, or `off` for anything no rule matches |
 | `off_task_action` | `nudge` (dock turns red with the reason), `notify`, or `none` |
 | `notifications.allow_from` / `hold_from` | regexes on `appName\|desktop-entry` |
@@ -46,7 +46,7 @@ changed a description and want it re-judged.
 
 - Prefer a regex over a description change: rules are free and instant,
   the LLM costs a call per new window title.
-- Browsers are judged by title only. A site the mode needs goes in `on_task`.
+- Browsers are judged by title, plus the tab URL when the browser extension is installed (`skills/lockdock/browser.md`). A site the mode needs goes in `on_task`.
 - Critical-urgency notifications always pass; do not try to hold them.
 - Keep `lockdock status` green after an edit: a JSON error logs
   `config_error` and the previous config stays active.
