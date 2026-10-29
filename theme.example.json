@@ -43,5 +43,13 @@
     "style": "pill",
     "max_rows": 8
   },
+  "prompts": {
+    "enabled": true,
+    "max_visible": 3,
+    "width": 360
+  },
+  "mode_strip": {
+    "stay_button": true
+  },
   "opacity": 1.0
 }

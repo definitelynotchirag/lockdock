@@ -68,6 +68,37 @@ def test_agents_style_and_rows():
     assert ThemeConfig.from_dict({"agents": "chips"}).problems
 
 
+def test_prompts_and_mode_strip_keys():
+    t = ThemeConfig()
+    assert (t.prompts.enabled, t.prompts.max_visible, t.prompts.width) == (True, 3, 360)
+    assert t.mode_strip.stay_button is True
+    t = ThemeConfig.from_dict({"prompts": {"enabled": False, "max_visible": 5, "width": 420},
+                               "mode_strip": {"stay_button": False}})
+    assert t.problems == []
+    snap = t.snapshot()
+    assert snap["prompts"] == {"enabled": False, "max_visible": 5, "width": 420}
+    assert snap["mode_strip"] == {"stay_button": False}
+    t = ThemeConfig.from_dict({"prompts": {"enabled": "yes", "max_visible": 0, "width": 50, "height": 3},
+                               "mode_strip": {"stay_button": 1}})
+    assert (t.prompts.enabled, t.prompts.max_visible, t.prompts.width) == (True, 3, 360)
+    assert t.mode_strip.stay_button is True
+    assert {p.split(":")[0] for p in t.problems} == {"prompts.enabled", "prompts.max_visible", "prompts.width",
+                                                     "prompts.height", "mode_strip.stay_button"}
+    assert ThemeConfig.from_dict({"prompts": {"max_visible": 2.5}}).prompts.max_visible == 3
+    assert ThemeConfig.from_dict({"prompts": True}).problems
+
+
+def test_service_set_prompts_keys():
+    svc, doc, _, _ = make_service({})
+    svc.set({"key": "prompts.max_visible", "value": 2})
+    svc.set({"key": "mode_strip.stay_button", "value": False})
+    assert doc.raw["prompts"] == {"max_visible": 2} and doc.raw["mode_strip"] == {"stay_button": False}
+    snap = svc.snapshot()
+    assert snap["prompts"]["max_visible"] == 2 and snap["mode_strip"]["stay_button"] is False
+    with pytest.raises(ValueError):
+        svc.set({"key": "prompts.width", "value": 5000})
+
+
 def test_service_set_agents_style():
     svc, doc, _, _ = make_service({})
     svc.set({"key": "agents.style", "value": "chips"})
@@ -111,7 +142,8 @@ def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
     assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
                          "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
-                         "show_unpinned", "autohide", "nudge", "agents", "opacity", "colors", "palette_source"}
+                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "opacity", "colors",
+                         "palette_source"}
     assert snap["background"] is None
     assert snap["border"] == {"color": None, "width": 1, "off_task_color": None}
     assert set(snap["colors"]) == set(ROLES) and snap["colors"]["bg"] == DARK.bg
