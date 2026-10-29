@@ -19,7 +19,7 @@ PanelWindow {
     id: dock
     required property var shell
     readonly property var st: shell.state
-    readonly property var theme: Theme { st: dock.st }
+    readonly property var theme: Theme { st: dock.st; host: dock }
     readonly property var activeMode: (st.modes || []).find(m => m.id === st.mode) || { id: "", label: "", icon: "", color: "auto", apps: [] }
     readonly property bool offTask: (st.activity || {}).verdict === "off"
     readonly property bool nudgeShown: offTask && theme.nudge
@@ -41,11 +41,12 @@ PanelWindow {
         apps: appStripComp,
         agents: theme.agentsStyle === "chips" ? agentStripComp : agentsPillComp,
         held: heldBadgeComp,
+        pin: pinComp,
     })
     // slab: sections drawn right after their neighbour with no divider (like the held badge)
-    readonly property var inlineSections: ({ held: true })
+    readonly property var inlineSections: ({ held: true, pin: true })
     // islands: sections that share the island of their neighbour (the next one, or the previous when last)
-    readonly property var joinSections: ({ pet: true })
+    readonly property var joinSections: ({ pet: true, pin: true })
 
     // theme.sections -> list of groups (lists of ids); one group per island
     readonly property var groups: {
@@ -64,23 +65,34 @@ PanelWindow {
 
     anchors.bottom: !theme.atTop
     anchors.top: theme.atTop
-    exclusiveZone: theme.autohide ? -1 : 0   // autohide: sit at the physical edge so the reveal strip is reachable
+    // pinned: reserve the island row and the margin (not the transparent headroom above it) so
+    // maximised and tiled windows stop at the dock. Unpinned: an overlay; autohide sits at the
+    // physical edge so the reveal strip is reachable. Pinned never hides.
+    readonly property bool autohide: theme.autohide && !theme.pinned
+    readonly property int reservedZone: Math.ceil(islandHeight + theme.margin)
+    exclusiveZone: theme.pinned ? reservedZone : (autohide ? -1 : 0)
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "lockdock"
     // room around the card for the islands' shadows
     // (wide enough for the agents list to sit centred on its pill)
     implicitWidth: Math.max(card.implicitWidth + theme.px(56),
+                            theme.tooltips ? tip.maxTextWidth + theme.px(60) : 0,
                             agentsPill ? 2 * (Math.abs(agentsPanel.pillOffset) + agentsPanel.width / 2 + theme.px(12)) : 0,
                             promptStack.count > 0 ? promptStack.width + theme.px(48) : 0)
     // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble, the
     // agents list or decision cards show
     implicitHeight: card.implicitHeight + theme.margin
-                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom, promptsHeadroom)
+                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom, promptsHeadroom,
+                               tipHeadroom)
     readonly property real panelGap: theme.px(10) + (nudgeShown ? nudgeBox.height + theme.px(8) : 0)
     // reserved while the pill shows, not only while the list is open: resizing the layer surface
     // on every open makes Hyprland redraw the whole dock squashed for a frame
-    readonly property real agentsHeadroom: agentsPill && agentsPill.visible ? agentsPanel.height + panelGap + theme.px(14) : 0
+    // (plus a tooltip's height, so a row's tip fits above the list)
+    readonly property real agentsHeadroom: agentsPill && agentsPill.visible
+        ? agentsPanel.height + panelGap + theme.px(14) + (theme.tooltips ? tipHeadroom : 0) : 0
+    // a tooltip over the islands: always reserved while tooltips are on (no resize on hover)
+    readonly property real tipHeadroom: theme.tooltips ? Math.ceil(tip.maxHeight) + theme.px(16) : 0
     // decision cards: while any card is up, reserve room for max_visible tall cards (or the real
     // stack, if taller) so the surface does not resize as cards come and go
     readonly property real promptCardReserve: theme.px(14 + 32 + 10 + 3 * 17 + 10 + 28 + 12 + 32 + 14 + 8)
@@ -93,6 +105,7 @@ PanelWindow {
         Region { item: dock.petItem && dock.petItem.bubbleShown ? dock.petItem.bubble : null }
         Region { item: agentsPanel.visible ? agentsPanel : null }
         Region { item: promptStack.count > 0 ? promptStack : null }
+        Region { item: tip.visible ? tip : null }
     }
 
     // countdown clock
@@ -103,7 +116,7 @@ PanelWindow {
     property bool shown: true
     readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown || (st.held_count || 0) > 0
                                  || agentsOpen || promptStack.count > 0
-    readonly property bool wantShown: !theme.autohide || cardHover.hovered || edgeHover.hovered || busy
+    readonly property bool wantShown: !autohide || cardHover.hovered || edgeHover.hovered || busy
     onWantShownChanged: { if (wantShown) { hideTimer.stop(); shown = true } else hideTimer.restart() }
     Component.onCompleted: if (!wantShown) hideTimer.start()
     Timer { id: hideTimer; interval: dock.theme.hideDelayMs; onTriggered: dock.shown = false }
@@ -113,7 +126,7 @@ PanelWindow {
         id: edge
         anchors.horizontalCenter: parent.horizontalCenter
         width: card.width
-        height: dock.theme.autohide ? (dock.shown ? Math.max(dock.theme.revealPx, dock.theme.margin) : dock.theme.revealPx) : 0
+        height: dock.autohide ? (dock.shown ? Math.max(dock.theme.revealPx, dock.theme.margin) : dock.theme.revealPx) : 0
         y: dock.theme.atTop ? 0 : dock.height - height
         HoverHandler { id: edgeHover }
     }
@@ -138,7 +151,7 @@ PanelWindow {
 
         transform: Translate {
             y: dock.shown ? 0 : (dock.theme.atTop ? -1 : 1) * (card.height + dock.theme.margin + dock.theme.px(12))
-            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on y { NumberAnimation { duration: dock.theme.dur(200); easing.type: Easing.OutCubic } }
         }
 
         Row {
@@ -271,6 +284,11 @@ PanelWindow {
         }
     }
 
+    Component {
+        id: pinComp
+        PinButton { st: dock.st; shell: dock.shell; theme: dock.theme }
+    }
+
     // off-task nudge next to the dock (above it at the bottom, below it at the top)
     Nudge {
         id: nudgeBox
@@ -318,5 +336,61 @@ PanelWindow {
         // the slot nearest the dock carries one card gap of its own
         y: dock.theme.atTop ? card.y + card.height + dock.panelGap - promptStack.gap
                             : card.y - height - dock.panelGap + promptStack.gap
+    }
+
+    // ---- the tooltip: one per window, shown for whichever Pressable is hovered ----
+    // showTip(item, {icon, title, detail}) after theme.tooltips.delay_ms; moving from one item to
+    // the next while a tip shows (or just faded) switches at once. hideTip(item) only hides the
+    // tip that item owns.
+    property Item tipTarget: null
+    property var tipContent: ({})
+    property bool tipOpen: false
+    function showTip(item, content) {
+        if (!theme.tooltips || !content || !content.title) return
+        const switching = tipOpen || tipGrace.running
+        tipGrace.stop()
+        tipTarget = item
+        tipContent = content
+        if (switching) { tipDelay.stop(); tipOpen = true }
+        else if (!tipOpen) tipDelay.restart()
+    }
+    function hideTip(item) {
+        if (item !== tipTarget) return
+        tipDelay.stop()
+        if (tipOpen) { tipOpen = false; tipGrace.restart() }
+    }
+    onTipTargetChanged: if (!tipTarget) { tipDelay.stop(); tipOpen = false }
+    Timer { id: tipDelay; interval: dock.theme.tooltipDelayMs; onTriggered: dock.tipOpen = dock.tipTarget !== null }
+    Timer { id: tipGrace; interval: 300 }
+
+    Tip {
+        id: tip
+        theme: dock.theme
+        z: 20
+        open: dock.tipOpen && dock.tipTarget !== null && dock.shown
+        icon: dock.tipContent.icon || ""
+        title: dock.tipContent.title || ""
+        detail: dock.tipContent.detail || ""
+        readonly property real gap: dock.theme.px(6)
+        // the target's top centre and bottom, in window coordinates (re-read as the card moves)
+        readonly property rect anchorRect: {
+            const t = dock.tipTarget
+            card.width; card.x; dock.width; dock.height; agentsPanel.y; tip.open
+            if (!t) return Qt.rect(0, 0, 0, 0)
+            const p = t.mapToItem(tip.parent, 0, 0)
+            const w = t.width * t.scale, h = t.height * t.scale
+            // an item on the islands: point at the island edge, not at the item itself
+            const cy = p.y + h / 2
+            if (cy >= card.y && cy <= card.y + card.height) return Qt.rect(p.x, card.y, w, card.height)
+            return Qt.rect(p.x, p.y, w, h)
+        }
+        readonly property bool wantBelow: dock.theme.atTop
+        readonly property real yAbove: anchorRect.y - height - gap
+        readonly property real yBelow: anchorRect.y + anchorRect.height + gap
+        below: wantBelow ? yBelow + height <= dock.height : yAbove < 0
+        x: Math.round(Math.max(dock.theme.px(4), Math.min(dock.width - width - dock.theme.px(4),
+                                                         anchorRect.x + anchorRect.width / 2 - width / 2)))
+        y: Math.round(below ? yBelow : yAbove)
+        tailX: anchorRect.x + anchorRect.width / 2 - x
     }
 }

@@ -31,7 +31,7 @@ Item {
     property real progress: open ? 1 : 0
     Behavior on progress {
         NumberAnimation {
-            duration: panel.open ? 180 : 120
+            duration: panel.theme.dur(panel.open ? 180 : 120)
             easing.type: panel.open ? Easing.OutCubic : Easing.InCubic
         }
     }
@@ -110,14 +110,24 @@ Item {
             }
         }
 
-        delegate: Item {
+        delegate: Pressable {
             id: row
+            theme: panel.theme
             required property var modelData
             required property int index
             readonly property bool needs: modelData.state === "needs_input"
             readonly property bool quiet: modelData.state === "idle" || modelData.state === "done"
             width: list.width
             height: panel.rowHeight
+            tip: ({
+                icon: panel.theme.agentIcon(modelData),
+                title: modelData.cwd ? modelData.cwd.replace(/^\/home\/[^\/]+/, "~") : modelData.id,
+                detail: modelData.kind + " · " + panel.stateText(modelData.state) + " · click to focus"
+            })
+            onClicked: {
+                panel.shell.send(["agent", "focus", row.modelData.id])
+                panel.closeRequested()
+            }
 
             // stagger: each row fades and slides in 25 ms after the one above it
             property bool revealed: false
@@ -131,19 +141,24 @@ Item {
                 function onOpenChanged() { if (!panel.open) row.revealed = false }
             }
             opacity: revealed ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: row.revealed ? 180 : 100; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: panel.theme.dur(row.revealed ? 180 : 100); easing.type: Easing.OutCubic } }
             transform: Translate {
                 y: row.revealed ? 0 : (panel.below ? -1 : 1) * panel.theme.px(8)
-                Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: panel.theme.dur(180); easing.type: Easing.OutCubic } }
             }
 
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: panel.theme.px(1)
                 radius: panel.theme.px(12)
-                color: rowMa.containsMouse ? panel.theme.surfaceHover
-                                           : row.needs ? panel.theme.alpha(panel.theme.danger, 0.10) : "transparent"
-                Behavior on color { ColorAnimation { duration: 120 } }
+                color: row.needs ? panel.theme.alpha(panel.theme.danger, 0.10) : "transparent"
+                Rectangle {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    color: panel.theme.surfaceHover
+                    opacity: row.hoverProgress
+                    visible: opacity > 0
+                }
             }
 
             RowLayout {
@@ -164,7 +179,8 @@ Item {
                         stroke: panel.theme.iconStroke
                         family: panel.theme.family
                         color: panel.theme.text
-                        opacity: row.quiet ? 0.6 : 1
+                        opacity: row.quiet ? 0.6 + 0.4 * row.hoverProgress : 1
+                        transform: Translate { y: row.lift(1.5) }
                     }
                 }
                 ColumnLayout {
@@ -203,20 +219,6 @@ Item {
                     color: panel.dotColor(row.modelData.state)
                     Layout.alignment: Qt.AlignVCenter
                 }
-            }
-
-            MouseArea {
-                id: rowMa
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    panel.shell.send(["agent", "focus", row.modelData.id])
-                    panel.closeRequested()
-                }
-                ToolTip.visible: containsMouse
-                ToolTip.delay: 600
-                ToolTip.text: row.modelData.cwd || row.modelData.id
             }
         }
     }

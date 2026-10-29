@@ -1,14 +1,13 @@
 import QtQuick
-import QtQuick.Controls
 
 // The mascot in the dock: its mood sprite, plus a speech bubble that pops up when
 // st.pet.line changes and hides after 6 s. Click to calm it. The Dock adds `bubble`
 // to its input mask and grows its headroom by `headroom` while the bubble shows.
-Item {
+// Hover (Pressable): a soft surface_hover halo, the sprite lifts 1.5 px; press scales to 0.96.
+Pressable {
     id: pet
     required property var st           // state.json
     required property var shell        // for shell.send
-    required property var theme        // components/Theme.qml (bubble colours, sizes)
     property bool shown: true          // the Dock hides the copy that is not in the configured position
     property real bubbleLift: 14       // gap between the pet's top and the bubble's bottom
     property bool bubbleLeftward: false // grow the bubble to the left (pet at the right end of the dock)
@@ -23,24 +22,27 @@ Item {
     implicitWidth: theme.ipx(40)
     implicitHeight: theme.ipx(40)
 
+    tip: ({
+        title: (info.name || "Pet") + " is " + (info.mood || "content"),
+        detail: (info.off_seconds ? Math.round(info.off_seconds) + "s off task · " : "") + "click to calm"
+    })
+    onClicked: pet.shell.send(["pet", "calm"])
+
+    // the sprite's halo, and the sprite: lifts on hover, springs on press
+    Rectangle {
+        anchors.fill: parent
+        radius: height / 2
+        color: pet.theme.surfaceHover
+        opacity: pet.hoverProgress
+        scale: (0.9 + 0.1 * pet.hoverProgress) * pet.pressScale
+        visible: opacity > 0
+    }
     PetSprite {
         anchors.fill: parent
         pet: pet.info
         renderSize: pet.theme.ipx(40)
-        scale: ma.pressed ? 0.9 : (ma.containsMouse ? 1.08 : 1)
-        Behavior on scale { NumberAnimation { duration: 120 } }
-    }
-
-    MouseArea {
-        id: ma
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: pet.shell.send(["pet", "calm"])
-        ToolTip.visible: containsMouse
-        ToolTip.delay: 500
-        ToolTip.text: (pet.info.name || "pet") + " is " + (pet.info.mood || "content")
-                      + (pet.info.off_seconds ? " · " + pet.info.off_seconds + "s off task" : "") + "\nclick to calm"
+        scale: pet.pressScale
+        transform: Translate { y: pet.lift(1.5) }
     }
 
     // ---- speech bubble: pops when the line changes ----

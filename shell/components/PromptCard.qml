@@ -227,8 +227,9 @@ Item {
             Item { Layout.fillWidth: true }
             Repeater {
                 model: card.actions
-                delegate: Rectangle {
+                delegate: Pressable {
                     id: btn
+                    theme: card.theme
                     required property var modelData
                     readonly property bool primary: modelData.style === "primary"
                     readonly property color fill: !primary ? card.theme.surfaceHover
@@ -238,11 +239,13 @@ Item {
                     implicitHeight: card.theme.px(34)
                     implicitWidth: label.implicitWidth + card.theme.px(32)
                     Layout.maximumWidth: full.width
-                    radius: height / 2
-                    color: bma.containsMouse ? Qt.tint(fill, card.theme.alpha(ink, 0.10)) : fill
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    scale: bma.pressed ? 0.96 : 1
-                    Behavior on scale { NumberAnimation { duration: 100 } }
+                    scale: pressScale
+                    onClicked: card.actionClicked(btn.modelData.id)
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: height / 2
+                        color: Qt.tint(btn.fill, card.theme.alpha(btn.ink, 0.10 * btn.hoverProgress))
+                    }
                     Text {
                         id: label
                         anchors.centerIn: parent
@@ -253,13 +256,7 @@ Item {
                         font.family: card.theme.family
                         font.weight: btn.primary ? Font.DemiBold : Font.Medium
                         color: btn.ink
-                    }
-                    MouseArea {
-                        id: bma
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: card.actionClicked(btn.modelData.id)
+                        transform: Translate { y: btn.lift(1) }
                     }
                 }
             }

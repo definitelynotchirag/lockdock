@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
 // One pill per mode; the active one is wide. While a switch is pending, a timer pill follows
@@ -37,9 +36,16 @@ RowLayout {
     }
 
     // ---- timer pill: "<glyph> Social 0:10" ----
-    Item {
+    Pressable {
         id: timer
+        theme: strip.theme
         visible: strip.pending !== null
+        tip: ({
+            icon: strip.theme.icon("timer", "icona:hourglass"),
+            title: strip.pendingMode ? "Switching to " + strip.pendingMode.label : "Switching",
+            detail: "press again to shorten the wait"
+        })
+        onClicked: if (strip.pending) strip.modeClicked(strip.pending.mode)
         property real clock: Date.now()
         Timer {
             interval: 250; repeat: true; running: timer.visible; triggeredOnStart: true
@@ -57,21 +63,19 @@ RowLayout {
         implicitHeight: strip.theme.ipx(40)
         implicitWidth: timerRow.implicitWidth + strip.theme.px(30)
         Layout.leftMargin: strip.theme.px(2)
-        scale: tma.pressed ? 0.96 : 1
-        Behavior on scale { NumberAnimation { duration: 100 } }
+        scale: pressScale
 
         Rectangle {
             anchors.fill: parent
             radius: height / 2
-            color: tma.containsMouse ? Qt.tint(strip.theme.surfaceHover, strip.theme.alpha(timer.c, 0.10)) : strip.theme.surfaceHover
-            Behavior on color { ColorAnimation { duration: 150 } }
+            color: Qt.tint(strip.theme.surfaceHover, strip.theme.alpha(timer.c, 0.10 * timer.hoverProgress))
             // the wait so far, rising left to right
             Rectangle {
                 anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom
                 width: Math.max(height, parent.width * timer.progress)
                 radius: parent.radius
                 color: strip.theme.alpha(timer.c, 0.35)
-                Behavior on width { NumberAnimation { duration: 250 } }
+                Behavior on width { NumberAnimation { duration: strip.theme.dur(250) } }
             }
         }
         RowLayout {
@@ -86,6 +90,7 @@ RowLayout {
                 family: strip.theme.family
                 color: strip.theme.text
                 Layout.alignment: Qt.AlignVCenter
+                transform: Translate { y: timer.lift(1.5) }
             }
             Text {
                 text: strip.pendingMode ? strip.pendingMode.label : ""
@@ -106,29 +111,27 @@ RowLayout {
                 Layout.alignment: Qt.AlignVCenter
             }
         }
-        MouseArea {
-            id: tma
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: if (strip.pending) strip.modeClicked(strip.pending.mode)
-            ToolTip.visible: containsMouse
-            ToolTip.delay: 400
-            ToolTip.text: "press again to shorten the wait"
-        }
     }
 
     // ---- Stay: cancel the pending switch ----
-    Rectangle {
+    Pressable {
+        id: stay
+        theme: strip.theme
         visible: strip.pending !== null && strip.theme.stayButton
         implicitHeight: strip.theme.ipx(40)
         implicitWidth: stayRow.implicitWidth + strip.theme.px(30)
-        radius: height / 2
-        color: sma.containsMouse ? Qt.tint(strip.theme.surfaceHover, strip.theme.alpha(strip.theme.text, 0.08))
-                                 : strip.theme.surfaceHover
-        Behavior on color { ColorAnimation { duration: 150 } }
-        scale: sma.pressed ? 0.96 : 1
-        Behavior on scale { NumberAnimation { duration: 100 } }
+        scale: pressScale
+        tip: ({
+            icon: strip.theme.icon("stay", "icona:target"),
+            title: "Cancel the switch",
+            detail: "stay in " + ((strip.st.modes || []).find(m => m.id === strip.st.mode) || { label: "this mode" }).label
+        })
+        onClicked: strip.stayClicked()
+        Rectangle {
+            anchors.fill: parent
+            radius: height / 2
+            color: Qt.tint(strip.theme.surfaceHover, strip.theme.alpha(strip.theme.text, 0.08 * stay.hoverProgress))
+        }
         Row {
             id: stayRow
             anchors.centerIn: parent
@@ -141,6 +144,7 @@ RowLayout {
                 stroke: strip.theme.iconStroke
                 family: strip.theme.family
                 color: strip.theme.text
+                transform: Translate { y: stay.lift(1.5) }
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
@@ -150,16 +154,6 @@ RowLayout {
                 font.weight: Font.DemiBold
                 color: strip.theme.text
             }
-        }
-        MouseArea {
-            id: sma
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: strip.stayClicked()
-            ToolTip.visible: containsMouse
-            ToolTip.delay: 400
-            ToolTip.text: "cancel the switch and stay in this mode"
         }
     }
 }

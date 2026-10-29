@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
 // Agent inbox, compact: one pill for every running coding agent (state.json `agents`): an
@@ -7,10 +6,9 @@ import QtQuick.Layouts
 // agent waits for you, success while all work, muted when idle / done). Click toggles the
 // list (AgentsPanel), which the Dock draws outside the card and opens from this pill's
 // centre. The Dock registers the pill (`agentsPill`) and binds `panelHovered`.
-Rectangle {
+Pressable {
     id: pill
     required property var st          // state.json
-    required property var theme
     property bool open: false
     property bool panelHovered: false  // set by the Dock from the panel
 
@@ -30,14 +28,25 @@ Rectangle {
     onActiveChanged: if (!active) open = false
     implicitHeight: theme.ipx(40)
     implicitWidth: content.implicitWidth + theme.px(26)
-    Behavior on implicitWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-    radius: height / 2
-    color: open || ma.containsMouse ? theme.surfaceHover : theme.alpha(theme.surfaceHover, theme.dark ? 0.85 : 0.6)
-    border.width: needs ? theme.px(1.5) : 0
-    border.color: theme.alpha(theme.paletteAccent, pulse)
-    Behavior on color { ColorAnimation { duration: 150 } }
-    scale: ma.pressed ? 0.96 : 1
-    Behavior on scale { NumberAnimation { duration: 100 } }
+    Behavior on implicitWidth { NumberAnimation { duration: pill.theme.dur(220); easing.type: Easing.OutCubic } }
+    scale: pressScale
+    tip: ({
+        icon: glyph,
+        title: count + (count === 1 ? " agent" : " agents"),
+        detail: (needs ? needCount + (needCount === 1 ? " needs you" : " need you")
+                       : workingCount > 0 ? workingCount + " working" : "all idle") + " · click for the list"
+    })
+    tipEnabled: !open
+    onClicked: pill.open = !pill.open
+
+    readonly property real rest: theme.dark ? 0.85 : 0.6
+    Rectangle {
+        anchors.fill: parent
+        radius: height / 2
+        color: pill.theme.alpha(pill.theme.surfaceHover, pill.open ? 1 : pill.rest + (1 - pill.rest) * pill.hoverProgress)
+        border.width: pill.needs ? pill.theme.px(1.5) : 0
+        border.color: pill.theme.alpha(pill.theme.paletteAccent, pill.pulse)
+    }
 
     SequentialAnimation on pulse {
         running: pill.needs
@@ -48,10 +57,9 @@ Rectangle {
     }
 
     // pointer away from both the pill and the open panel for 700 ms: close
-    readonly property bool hovered: ma.containsMouse || panelHovered
     Timer {
         interval: 700
-        running: pill.open && !pill.hovered
+        running: pill.open && !pill.hovered && !pill.panelHovered
         onTriggered: pill.open = false
     }
 
@@ -66,6 +74,7 @@ Rectangle {
             family: pill.theme.family
             color: pill.theme.text
             Layout.alignment: Qt.AlignVCenter
+            transform: Translate { y: pill.lift(1.5) }
         }
         Text {
             text: pill.count
@@ -79,7 +88,7 @@ Rectangle {
             implicitWidth: pill.theme.px(7); implicitHeight: implicitWidth; radius: implicitWidth / 2
             color: pill.dotColor
             opacity: pill.needs ? Math.max(0.45, pill.pulse) : 1
-            Behavior on color { ColorAnimation { duration: 200 } }
+            Behavior on color { ColorAnimation { duration: pill.theme.dur(200) } }
             Layout.alignment: Qt.AlignVCenter
         }
         // "2 need you": slides open (the pill's width animates with it)
@@ -97,20 +106,8 @@ Rectangle {
                 font.weight: Font.DemiBold
                 color: pill.theme.danger
                 opacity: pill.needs ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 200 } }
+                Behavior on opacity { NumberAnimation { duration: pill.theme.dur(200) } }
             }
         }
-    }
-
-    MouseArea {
-        id: ma
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: pill.open = !pill.open
-        ToolTip.visible: containsMouse && !pill.open
-        ToolTip.delay: 600
-        ToolTip.text: pill.count + (pill.count === 1 ? " agent" : " agents")
-                      + (pill.needs ? " · " + needLabel.text : "") + "\nclick for the list"
     }
 }

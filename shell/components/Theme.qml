@@ -89,6 +89,18 @@ QtObject {
     readonly property real promptsWidth: pick((t.prompts || {}).width, 360)
     // a Stay (cancel) pill next to the countdown pill while a switch is pending
     readonly property bool stayButton: pick((t.mode_strip || {}).stay_button, true)
+    // pinned: the dock reserves its row (layer-shell exclusive zone) so windows stop at it
+    readonly property bool pinned: pick(t.pinned, false)
+
+    // ---- motion and tooltips ----
+    // reduced_motion: every interaction animation (Pressable, Tip, hover fades) takes 0 ms
+    readonly property bool reducedMotion: pick(t.reduced_motion, false)
+    function dur(ms) { return reducedMotion ? 0 : ms }
+    readonly property bool tooltips: pick((t.tooltips || {}).enabled, true)
+    readonly property int tooltipDelayMs: pick((t.tooltips || {}).delay_ms, 350)
+    // the Dock that owns this theme: Pressable calls host.showTip(item, {icon, title, detail}) /
+    // host.hideTip(item) on it (one Tip per dock window, drawn outside the islands)
+    property var host: null
 
     // ---- icons (theme.json `icons`, core/theme.py IconsTheme): names for components/Icon.qml ----
     readonly property var icons: t.icons || ({})

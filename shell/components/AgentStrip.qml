@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
 // Agent inbox: one chip per running coding agent (state.json `agents`).
@@ -22,8 +21,9 @@ RowLayout {
 
     Repeater {
         model: strip.agents
-        Rectangle {
+        Pressable {
             id: chip
+            theme: strip.theme
             required property var modelData
             readonly property bool needs: modelData.state === "needs_input"
             readonly property bool quiet: modelData.state === "done" || modelData.state === "idle"
@@ -31,11 +31,21 @@ RowLayout {
 
             implicitHeight: strip.theme.ipx(40)
             implicitWidth: content.implicitWidth + strip.theme.px(28)
-            radius: height / 2
-            color: ma.containsMouse ? strip.theme.surfaceHover : strip.theme.alpha(strip.theme.surfaceHover, strip.theme.dark ? 0.85 : 0.6)
-            border.width: needs ? strip.theme.px(1.5) : 0
-            border.color: strip.theme.alpha(strip.theme.paletteAccent, chip.pulse)
-            Behavior on color { ColorAnimation { duration: 150 } }
+            scale: pressScale
+            tip: ({
+                icon: strip.theme.agentIcon(modelData),
+                title: modelData.label + " · " + modelData.state.replace("_", " "),
+                detail: (modelData.last_message || modelData.cwd || "")
+            })
+            onClicked: strip.shell.send(["agent", "focus", chip.modelData.id])
+            readonly property real rest: strip.theme.dark ? 0.85 : 0.6
+            Rectangle {
+                anchors.fill: parent
+                radius: height / 2
+                color: strip.theme.alpha(strip.theme.surfaceHover, chip.rest + (1 - chip.rest) * chip.hoverProgress)
+                border.width: chip.needs ? strip.theme.px(1.5) : 0
+                border.color: strip.theme.alpha(strip.theme.paletteAccent, chip.pulse)
+            }
             SequentialAnimation on pulse {
                 running: chip.needs
                 loops: Animation.Infinite
@@ -54,8 +64,9 @@ RowLayout {
                     stroke: strip.theme.iconStroke
                     family: strip.theme.family
                     color: strip.theme.text
-                    opacity: chip.quiet ? 0.6 : 1
+                    opacity: chip.quiet ? 0.6 + 0.4 * chip.hoverProgress : 1
                     Layout.alignment: Qt.AlignVCenter
+                    transform: Translate { y: chip.lift(1.5) }
                 }
                 Text {
                     text: chip.modelData.label
@@ -74,19 +85,6 @@ RowLayout {
                     opacity: chip.needs ? Math.max(0.35, chip.pulse) : 1
                     Layout.alignment: Qt.AlignVCenter
                 }
-            }
-
-            MouseArea {
-                id: ma
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: strip.shell.send(["agent", "focus", chip.modelData.id])
-                ToolTip.visible: containsMouse
-                ToolTip.delay: 400
-                ToolTip.text: chip.modelData.kind + " · " + chip.modelData.state.replace("_", " ")
-                              + (chip.modelData.last_message ? "\n" + chip.modelData.last_message : "")
-                              + "\n" + chip.modelData.cwd
             }
         }
     }

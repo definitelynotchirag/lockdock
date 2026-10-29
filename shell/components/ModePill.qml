@@ -1,20 +1,26 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
 // One mode. Active: a filled pill (accent_container, or the mode's own colour when modes.json
 // sets one) with a small accent dot, icon (Icon.qml: icona:<slug> or a glyph) and label.
 // Inactive: the icon only, muted; a
 // pending switch widens it and fills it left to right as the countdown runs.
-Item {
+// Hover (Pressable): surface_hover fades in behind an inactive pill and the icon lifts 1.5 px;
+// press scales it to 0.96.
+Pressable {
     id: pill
-    required property var theme
     property var mode
     property bool active: false
     property var pending: null      // {mode, deadline_ms, total_ms} or null
     property real now: 0
     property bool offTask: false
-    signal clicked()
+    scale: pressScale
+    tip: ({
+        icon: theme.modeIcon(mode),
+        title: mode ? mode.label : "",
+        detail: pending ? "press again to shorten the wait"
+                        : active ? (mode.description || "the current mode") : (mode.description || "switch to this mode")
+    })
 
     readonly property bool auto: theme.modeIsAuto(mode)
     readonly property color c: theme.modeColor(mode)
@@ -28,14 +34,22 @@ Item {
 
     implicitHeight: theme.ipx(40)
     implicitWidth: wide ? content.implicitWidth + theme.px(30) : implicitHeight
-    Behavior on implicitWidth { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+    Behavior on implicitWidth { NumberAnimation { duration: pill.theme.dur(180); easing.type: Easing.OutCubic } }
 
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: pill.active ? pill.fill
-                           : (pill.pending || ma.containsMouse ? pill.theme.surfaceHover : "transparent")
-        Behavior on color { ColorAnimation { duration: 150 } }
+        color: pill.active ? pill.fill : pill.pending ? pill.theme.surfaceHover : pill.theme.alpha(pill.theme.surfaceHover, 0)
+        Behavior on color { ColorAnimation { duration: pill.theme.dur(150) } }
+
+        // hover: surface_hover fades in behind an inactive pill
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: pill.theme.surfaceHover
+            opacity: pill.active || pill.pending ? 0 : pill.hoverProgress
+            visible: opacity > 0
+        }
 
         // countdown fill while a switch is pending
         Rectangle {
@@ -63,8 +77,10 @@ Item {
             size: pill.theme.fpx(18)
             stroke: pill.theme.iconStroke
             family: pill.theme.family
-            color: pill.active ? pill.ink : (ma.containsMouse || pill.pending ? pill.theme.text : pill.theme.textMuted)
+            color: pill.active ? pill.ink : (pill.pending ? pill.theme.text
+                                                          : Qt.tint(pill.theme.textMuted, pill.theme.alpha(pill.theme.text, pill.hoverProgress)))
             Layout.alignment: Qt.AlignVCenter
+            transform: Translate { y: pill.lift(1.5) }
         }
         Text {
             visible: pill.wide
@@ -76,16 +92,5 @@ Item {
             color: pill.active ? pill.ink : pill.theme.text
             Layout.alignment: Qt.AlignVCenter
         }
-    }
-
-    MouseArea {
-        id: ma
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: pill.clicked()
-        ToolTip.visible: containsMouse
-        ToolTip.delay: 400
-        ToolTip.text: pill.pending ? "press again to shorten the wait" : (pill.mode.description || pill.mode.label)
     }
 }
