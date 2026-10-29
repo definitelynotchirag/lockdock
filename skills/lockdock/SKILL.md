@@ -17,10 +17,10 @@ description: Tune and debug lockdock, the mode-aware Hyprland dock. Use when the
 |---|---|---|---|
 | `~/.config/lockdock/modes.json` | modes, rules, notification policy, LLM | `lockdock config` (path), `modes`, `mode <id>`, `reload` | `modes.md` |
 | `~/.config/lockdock/theme.json` | every visual knob of the dock | `lockdock theme`, `theme set <key> <json>`, `theme reset`, `theme path` | `theme.md` |
-| pet config (the cat) | the dock pet | see page | `pet.md` |
-| agents config | coding agents shown in the dock | see page | `agents.md` |
+| `~/.config/lockdock/pet.json` | the dock pet: persona, lines, thresholds, growth, sprite pack | `lockdock pet`, `pet calm`, `pet mood <m>\|auto`, `pet mute\|unmute`, `pet pack <name>`, `pet packs`, `pet say "<text>"` | `pet.md` |
+| `modes.json` → `agents.kinds` | coding agents shown in the dock (Claude Code, Codex, OpenCode, Aider, Gemini, T3) | `lockdock agents`, `agents install-hooks [--dry-run]`, `agent focus <id>` | `agents.md` |
 
-Browser tab titles and URLs reach the dock through the browser integration: `browser.md`.
+Browser tab URLs reach the dock through the extension in `browser-extension/` and `modes.json` → `browser_bridge`; `lockdock url` shows the bridge state: `browser.md`.
 
 Prefer the CLI verbs over hand-editing when one exists (`theme set` validates and rejects bad values; a hand edit that is wrong falls back to defaults and is logged).
 
