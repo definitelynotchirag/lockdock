@@ -5,6 +5,8 @@ Wants=lockdock-daemon.service
 PartOf=graphical-session.target
 
 [Service]
+# new component files are invisible to the stale Qt QML disk cache on first start
+Environment=QML_DISABLE_DISK_CACHE=1
 ExecStart=%h/.local/bin/lockdock shell
 Restart=on-failure
 RestartSec=2
