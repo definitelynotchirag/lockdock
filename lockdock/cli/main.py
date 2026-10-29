@@ -14,6 +14,9 @@
                              press a card button: later | dismiss | stay | switch
   lockdock reload            reload modes.json (also happens automatically)
   lockdock log [-n N]        tail events.jsonl (what was classified and why)
+  lockdock classify <class> "<title>" [--mode <id>] [--url <url>] [--cached]
+                             run the configured classifier once (live unless --cached) and show
+                             verdict, reason, source and ms; for tuning mode descriptions
   lockdock config            print the modes.json path
   lockdock agents [--json]   running coding agents and whether they need you
   lockdock agent focus <id>  focus an agent's window
@@ -92,6 +95,29 @@ def _prompts(rest: list[str]) -> None:
             print("      actions: " + "  ".join(f"{a['id']}={a['label']!r}" for a in p["actions"]))
         if p.get("expires_ms"):
             print(f"      expires_ms: {p['expires_ms']}")
+
+
+def _classify(rest: list[str]) -> None:
+    opts: dict = {}
+    words: list[str] = []
+    it = iter(rest)
+    for a in it:
+        if a in ("--mode", "--url"):
+            opts[a[2:]] = next(it, "")
+        elif a == "--cached":
+            opts["cached"] = True
+        else:
+            words.append(a)
+    if len(words) != 2:
+        sys.exit('usage: lockdock classify <class> "<title>" [--mode <id>] [--url <url>] [--cached]')
+    res = call("classify", {"cls": words[0], "title": words[1], **opts})
+    if not isinstance(res, dict):
+        sys.exit(str(res))
+    print(f"{res['mode']}: {res['verdict']}  ({res['reason']})")
+    print(f"  source: {res['source']} via {res['provider']}  {res['ms']} ms")
+    r = res.get("rules")
+    print(f"  rules:  {r['verdict']} ({r['reason']}); the daemon decides by rule, not the classifier"
+          if r else "  rules:  no rule matches; the daemon asks the classifier")
 
 
 def _pet(rest: list[str]) -> None:
@@ -178,6 +204,8 @@ def main(argv: list[str] | None = None) -> None:
     elif cmd == "log":
         n = int(rest[rest.index("-n") + 1]) if "-n" in rest else 30
         subprocess.run(["tail", f"-n{n}", str(EVENTS_LOG)])
+    elif cmd == "classify":
+        _classify(rest)
     elif cmd == "pet":
         _pet(rest)
     elif cmd == "config":

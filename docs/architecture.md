@@ -9,7 +9,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
  Hyprland ─ HyprlandWindowSource ─┐                    ┌─ AtomicJsonStatePublisher ─ state.json ─ shell/
  busctl monitor ─ BusctlObserver ─┤                    ├─ BusctlNotificationSink ─ close / re-send
  modes.json ─ JsonConfigLoader ───┼─▶ core.Daemon ─────┼─ SubprocessCommandRunner ─ on_enter / on_exit
- unix socket ─ UnixSocketControl ─┤   ├ ModeManager    ├─ ClaudeCliClassifier ─ claude -p (+ JsonFileCache)
+ unix socket ─ UnixSocketControl ─┤   ├ ModeManager    ├─ ClaudeCli/JevClassifier ─ claude -p | Jev HTTPS (+ JsonFileCache)
  /proc ─ ProcScanner ─────────────┘   ├ ActivityJudge  └─ EventLog ─ events.jsonl
                                       ├ NotificationGate
                                       └ AgentRegistry (feature: agents)
@@ -23,7 +23,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | `UrlSource` | `async watch(on_url(browser_class, url))` | `adapters/http_url_source.py` `HttpUrlSource` (127.0.0.1 HTTP; fed by `browser-extension/`) |
 | `NotificationObserver` | `async watch(on_notify(Notification), on_reply(cookie, id, sender))` | `adapters/dbus_notifications.py` `BusctlNotificationObserver` |
 | `NotificationSink` | `close(id)`, `send(app, summary, body, desktop_entry="", urgency=1, timeout_ms=-1)` | `BusctlNotificationSink` |
-| `Classifier` | `async activity(mode, window) -> ActivityVerdict(verdict, reason, cached)`, `async notification(mode, n) -> NotificationVerdict(action, reason, time_sensitive, deadline, cached)` | `adapters/claude_cli.py` `ClaudeCliClassifier` |
+| `Classifier` | `async activity(mode, window) -> ActivityVerdict(verdict, reason, cached)`, `async notification(mode, n) -> NotificationVerdict(action, reason, time_sensitive, deadline, cached)` | `adapters/claude_cli.py` `ClaudeCliClassifier` (`claude -p`), or `adapters/jev.py` `JevClassifier` (TypeSafe AI `POST /v1/systemone`, stdlib urllib in a thread, 5 s timeout, one retry on 5xx/timeout, never raises: neutral / pass on failure; one `choice` question per window, a `choice` + `noul` pair per notification; `on_usage` logs `kind: "classifier"`). Both share `JsonFileCache` and its keys (`activity_key`, `notification_key`). `app.pick_classifier` chooses by `llm.provider` once at startup (key: `TYPESAFE_API_KEY` from the environment or `paths.ENV_FILE` via `adapters/env_file.py`; missing key -> Claude + `config_error`); a provider change needs a restart. The pet `Speaker` is always Claude |
 | `StatePublisher` | `publish(snapshot)` | `adapters/file_state.py` `AtomicJsonStatePublisher` |
 | `CommandRunner` | `run(cmd)` | `adapters/shell_commands.py` `SubprocessCommandRunner` |
 | `ConfigSource` | `load() -> Config`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonConfigLoader` (generic: `parse=` builds another type, `update(changes)` rewrites keys; pet.json uses it too) (built on `JsonFileWatcher`; generic: `parse=` builds another type, `update(changes)` rewrites keys; pet.json uses it too) |
@@ -144,6 +144,10 @@ timer pill (click = `["mode", target]`, press again) and a Stay pill (`["cancel"
 `theme.mode_strip.stay_button`).
 5. **Tests.** `tests/test_<feature>.py` with the fakes;
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
+
+Control verbs may return an awaitable; `UnixSocketControl` awaits it before replying
+(`features/classify.py`: `classify {cls, title, mode?, url?, cached?}` runs the classifier once and
+returns `{mode, provider, verdict, reason, source, ms, rules}`).
 
 Control verbs added by `features/agents.py`: `agent_event {kind, state, payload, pids}`,
 `agent_focus <id>`, `agents`. By `features/prompts.py`: `prompts` (the list) and

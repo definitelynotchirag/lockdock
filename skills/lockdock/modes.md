@@ -16,7 +16,34 @@
 | `exit_delay_s`, `per_press_s` | exit countdown when leaving this mode; each extra press cuts the wait |
 | `on_enter` / `on_exit` | shell commands (e.g. `hyprctl dispatch workspace 2`) |
 
-Top level: `default_mode`, `dwell_s` (how long a window must stay focused before it is judged), `llm.enabled`, `llm.model` (a `claude -p` model alias), `browsers` (classes judged by tab title, never by being a mode app), `prompts` (decision cards, below).
+Top level: `default_mode`, `dwell_s` (how long a window must stay focused before it is judged), `llm` (the classifier, below), `browsers` (classes judged by tab title, never by being a mode app), `prompts` (decision cards, below).
+
+## Classifier provider
+
+```json
+"llm": { "enabled": true, "provider": "claude", "model": "haiku", "jev_model": "jev-latest", "min_confidence": 0.35 }
+```
+
+| key | meaning |
+|---|---|
+| `enabled` | `false` = rules only; anything unknown is neutral, notifications with `default: "ask"` pass |
+| `provider` | `claude` (default: `claude -p` through the user's Claude Code login, a few seconds per call) or `jev` (TypeSafe AI's hosted decision model, ~0.3-1 s, typed answers with a probability). **Read once at startup: restart the daemon after changing it** (`systemctl --user restart lockdock`); until then the log shows a `config_error` saying which one is running |
+| `model` | the `claude -p` model alias; the pet's lines always use Claude with this model, whatever `provider` says |
+| `jev_model` | the Jev model (`jev-latest`) |
+| `min_confidence` | Jev only: an answer whose confidence is below this becomes `neutral` (windows) or `pass` (notifications, fail open), with the reason `low confidence (p=0.18 off)` |
+
+Jev needs an API key: put `TYPESAFE_API_KEY=...` in `~/.config/lockdock/.env` (`chmod 600`; the process environment wins over the file). Never print the key, paste it into modes.json, or commit it. With `provider: "jev"` and no key, the daemon logs `config_error` "TYPESAFE_API_KEY missing, falling back to claude" and uses Claude.
+
+Jev sees the mode's `description`, `apps` and the `on_task` / `off_task` lists (in plain words), so the same advice holds for both providers: a precise description gives confident answers. A Jev reason reads `off p=0.71 · jev` (p is Jev's confidence); every Jev call is also logged as `"kind": "classifier"` with `ms`, `input_tokens` and `output_tokens`, and a failed call as `error` (the verdict is then neutral / pass, reason `jev unavailable: timeout`). Jev cannot extract a deadline, so its time-sensitive notification cards show the reason instead of "before 3pm". Both providers share the verdict cache and its keys.
+
+To tune a description, ask the running classifier directly:
+
+```
+lockdock classify helium "Home / X - Helium" --mode writing
+lockdock classify dev.zed.Zed "lockdock — activity.py" --mode writing [--url https://...] [--cached]
+```
+
+It prints the verdict, reason, `source` (`llm` live, or `cache` with `--cached`), the provider and the time in ms, plus what the rules alone would decide (a rule match means the daemon never asks the classifier for that window). Without `--cached` the cached answer is dropped first and the new one is cached, so this is also how to refresh one entry after editing a description.
 
 ## Decision cards
 
@@ -36,7 +63,7 @@ lockdock status           # current mode, verdict, held count
 lockdock held             # what is being held right now
 ```
 
-A line like `"verdict": "off", "reason": "matches off_task rule 'docs'"` tells you exactly which rule to loosen. Verdicts from the LLM are cached in `~/.local/state/lockdock/classify-cache.json`; delete a key there if you changed a description and want it re-judged (or run `lockdock reclassify`).
+A line like `"verdict": "off", "reason": "matches off_task rule 'docs'"` tells you exactly which rule to loosen. Verdicts from the LLM are cached in `~/.local/state/lockdock/classify-cache.json`; delete a key there if you changed a description and want it re-judged (or run `lockdock classify <class> "<title>"` for that window, or `lockdock reclassify`).
 
 ## Rules of thumb
 

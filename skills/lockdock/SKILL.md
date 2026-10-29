@@ -5,7 +5,7 @@ description: Tune and debug lockdock, the mode-aware Hyprland dock. Use when the
 
 # lockdock
 
-- lockdock is a dock for Hyprland with focus **modes** (Writing, Building, ...). A Python daemon watches the focused window and judges it against the active mode (rules first, then `claude -p` for unknowns); a Quickshell dock renders the result.
+- lockdock is a dock for Hyprland with focus **modes** (Writing, Building, ...). A Python daemon watches the focused window and judges it against the active mode (rules first, then a classifier for unknowns: `claude -p`, or Jev with `llm.provider: "jev"`); a Quickshell dock renders the result.
 - Off-task windows turn the dock red with a reason; notifications that do not fit the mode are held and re-delivered when the mode ends.
 - You are the agent that tunes it: change behaviour by editing a config file, never by patching code for a single rule.
 - Every config file is hot-reloaded (modes.json within 2 s). A JSON error keeps the previous config active and logs an error.
@@ -15,7 +15,7 @@ description: Tune and debug lockdock, the mode-aware Hyprland dock. Use when the
 
 | file | what it controls | CLI | page |
 |---|---|---|---|
-| `~/.config/lockdock/modes.json` | modes, rules, notification policy, LLM | `lockdock config` (path), `modes`, `mode <id>`, `reload` | `modes.md` |
+| `~/.config/lockdock/modes.json` | modes, rules, notification policy, LLM (`llm.provider`) | `lockdock config` (path), `modes`, `mode <id>`, `reload`, `classify <class> "<title>" [--mode <id>]` | `modes.md` |
 | `~/.config/lockdock/theme.json` | every visual knob of the dock | `lockdock theme`, `theme set <key> <json>`, `theme reset`, `theme path` | `theme.md` |
 | `~/.config/lockdock/pet.json` | the dock pet: persona, lines, thresholds, growth, sprite pack | `lockdock pet`, `pet calm`, `pet mood <m>\|auto`, `pet mute\|unmute`, `pet pack <name>`, `pet packs`, `pet say "<text>"` | `pet.md` |
 | `modes.json` → `agents.kinds` | coding agents shown in the dock (Claude Code, Codex, OpenCode, Aider, Gemini, T3) | `lockdock agents`, `agents install-hooks [--dry-run]`, `agent focus <id>` | `agents.md` |

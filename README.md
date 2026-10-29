@@ -13,7 +13,8 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   ([Stay] / [Go to Social (15s wait)]), or a short toast with the verdict on an
   unknown site. Theme key `prompts` (see `skills/lockdock/theme.md`).
 - The daemon watches the focused window and judges it against the mode:
-  rules first, then `claude -p --model haiku` for anything unknown. Off-task
+  rules first, then `claude -p --model haiku` (or the hosted Jev decision model,
+  `llm.provider: "jev"` with `TYPESAFE_API_KEY` in `~/.config/lockdock/.env`) for anything unknown. Off-task
   windows turn the dock red with a one-line reason.
 - Notifications that do not belong to the mode are **held** (closed as they
   arrive, re-delivered when the mode ends). Keywords like "urgent" and
@@ -62,6 +63,7 @@ lockdock mode writing     # switch (press again during a countdown to shorten it
 lockdock status           # mode, verdict for the current window, held count
 lockdock held / release   # see or re-deliver held notifications
 lockdock log -n 50        # every verdict with its reason
+lockdock classify helium "Home / X - Helium" --mode writing   # ask the classifier once (tuning)
 lockdock config           # path to modes.json
 lockdock agents           # running coding agents and whether they need you
 lockdock agents install-hooks --dry-run   # show the hook changes, then run without --dry-run
