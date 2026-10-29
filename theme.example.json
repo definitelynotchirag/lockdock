@@ -39,5 +39,9 @@
   "nudge": {
     "enabled": true
   },
+  "agents": {
+    "style": "pill",
+    "max_rows": 8
+  },
   "opacity": 1.0
 }

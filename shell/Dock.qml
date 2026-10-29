@@ -26,6 +26,9 @@ PanelWindow {
     readonly property color accent: theme.modeColor(activeMode)
     // the pet registers itself here when its section is loaded (see components/Pet.qml)
     property Item petItem: null
+    // the agents pill registers itself here (theme.agents.style "pill"); its list is agentsPanel
+    property Item agentsPill: null
+    readonly property bool agentsOpen: agentsPill !== null && agentsPill.open
     readonly property bool petAfterModes: theme.sections.indexOf("pet") > theme.sections.indexOf("modes")
     // the pet's bubble clears the nudge row while off task
     readonly property real petLift: theme.px(nudgeShown ? 48 : 12)
@@ -36,7 +39,7 @@ PanelWindow {
         pet: petComp,
         modes: modeStripComp,
         apps: appStripComp,
-        agents: agentStripComp,
+        agents: theme.agentsStyle === "chips" ? agentStripComp : agentsPillComp,
         held: heldBadgeComp,
     })
     // slab: sections drawn right after their neighbour with no divider (like the held badge)
@@ -66,15 +69,23 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "lockdock"
     // room around the card for the islands' shadows
-    implicitWidth: card.implicitWidth + theme.px(56)
-    // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble shows
+    // (wide enough for the agents list to sit centred on its pill)
+    implicitWidth: Math.max(card.implicitWidth + theme.px(56),
+                            agentsPill ? 2 * (Math.abs(agentsPanel.pillOffset) + agentsPanel.width / 2 + theme.px(12)) : 0)
+    // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble or
+    // the agents list shows
     implicitHeight: card.implicitHeight + theme.margin
-                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4)
+                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom)
+    readonly property real panelGap: theme.px(10) + (nudgeShown ? nudgeBox.height + theme.px(8) : 0)
+    // reserved while the pill shows, not only while the list is open: resizing the layer surface
+    // on every open makes Hyprland redraw the whole dock squashed for a frame
+    readonly property real agentsHeadroom: agentsPill && agentsPill.visible ? agentsPanel.height + panelGap + theme.px(14) : 0
     mask: Region {
         item: cardHit
         Region { item: nudgeBox }
         Region { item: edge }
         Region { item: dock.petItem && dock.petItem.bubbleShown ? dock.petItem.bubble : null }
+        Region { item: agentsPanel.visible ? agentsPanel : null }
     }
 
     // countdown clock
@@ -84,6 +95,7 @@ PanelWindow {
     // ---- autohide ----
     property bool shown: true
     readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown || (st.held_count || 0) > 0
+                                 || agentsOpen
     readonly property bool wantShown: !theme.autohide || cardHover.hovered || edgeHover.hovered || busy
     onWantShownChanged: { if (wantShown) { hideTimer.stop(); shown = true } else hideTimer.restart() }
     Component.onCompleted: if (!wantShown) hideTimer.start()
@@ -232,6 +244,16 @@ PanelWindow {
         AgentStrip { st: dock.st; shell: dock.shell; theme: dock.theme }
     }
     Component {
+        id: agentsPillComp
+        AgentsPill {
+            st: dock.st
+            theme: dock.theme
+            panelHovered: agentsPanel.hovered
+            Component.onCompleted: dock.agentsPill = this
+            Component.onDestruction: if (dock.agentsPill === this) dock.agentsPill = null
+        }
+    }
+    Component {
         id: heldBadgeComp
         HeldBadge {
             st: dock.st
@@ -250,5 +272,28 @@ PanelWindow {
         y: dock.theme.atTop ? card.y + card.height + dock.theme.px(8) : card.y - height - dock.theme.px(8)
         anchors.horizontalCenter: card.horizontalCenter
         reason: (dock.st.activity || {}).reason || ""
+    }
+
+    // the agents list, opened from the pill: above the dock (below it at the top), centred on
+    // the pill, clear of the nudge
+    AgentsPanel {
+        id: agentsPanel
+        st: dock.st
+        shell: dock.shell
+        theme: dock.theme
+        open: dock.agentsOpen
+        below: dock.theme.atTop
+        z: 10
+        // the pill's centre relative to the card's centre (the card is centred in the window)
+        readonly property real pillOffset: {
+            const p = dock.agentsPill
+            card.width; open
+            if (!p || !p.visible) return 0
+            return p.mapToItem(card, p.width / 2, 0).x - card.width / 2
+        }
+        x: Math.round(dock.width / 2 + pillOffset - width / 2)
+        originX: dock.width / 2 + pillOffset - x
+        y: dock.theme.atTop ? card.y + card.height + dock.panelGap : card.y - height - dock.panelGap
+        onCloseRequested: if (dock.agentsPill) dock.agentsPill.open = false
     }
 }

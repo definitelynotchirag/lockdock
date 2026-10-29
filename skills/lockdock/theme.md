@@ -31,6 +31,7 @@ lockdock theme reset                 # back to the defaults
 | `show_unpinned` | true | dimmed icons for running apps not pinned to the mode |
 | `autohide` | `{enabled: false, reveal_px: 4, hide_delay_ms: 600}` | slides away when idle; hover the screen edge to reveal. Stays up during a countdown, a nudge, or held notifications |
 | `nudge` | `{enabled: true}` | the "off task" bubble (palette `danger`) |
+| `agents` | `{style: "pill", max_rows: 8}` | agent inbox: `"pill"` = one pill (count, red dot + "N need you" when an agent waits) that opens a list, `max_rows` rows (1-50) before it scrolls; `"chips"` = one chip per agent. See `agents.md` |
 | `opacity` | 1.0 | whole dock |
 
 ## Palette (colours)
@@ -54,5 +55,6 @@ Mode colours: in modes.json `"color": "auto"` (the default) gives the active mod
 - "Glassier islands": `lockdock theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`
 - "A fixed background colour": `theme set background '"#FF1C1C21"'` (`null` to follow the palette again)
 - "No off-task bubble": `lockdock theme set nudge.enabled false`
+- "One chip per agent again": `lockdock theme set agents.style '"chips"'` (back: `'"pill"'`)
 
 Check the result with a screenshot (`grim`) before telling the user it is done.

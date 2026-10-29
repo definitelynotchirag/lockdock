@@ -1,7 +1,16 @@
 # lockdock agent inbox
 
-The dock shows one chip per running coding agent: glyph, label (project dir),
-and a dot. Click a chip to focus that agent's window.
+The dock shows one pill for all running coding agents: a glyph, the count and
+a dot. When an agent waits for you the dot turns red, the pill says "2 need
+you" and its outline pulses (it never opens by itself). Click the pill for the
+list: one row per agent (waiting first, then working, idle, done) with its
+glyph, label (project dir), last message, age and dot; the cwd is in the row's
+tooltip. Click a row to focus that agent's window. The list closes on a second
+click on the pill, on a row click, or 0.7 s after the pointer leaves it.
+
+theme.json `agents`: `max_rows` (default 8) rows show before the list scrolls;
+`style: "chips"` brings back one chip per agent in the dock
+(`lockdock theme set agents.style '"chips"'`, back with `'"pill"'`).
 
 | state | dot | meaning |
 |---|---|---|

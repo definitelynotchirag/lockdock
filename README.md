@@ -12,10 +12,11 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
 - Notifications that do not belong to the mode are **held** (closed as they
   arrive, re-delivered when the mode ends). Keywords like "urgent" and
   critical urgency always pass.
-- **Agent inbox**: one chip per running coding agent (Claude Code, Codex,
+- **Agent inbox**: one pill for every running coding agent (Claude Code, Codex,
   OpenCode, Aider, Gemini CLI, cursor-agent, T3 Code threads). Red and
-  pulsing when it waits for you, green while it works, grey when done; click
-  to focus its window. `lockdock agents install-hooks` wires Claude Code and
+  pulsing when one waits for you, green while they work, grey when done; click
+  it for the list, click a row to focus that agent's window (theme
+  `agents.style: "chips"`: one chip per agent instead). `lockdock agents install-hooks` wires Claude Code and
   Codex so the state is exact rather than guessed. See `skills/lockdock/agents.md`.
 - A **pixel cat** lives in the dock. It is content while you are on task, then
   suspicious, annoyed and furious the longer you stay off task, and says so in
@@ -84,7 +85,8 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
   cli/                main.py (verbs), agents.py (agent verbs), client.py (control socket client)
 shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
   Dock.qml            the panel window; builds the row from theme.sections (sectionMap)
-  components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentStrip, HeldBadge, Nudge,
+  components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentsPill + AgentsPanel
+                      (or AgentStrip), HeldBadge, Nudge,
                       ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen)
   pets/cat/           the built-in sprite pack (pack.json + SVG frames)
 browser-extension/    WebExtension that reports the active tab URL to the daemon

@@ -15,6 +15,7 @@ from .ports import JsonDocument, PaletteSource
 
 POSITIONS = ("bottom", "top")
 LAYOUTS = ("islands", "slab")
+AGENT_STYLES = ("pill", "chips")
 DEFAULT_SECTIONS = ("pet", "modes", "apps", "agents", "held")
 
 # Values the pre-palette theme.example.json wrote into every theme.json. A file without a
@@ -102,6 +103,14 @@ class ShadowTheme:
     opacity: float = 0.28
 
 
+@dataclass
+class AgentsTheme:
+    """The agent inbox: "pill" (one pill that opens a list of up to max_rows rows before
+    scrolling) or "chips" (one chip per agent in the dock)."""
+    style: str = "pill"
+    max_rows: int = 8
+
+
 _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "position": (lambda v: v in POSITIONS, '"bottom" or "top"'),
     "margin": (_num(0, 1000), "a number 0..1000"),
@@ -126,8 +135,10 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "nudge.enabled": (_is_bool, "true or false"),
     "shadow.enabled": (_is_bool, "true or false"),
     "shadow.opacity": (_num(0, 1), "a number 0..1"),
+    "agents.style": (lambda v: v in AGENT_STYLES, '"pill" or "chips"'),
+    "agents.max_rows": (_int(1, 50), "an integer 1..50"),
 }
-_GROUPS = ("border", "font", "autohide", "nudge", "shadow")
+_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents")
 
 
 @dataclass
@@ -152,6 +163,7 @@ class ThemeConfig:
     show_unpinned: bool = True
     autohide: AutohideTheme = field(default_factory=AutohideTheme)
     nudge: NudgeTheme = field(default_factory=NudgeTheme)
+    agents: AgentsTheme = field(default_factory=AgentsTheme)
     opacity: float = 1.0
     problems: list[str] = field(default_factory=list, compare=False)
 

@@ -80,6 +80,9 @@ QtObject {
     readonly property int hideDelayMs: pick((t.autohide || {}).hide_delay_ms, 600)
     readonly property bool nudge: pick((t.nudge || {}).enabled, true)
     readonly property real opacity: pick(t.opacity, 1.0)
+    // agent inbox: "pill" (one pill + pop-over list) or "chips" (one chip per agent)
+    readonly property string agentsStyle: (t.agents || {}).style === "chips" ? "chips" : "pill"
+    readonly property int agentsMaxRows: Math.max(1, pick((t.agents || {}).max_rows, 8))
 
     // icon_size grows or shrinks everything that wraps an icon by the same delta
     readonly property real iconDelta: iconSize - 34

@@ -116,7 +116,10 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    `pet: petComp,` after adding a `Component { id: petComp; Pet { ... } }`).
    Users then place it with `theme.sections`. Components that float outside
    the card (like `Nudge`) are anchored to `card` and added to the `mask`
-   Region instead. Read your section as `st.<name>`.
+   Region instead. A section with a pop-up registers itself on the dock
+   (`petItem`, `agentsPill`) so the dock can add the pop-up to the `mask` and
+   to `implicitHeight` (the window's headroom); `AgentsPanel` lives in
+   `Dock.qml` next to `Nudge` and is placed from the pill's centre. Read your section as `st.<name>`.
 5. **Tests.** `tests/test_<feature>.py` with the fakes;
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
 

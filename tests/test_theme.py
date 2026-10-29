@@ -55,6 +55,27 @@ def test_bad_values_fall_back_and_are_reported():
                     "autohide.reveal_px", "font", "bogus", "nudge.enabled"}
 
 
+def test_agents_style_and_rows():
+    t = ThemeConfig()
+    assert (t.agents.style, t.agents.max_rows) == ("pill", 8)
+    t = ThemeConfig.from_dict({"agents": {"style": "chips", "max_rows": 5}})
+    assert (t.agents.style, t.agents.max_rows) == ("chips", 5) and t.problems == []
+    assert t.snapshot()["agents"] == {"style": "chips", "max_rows": 5}
+    t = ThemeConfig.from_dict({"agents": {"style": "list", "max_rows": 0, "rows": 3}})
+    assert (t.agents.style, t.agents.max_rows) == ("pill", 8)
+    assert {p.split(":")[0] for p in t.problems} == {"agents.style", "agents.max_rows", "agents.rows"}
+    assert ThemeConfig.from_dict({"agents": {"max_rows": 2.5}}).agents.max_rows == 8
+    assert ThemeConfig.from_dict({"agents": "chips"}).problems
+
+
+def test_service_set_agents_style():
+    svc, doc, _, _ = make_service({})
+    svc.set({"key": "agents.style", "value": "chips"})
+    assert doc.raw["agents"] == {"style": "chips"} and svc.snapshot()["agents"]["style"] == "chips"
+    with pytest.raises(ValueError):
+        svc.set({"key": "agents.style", "value": "grid"})
+
+
 def test_valid_values_applied():
     t = ThemeConfig.from_dict({"position": "top", "scale": 0.8, "accent_override": "#ff0000",
                                "border": {"width": 2}, "font": {"family": "Inter", "size": 12}})
@@ -90,7 +111,7 @@ def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
     assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
                          "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
-                         "show_unpinned", "autohide", "nudge", "opacity", "colors", "palette_source"}
+                         "show_unpinned", "autohide", "nudge", "agents", "opacity", "colors", "palette_source"}
     assert snap["background"] is None
     assert snap["border"] == {"color": None, "width": 1, "off_task_color": None}
     assert set(snap["colors"]) == set(ROLES) and snap["colors"]["bg"] == DARK.bg
