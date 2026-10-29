@@ -1,0 +1,57 @@
+{
+  "default_mode": "free",
+  "dwell_s": 2.0,
+  "llm": { "enabled": true, "model": "haiku" },
+  "browsers": ["helium", "chrom", "firefox", "zen", "brave", "vivaldi", "librewolf"],
+  "modes": [
+    {
+      "id": "free",
+      "label": "Free",
+      "icon": "☕",
+      "color": "#7aa2f7",
+      "description": "No restrictions. Everything is on task, all notifications pass.",
+      "apps": ["helium", "kitty", "dev.zed.Zed", "md.obsidian.Obsidian"],
+      "on_task": [".*"],
+      "unknown": "neutral",
+      "notifications": { "default": "pass" }
+    },
+    {
+      "id": "writing",
+      "label": "Writing",
+      "icon": "✎",
+      "color": "#f0a04b",
+      "description": "Long-form writing in Obsidian or a docs tab. Reading reference material is fine; chat, social media and video are off task.",
+      "apps": ["md.obsidian.Obsidian", "helium"],
+      "on_task": ["obsidian", "docs\\.google", "notion", "wikipedia", "dictionary"],
+      "off_task": ["youtube", "twitter|x\\.com|/ X -", "reddit", "discord", "slack", "netflix", "instagram"],
+      "unknown": "ask",
+      "off_task_action": "nudge",
+      "notifications": {
+        "allow_from": ["Calendar", "Alarm"],
+        "pass_keywords": ["urgent", "prod", "down", "pager"],
+        "default": "hold"
+      },
+      "exit_delay_s": 30,
+      "per_press_s": 10
+    },
+    {
+      "id": "building",
+      "label": "Building",
+      "icon": "⚒",
+      "color": "#3b82f6",
+      "description": "Coding: editor, terminal, docs for libraries, GitHub, Claude Code. Video and social media are off task unless it is a programming tutorial directly relevant to the work.",
+      "apps": ["dev.zed.Zed", "kitty", "helium", "com.t3tools.T3Code"],
+      "on_task": ["zed", "kitty", "github", "docs", "stackoverflow", "localhost", "claude", "t3 code"],
+      "off_task": ["youtube", "twitter|x\\.com|/ X -", "reddit", "netflix", "instagram"],
+      "unknown": "ask",
+      "off_task_action": "nudge",
+      "notifications": {
+        "allow_from": ["GitHub", "Calendar"],
+        "pass_keywords": ["urgent", "prod", "deploy failed", "pager"],
+        "default": "ask"
+      },
+      "exit_delay_s": 20,
+      "per_press_s": 10
+    }
+  ]
+}

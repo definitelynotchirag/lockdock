@@ -1,0 +1,13 @@
+[Unit]
+Description=lockdock dock (Quickshell)
+After=graphical-session.target lockdock-daemon.service
+Wants=lockdock-daemon.service
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/lockdock shell
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
