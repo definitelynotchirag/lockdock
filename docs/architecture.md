@@ -84,3 +84,13 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    outside the card). Read your section as `st.<name>`.
 5. **Tests.** `tests/test_<feature>.py` with the fakes;
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
+
+## Running a second instance for development
+
+`LOCKDOCK_INSTANCE=dev ./bin/lockdock daemon` and
+`LOCKDOCK_INSTANCE=dev qs -p ./shell` use `~/.config/lockdock-dev/`,
+`~/.local/state/lockdock-dev/` and `$XDG_RUNTIME_DIR/lockdock-dev/`, so they
+run beside the user's real daemon and dock. The CLI honours the same variable.
+Note the dev dock still shows at the bottom-center and will visually overlap
+the real one; stop the real dock first if you need a clean screenshot
+(`pkill -f "[q]s -p \./shell$"`, and restart it afterwards).

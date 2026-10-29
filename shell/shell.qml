@@ -8,7 +8,8 @@ ShellRoot {
     // ---- state from the daemon ----
     property var state: ({ mode: "", modes: [], pending: null, activity: {}, held: [], held_count: 0, agents: [], pet: {}, theme: {} })
     property string bin: Quickshell.shellDir + "/../bin/lockdock"
-    readonly property string statePath: Quickshell.env("XDG_RUNTIME_DIR") + "/lockdock/state.json"
+    readonly property string instance: Quickshell.env("LOCKDOCK_INSTANCE") || ""
+    readonly property string statePath: Quickshell.env("XDG_RUNTIME_DIR") + "/lockdock" + (instance ? "-" + instance : "") + "/state.json"
 
     function send(args) { Quickshell.execDetached([root.bin].concat(args)) }
 

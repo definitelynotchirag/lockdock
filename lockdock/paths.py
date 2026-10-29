@@ -4,9 +4,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "lockdock"
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "lockdock"
-RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")) / "lockdock"
+# LOCKDOCK_INSTANCE=<name> runs a second, fully isolated daemon+dock (dev/testing).
+INSTANCE = os.environ.get("LOCKDOCK_INSTANCE", "")
+_DIR = "lockdock" + (f"-{INSTANCE}" if INSTANCE else "")
+
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / _DIR
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / _DIR
+RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")) / _DIR
 
 MODES_FILE = CONFIG_DIR / "modes.json"
 STATE_FILE = RUNTIME_DIR / "state.json"
