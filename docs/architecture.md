@@ -25,9 +25,11 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | `Classifier` | `async activity(mode, window) -> (Verdict, reason)`, `async notification(mode, n) -> (action, reason)` | `adapters/claude_cli.py` `ClaudeCliClassifier` |
 | `StatePublisher` | `publish(snapshot)` | `adapters/file_state.py` `AtomicJsonStatePublisher` |
 | `CommandRunner` | `run(cmd)` | `adapters/shell_commands.py` `SubprocessCommandRunner` |
-| `ConfigSource` | `load() -> Config`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonConfigLoader` |
+| `ConfigSource` | `load() -> Config`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonConfigLoader` (generic: `parse=` builds another type, `update(changes)` rewrites keys; pet.json uses it too) |
 | `CommandHandler` | `handle(cmd, arg) -> result` | implemented by `core.daemon.Daemon`; served by `adapters/control_socket.py` |
 | `Clock` | `now()`, `async sleep(s)` | `adapters/clock.py` `SystemClock` |
+| `Speaker` | `async line(mood, mode, app, title, reason) -> str \| None` | `adapters/claude_cli.py` `ClaudeCliSpeaker` (one line of at most 12 words in the pet.json `persona`, cached per (mood, app)) |
+| `PetPackSource` | `resolve(name) -> (pack_dir, manifest) \| None`, `available() -> [{name, title, author, source, dir}]` | `adapters/pet_packs.py` `DirPetPacks` (user `~/.config/lockdock/pets/` before built-in `shell/pets/`) |
 
 Fakes for every port are in `tests/fakes.py`.
 
@@ -41,7 +43,15 @@ Fakes for every port are in `tests/fakes.py`.
   ask, the held list, `release_messages()` (<= 5 one by one, else a summary).
 - `StateSnapshot` (`core/state.py`) and `EventLog` (`core/events.py`).
 - `Daemon` (`core/daemon.py`): owns the above, publishes a snapshot whenever
-  one changes, dispatches control commands.
+  one changes, dispatches control commands. `activity_listeners` get the
+  activity dict plus `mode` (the mode label) after every final verdict.
+- `PetBrain` (`core/pet.py`, wired by `features/pet.py`): verdicts and a 1 s
+  tick in, mood / scale / speech line out. `off_seconds` rises while off task
+  and decays `decay_per_s` times as fast otherwise; moods come from
+  `thresholds`; growth (0..1) rises over `grow_s` while furious and off task,
+  falls over `shrink_s` otherwise. Config: `~/.config/lockdock/pet.json`
+  (seeded from `pet.example.json`, hot-reloaded). Control verb: `pet [status |
+  calm | mood <m>|auto | mute | unmute | pack <name> | packs | say <text>]`.
 
 ## state.json
 
@@ -56,7 +66,7 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | `held` | last 50 held notifications `{app, summary, body, urgency, ts, id}` |
 | `held_count` | number held |
 | `agents` | reserved: list, empty until a feature registers it |
-| `pet` | reserved: dict, empty until a feature registers it |
+| `pet` | `{name, mood, scale, line, line_id, off_seconds, pack, pack_dir, manifest, size, muted, forced, position, max_screen_fraction}` from `features/pet.py`. `mood` is content / suspicious / annoyed / furious; `scale` is the size in dock sprites (1.0 = in the dock; the overlay shows above 1.05, capped at `max_screen_fraction` of the screen); `line_id` bumps on every new line; `manifest` is the pack's `pack.json`, frames relative to `pack_dir`; `forced` is a previewed mood or null |
 | `theme` | reserved: dict, empty until a feature registers it |
 | `updated_ms` | write time |
 
@@ -75,7 +85,8 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    `install(daemon) -> list[Awaitable[None]]`. It builds the adapter and the
    service, calls `daemon.register_section("agents", service.snapshot)`,
    optionally `daemon.register_command("verb", fn)` and
-   `daemon.config_listeners.append(...)`, and returns watcher coroutines.
+   `daemon.config_listeners.append(...)` / `daemon.activity_listeners.append(...)`,
+   and returns watcher coroutines.
    `features.install_all` discovers the module; `app.py` stays untouched.
    Call `daemon.publish()` from the service's `on_change`.
 4. **Shell component.** Add `shell/components/<Thing>.qml` taking

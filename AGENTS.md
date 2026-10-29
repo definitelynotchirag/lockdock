@@ -29,6 +29,9 @@ Top level: `default_mode`, `dwell_s` (how long a window must stay focused
 before it is judged), `llm.enabled`, `llm.model` (a `claude -p` model alias),
 `browsers` (classes judged by tab title, never by being a mode app).
 
+The dock pet has its own file, `~/.config/lockdock/pet.json` (persona, lines,
+thresholds, growth, sprite pack). See `skills/lockdock/pet.md`.
+
 ## How to find out what went wrong
 
 ```
