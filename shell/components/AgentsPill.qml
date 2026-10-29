@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Agent inbox, compact: one pill for every running coding agent (state.json `agents`): a
-// glyph, the count, and a dot (danger + "N need you" + a pulsing accent outline when an
+// Agent inbox, compact: one pill for every running coding agent (state.json `agents`): an
+// icon (theme.agentIcon), the count, and a dot (danger + "N need you" + a pulsing accent outline when an
 // agent waits for you, success while all work, muted when idle / done). Click toggles the
 // list (AgentsPanel), which the Dock draws outside the card and opens from this pill's
 // centre. The Dock registers the pill (`agentsPill`) and binds `panelHovered`.
@@ -20,9 +20,9 @@ Rectangle {
     readonly property int workingCount: agents.filter(a => a.state === "working").length
     readonly property bool needs: needCount > 0
     readonly property bool active: count > 0
-    // the first agent's glyph when every agent is the same kind, else the generic mark
-    readonly property string glyph: count > 0 && agents.every(a => a.kind === agents[0].kind) && agents[0].glyph
-                                    ? agents[0].glyph : "◆"
+    // the kind's icon when every agent is the same kind, else the generic icons.agents
+    readonly property string glyph: count > 0 && agents.every(a => a.kind === agents[0].kind)
+                                    ? theme.agentIcon(agents[0]) : theme.icon("agents", "icona:sparkles")
     readonly property color dotColor: needs ? theme.danger : workingCount > 0 ? theme.success : theme.textMuted
     property real pulse: 1
 
@@ -59,10 +59,11 @@ Rectangle {
         id: content
         anchors.centerIn: parent
         spacing: pill.theme.px(7)
-        Text {
-            text: pill.glyph
-            font.pixelSize: pill.theme.fpx(15)
-            font.family: pill.theme.family
+        Icon {
+            name: pill.glyph
+            size: pill.theme.fpx(17)
+            stroke: pill.theme.iconStroke
+            family: pill.theme.family
             color: pill.theme.text
             Layout.alignment: Qt.AlignVCenter
         }

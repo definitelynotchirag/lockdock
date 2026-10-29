@@ -7,7 +7,7 @@ Item {
     required property string reason
     required property var theme
 
-    width: label.implicitWidth + theme.px(28); height: theme.px(30)
+    width: row.implicitWidth + theme.px(28); height: theme.px(30)
 
     Island {
         anchors.fill: parent
@@ -16,11 +16,25 @@ Item {
         stroke: nudge.theme.alpha(nudge.theme.dangerInk, 0.15)
         radius: height / 2
     }
-    Text {
-        id: label; anchors.centerIn: parent; color: nudge.theme.dangerInk
-        font.pixelSize: nudge.theme.fpx(12)
-        font.family: nudge.theme.family
-        font.weight: Font.DemiBold
-        text: "off task · " + nudge.reason
+    Row {
+        id: row
+        anchors.centerIn: parent
+        spacing: nudge.theme.px(6)
+        Icon {
+            visible: name !== ""
+            anchors.verticalCenter: parent.verticalCenter
+            name: nudge.theme.icon("nudge", "icona:alert")
+            size: nudge.theme.fpx(15)
+            stroke: nudge.theme.iconStroke
+            family: nudge.theme.family
+            color: nudge.theme.dangerInk
+        }
+        Text {
+            id: label; anchors.verticalCenter: parent.verticalCenter; color: nudge.theme.dangerInk
+            font.pixelSize: nudge.theme.fpx(12)
+            font.family: nudge.theme.family
+            font.weight: Font.DemiBold
+            text: "off task · " + nudge.reason
+        }
     }
 }

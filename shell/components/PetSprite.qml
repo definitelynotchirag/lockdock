@@ -1,11 +1,13 @@
 import QtQuick
 
 // The pet's current mood from its sprite pack, looping the mood's frames at its fps.
-// Size it from the parent; pixel packs stay crisp at any size (smooth: false).
+// Size it from the parent; pixel packs stay crisp at any size (smooth: false). A vector pack
+// (pack.json `"pixel": false`, e.g. icona-cat) is rasterised at the drawn size, smoothed.
 Image {
     id: sprite
     required property var pet          // st.pet: {mood, pack_dir, manifest, ...}
     property int renderSize: pet.size || 48   // rasterise at this size, then scale without smoothing
+    readonly property bool pixel: (pet.manifest || {}).pixel !== false
 
     readonly property string mood: pet.mood || "content"
     readonly property var moodDef: ((pet.manifest || {}).moods || {})[mood] || ({ frames: [], fps: 1 })
@@ -14,9 +16,10 @@ Image {
     onMoodChanged: frame = 0
 
     source: pet.pack_dir && frames.length > 0 ? "file://" + pet.pack_dir + "/" + frames[frame % frames.length] : ""
-    sourceSize: Qt.size(renderSize, renderSize)
+    sourceSize: pixel ? Qt.size(renderSize, renderSize)
+                      : Qt.size(Math.max(1, Math.round(width)), Math.max(1, Math.round(height)))
     fillMode: Image.PreserveAspectFit
-    smooth: false
+    smooth: !pixel
 
     Timer {
         interval: Math.round(1000 / Math.max(0.5, sprite.moodDef.fps || 2))

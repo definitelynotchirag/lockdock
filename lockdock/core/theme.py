@@ -91,6 +91,7 @@ TEXT_ICONS: dict[str, Any] = {
     "mode_fallback": "●", "agents": "◆", "agent_kinds": {}, "held": "🔕", "held_muted": "🔕",
     "timer": "", "stay": "", "nudge": "", "tag_urgent": "✦", "tag_info": "✦", "tag_ok": "✅",
     "card_notification": "🔔", "card_site": "🌐", "card_verdict": "✦",
+    "app_fallback": "application-x-executable",
 }
 
 
@@ -179,6 +180,7 @@ class IconsTheme:
     card_notification: str = "icona:bell"
     card_site: str = "icona:compass"
     card_verdict: str = "icona:check-circle"
+    app_fallback: str = "icona:layers"
 
 
 _ICON_WANT = '"icona:<slug>", a glyph, an icon name or ""'

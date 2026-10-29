@@ -90,6 +90,24 @@ QtObject {
     // a Stay (cancel) pill next to the countdown pill while a switch is pending
     readonly property bool stayButton: pick((t.mode_strip || {}).stay_button, true)
 
+    // ---- icons (theme.json `icons`, core/theme.py IconsTheme): names for components/Icon.qml ----
+    readonly property var icons: t.icons || ({})
+    readonly property real iconStroke: pick(icons.stroke, 1.75)
+    // the icon for a key ("held", "timer", ...); "" (set in theme.json) means none
+    function icon(key, fallback) { const v = icons[key]; return (v === undefined || v === null) ? fallback : v }
+    // a mode's icon (modes.json `icon`, emoji or icona:<slug>), else icons.mode_fallback
+    function modeIcon(mode) { return (mode && mode.icon) ? mode.icon : icon("mode_fallback", "icona:target") }
+    // an agent's icon: an icona glyph from modes.json agents.kinds, else icons.agent_kinds[kind],
+    // else its own glyph, else the generic icons.agents
+    function agentIcon(a) {
+        if (!a) return icon("agents", "icona:sparkles")
+        const g = a.glyph || ""
+        if (g.indexOf("icona:") === 0) return g
+        const k = (icons.agent_kinds || {})[a.kind]
+        if (k) return k
+        return g && g !== "◆" ? g : icon("agents", "icona:sparkles")
+    }
+
     // icon_size grows or shrinks everything that wraps an icon by the same delta
     readonly property real iconDelta: iconSize - 34
 

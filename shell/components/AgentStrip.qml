@@ -48,10 +48,11 @@ RowLayout {
                 id: content
                 anchors.centerIn: parent
                 spacing: strip.theme.px(7)
-                Text {
-                    text: chip.modelData.glyph || "◆"
-                    font.pixelSize: strip.theme.fpx(15)
-                    font.family: strip.theme.family
+                Icon {
+                    name: strip.theme.agentIcon(chip.modelData)
+                    size: strip.theme.fpx(17)
+                    stroke: strip.theme.iconStroke
+                    family: strip.theme.family
                     color: strip.theme.text
                     opacity: chip.quiet ? 0.6 : 1
                     Layout.alignment: Qt.AlignVCenter

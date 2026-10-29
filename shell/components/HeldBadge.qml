@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 
-// Bell with the number of held notifications; click releases them.
+// Bell (theme icons.held / held_muted) with the number of held notifications; click releases them.
 Rectangle {
     id: badgeRoot
     required property var st          // state.json
@@ -14,7 +14,16 @@ Rectangle {
     visible: active
     implicitWidth: theme.ipx(40); implicitHeight: theme.ipx(40); radius: height / 2
     color: ma.containsMouse ? theme.surfaceHover : theme.alpha(theme.surfaceHover, 0.6)
-    Text { anchors.centerIn: parent; text: "🔕"; font.pixelSize: badgeRoot.theme.fpx(15) }
+    // icons.held, or icons.held_muted while the active mode holds every notification
+    readonly property bool muted: ((st.modes || []).find(m => m.id === st.mode) || {}).notifications === "hold"
+    Icon {
+        anchors.centerIn: parent
+        name: badgeRoot.muted ? badgeRoot.theme.icon("held_muted", "icona:snooze") : badgeRoot.theme.icon("held", "icona:bell")
+        size: badgeRoot.theme.fpx(18)
+        stroke: badgeRoot.theme.iconStroke
+        family: badgeRoot.theme.family
+        color: badgeRoot.theme.text
+    }
     Rectangle {
         anchors.top: parent.top; anchors.right: parent.right
         anchors.topMargin: -badgeRoot.theme.px(3); anchors.rightMargin: -badgeRoot.theme.px(3)

@@ -3,7 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // One mode. Active: a filled pill (accent_container, or the mode's own colour when modes.json
-// sets one) with a small accent dot, glyph and label. Inactive: the glyph only, muted; a
+// sets one) with a small accent dot, icon (Icon.qml: icona:<slug> or a glyph) and label.
+// Inactive: the icon only, muted; a
 // pending switch widens it and fills it left to right as the countdown runs.
 Item {
     id: pill
@@ -57,10 +58,11 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             Layout.rightMargin: pill.theme.px(1)
         }
-        Text {
-            text: pill.mode.icon || "●"
-            font.pixelSize: pill.theme.fpx(16)
-            font.family: pill.theme.family
+        Icon {
+            name: pill.theme.modeIcon(pill.mode)
+            size: pill.theme.fpx(18)
+            stroke: pill.theme.iconStroke
+            family: pill.theme.family
             color: pill.active ? pill.ink : (ma.containsMouse || pill.pending ? pill.theme.text : pill.theme.textMuted)
             Layout.alignment: Qt.AlignVCenter
         }

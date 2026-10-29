@@ -7,8 +7,9 @@ import Quickshell.Widgets
 //   [icon] title                 (bold)
 //          subtitle              (muted)
 //   body (up to 3 lines)
-//   [✦ tag label · detail]       (tinted by tag.level: urgent danger, info accent, ok success)
+//   [! tag label · detail]       (tinted by tag.level: urgent danger, info accent, ok success)
 //                 [plain] [primary]
+// Icons come from theme `icons` (card_<kind> when the prompt has no desktop icon, tag_<level>).
 // kind "verdict" is a compact one-line toast with no buttons. `actionClicked(actionId)` fires
 // on a button; the stack sends the command and hides the card.
 Item {
@@ -22,14 +23,19 @@ Item {
     readonly property var tag: prompt.tag || null
     readonly property var actions: prompt.actions || []
     readonly property bool urgent: tag !== null && tag.level === "urgent"
-    readonly property string fallbackGlyph: prompt.kind === "notification" ? "🔔" : prompt.kind === "site" ? "🌐" : "✦"
+    readonly property string fallbackGlyph: prompt.kind === "notification" ? theme.icon("card_notification", "icona:bell")
+                                          : prompt.kind === "site" ? theme.icon("card_site", "icona:compass")
+                                          : theme.icon("card_verdict", "icona:check-circle")
     readonly property string iconSource: prompt.icon ? Quickshell.iconPath(prompt.icon, true) : ""
     readonly property real pad: theme.px(16)
 
     function tagColor(level) {
         return level === "urgent" ? theme.danger : level === "ok" ? theme.success : theme.paletteAccent
     }
-    function tagGlyph(level) { return level === "ok" ? "✅" : "✦" }
+    function tagGlyph(level) {
+        return level === "urgent" ? theme.icon("tag_urgent", "icona:alert")
+             : level === "ok" ? theme.icon("tag_ok", "icona:check-circle") : theme.icon("tag_info", "icona:info")
+    }
     function tagText(t) { return t ? (t.label || "") + (t.detail ? " · " + t.detail : "") : "" }
 
     implicitWidth: toast ? Math.min(toastRow.implicitWidth + 2 * theme.px(14), maxWidth * 1.45) : maxWidth
@@ -52,11 +58,12 @@ Item {
             radius: badge.size * 0.3
             visible: card.iconSource === ""
             color: card.theme.alpha(card.theme.surfaceHover, card.theme.dark ? 0.9 : 0.7)
-            Text {
+            Icon {
                 anchors.centerIn: parent
-                text: card.fallbackGlyph
-                font.pixelSize: badge.size * 0.5
-                font.family: card.theme.family
+                name: card.fallbackGlyph
+                size: Math.max(card.theme.px(14), Math.round(badge.size * 0.56))
+                stroke: card.theme.iconStroke
+                family: card.theme.family
                 color: card.theme.text
             }
         }
@@ -91,9 +98,30 @@ Item {
             function esc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") }
             text: "<b><font color='" + card.theme.text + "'>" + esc(card.prompt.title) + "</font></b>"
                   + (card.prompt.subtitle ? sep + esc(card.prompt.subtitle) : "")
-                  + (card.tag ? sep + "<font color='" + card.tagColor(card.tag.level) + "'>" + card.tagGlyph(card.tag.level)
-                                + " <b>" + esc(card.tag.label) + "</b>"
-                                + (card.tag.detail ? sep + esc(card.tag.detail) : "") + "</font>" : "")
+        }
+        // the tag: icon + label (· detail), tinted by level
+        Icon {
+            visible: card.tag !== null && name !== ""
+            name: card.tag ? card.tagGlyph(card.tag.level) : ""
+            size: card.theme.fpx(15)
+            stroke: card.theme.iconStroke
+            family: card.theme.family
+            color: card.tag ? card.tagColor(card.tag.level) : card.theme.text
+            Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: card.theme.px(2)
+        }
+        Text {
+            visible: card.tag !== null
+            Layout.alignment: Qt.AlignVCenter
+            Layout.maximumWidth: card.maxWidth * 0.6
+            textFormat: Text.StyledText
+            elide: Text.ElideRight
+            maximumLineCount: 1
+            font.pixelSize: card.theme.fpx(12)
+            font.family: card.theme.family
+            color: card.tag ? card.tagColor(card.tag.level) : card.theme.text
+            text: card.tag ? "<b>" + toastText.esc(card.tag.label) + "</b>"
+                             + (card.tag.detail ? toastText.sep + toastText.esc(card.tag.detail) : "") : ""
         }
     }
 
@@ -161,11 +189,14 @@ Item {
                 x: card.theme.px(10)
                 width: parent.width - card.theme.px(20)
                 spacing: card.theme.px(6)
-                Text {
-                    text: card.tag ? card.tagGlyph(card.tag.level) : ""
-                    font.pixelSize: card.theme.fpx(12)
-                    font.family: card.theme.family
+                Icon {
+                    visible: name !== ""
+                    name: card.tag ? card.tagGlyph(card.tag.level) : ""
+                    size: card.theme.fpx(16)
+                    stroke: card.theme.iconStroke
+                    family: card.theme.family
                     color: parent.parent.tint
+                    Layout.alignment: Qt.AlignVCenter
                 }
                 Text {
                     text: card.tag ? card.tag.label || "" : ""

@@ -26,16 +26,38 @@ Item {
         Behavior on color { ColorAnimation { duration: 120 } }
     }
 
+    // the app's theme icon; none found: theme icons.app_fallback on a soft tile
+    readonly property string iconSource: Quickshell.iconPath(btn.entry?.icon ?? btn.appId, true)
     IconImage {
         id: icon
+        visible: btn.iconSource !== ""
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: btn.theme.px(4)
         implicitSize: btn.theme.px(btn.theme.iconSize)
-        source: Quickshell.iconPath(btn.entry?.icon ?? btn.appId, "application-x-executable")
+        source: btn.iconSource
         opacity: btn.dim ? 0.7 : 1
         scale: ma.pressed ? 0.9 : (ma.containsMouse ? 1.08 : 1)
         Behavior on scale { NumberAnimation { duration: 120 } }
+    }
+    Rectangle {
+        visible: btn.iconSource === ""
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: btn.theme.px(4) + Math.round(btn.theme.px(btn.theme.iconSize) * 0.1)
+        width: Math.round(btn.theme.px(btn.theme.iconSize) * 0.8); height: width
+        radius: width * 0.28
+        color: btn.theme.alpha(btn.theme.surfaceHover, btn.theme.dark ? 0.9 : 0.8)
+        opacity: btn.dim ? 0.7 : 1
+        scale: icon.scale
+        Icon {
+            anchors.centerIn: parent
+            name: btn.theme.icon("app_fallback", "icona:layers")
+            size: Math.round(parent.width * 0.62)
+            stroke: btn.theme.iconStroke
+            family: btn.theme.family
+            color: btn.theme.textMuted
+        }
     }
 
     // running dot (text_muted) / focused pill (accent)

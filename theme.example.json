@@ -75,7 +75,8 @@
     "tag_ok": "icona:check-circle",
     "card_notification": "icona:bell",
     "card_site": "icona:compass",
-    "card_verdict": "icona:check-circle"
+    "card_verdict": "icona:check-circle",
+    "app_fallback": "icona:layers"
   },
   "opacity": 1.0
 }

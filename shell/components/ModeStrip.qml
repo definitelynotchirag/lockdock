@@ -3,8 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // One pill per mode; the active one is wide. While a switch is pending, a timer pill follows
-// the modes (target glyph + label + m:ss, filling as the wait runs; click = press again, which
-// shortens the wait) and, with theme.stayButton, a Stay pill that cancels the switch. The
+// the modes (icons.timer + target label + m:ss, filling as the wait runs; click = press again,
+// which shortens the wait) and, with theme.stayButton, a Stay pill (icons.stay) that cancels the switch. The
 // target mode's own pill then stays a plain inactive pill so the countdown shows once.
 RowLayout {
     id: strip
@@ -78,10 +78,12 @@ RowLayout {
             id: timerRow
             anchors.centerIn: parent
             spacing: strip.theme.px(7)
-            Text {
-                text: strip.pendingMode ? (strip.pendingMode.icon || "●") : ""
-                font.pixelSize: strip.theme.fpx(16)
-                font.family: strip.theme.family
+            // icons.timer; "" (pack "text") shows the target mode's own icon as before
+            Icon {
+                name: strip.theme.icon("timer", "icona:hourglass") || strip.theme.modeIcon(strip.pendingMode)
+                size: strip.theme.fpx(17)
+                stroke: strip.theme.iconStroke
+                family: strip.theme.family
                 color: strip.theme.text
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -120,21 +122,34 @@ RowLayout {
     Rectangle {
         visible: strip.pending !== null && strip.theme.stayButton
         implicitHeight: strip.theme.ipx(40)
-        implicitWidth: stayLabel.implicitWidth + strip.theme.px(30)
+        implicitWidth: stayRow.implicitWidth + strip.theme.px(30)
         radius: height / 2
         color: sma.containsMouse ? Qt.tint(strip.theme.surfaceHover, strip.theme.alpha(strip.theme.text, 0.08))
                                  : strip.theme.surfaceHover
         Behavior on color { ColorAnimation { duration: 150 } }
         scale: sma.pressed ? 0.96 : 1
         Behavior on scale { NumberAnimation { duration: 100 } }
-        Text {
-            id: stayLabel
+        Row {
+            id: stayRow
             anchors.centerIn: parent
-            text: "Stay"
-            font.pixelSize: strip.theme.fpx(14)
-            font.family: strip.theme.family
-            font.weight: Font.DemiBold
-            color: strip.theme.text
+            spacing: strip.theme.px(6)
+            Icon {
+                visible: name !== ""
+                anchors.verticalCenter: parent.verticalCenter
+                name: strip.theme.icon("stay", "icona:target")
+                size: strip.theme.fpx(17)
+                stroke: strip.theme.iconStroke
+                family: strip.theme.family
+                color: strip.theme.text
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Stay"
+                font.pixelSize: strip.theme.fpx(14)
+                font.family: strip.theme.family
+                font.weight: Font.DemiBold
+                color: strip.theme.text
+            }
         }
         MouseArea {
             id: sma
