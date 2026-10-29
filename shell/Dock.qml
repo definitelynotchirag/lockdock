@@ -13,6 +13,10 @@ PanelWindow {
     readonly property var activeMode: (st.modes || []).find(m => m.id === st.mode) || { id: "", label: "", icon: "", color: "#888", apps: [] }
     readonly property bool offTask: (st.activity || {}).verdict === "off"
     readonly property color accent: activeMode.color || "#f0a04b"
+    readonly property bool petRight: (st.pet || {}).position === "right"
+    readonly property var pet: petRight ? petRightLoader.item : petLeft
+    // the pet sits 10 px below the card's top; its bubble clears the nudge row when off task
+    readonly property real petLift: offTask ? 42 : 8
 
     anchors.bottom: true
     margins.bottom: 10
@@ -21,8 +25,13 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "lockdock"
     implicitWidth: card.implicitWidth + 24
-    implicitHeight: card.implicitHeight + 12 + 34   // headroom for the nudge
-    mask: Region { item: card; Region { item: nudgeBox } }
+    // headroom for the nudge, more while the pet's speech bubble shows
+    implicitHeight: card.implicitHeight + Math.max(12 + 34, (pet ? pet.headroom : 0) - 10 + 6)
+    mask: Region {
+        item: card
+        Region { item: nudgeBox }
+        Region { item: dock.pet && dock.pet.bubbleShown ? dock.pet.bubble : null }
+    }
 
     // countdown clock
     property real now: Date.now()
@@ -45,6 +54,8 @@ PanelWindow {
             anchors.centerIn: parent
             spacing: 6
 
+            Pet { id: petLeft; st: dock.st; shell: dock.shell; shown: !dock.petRight; bubbleLift: dock.petLift; Layout.rightMargin: 2 }
+
             ModeStrip {
                 st: dock.st
                 now: dock.now
@@ -64,6 +75,14 @@ PanelWindow {
                 st: dock.st
                 accent: dock.accent
                 onReleaseClicked: dock.shell.send(["release"])
+            }
+
+            // the pet again when pet.json says "position": "right"
+            Loader {
+                id: petRightLoader
+                active: dock.petRight
+                visible: active
+                sourceComponent: Pet { st: dock.st; shell: dock.shell; bubbleLift: dock.petLift; bubbleLeftward: true }
             }
         }
     }
