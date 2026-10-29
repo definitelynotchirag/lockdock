@@ -24,7 +24,7 @@ def config_from_dict(raw: dict) -> Config:
         n = m.get("notifications", {})
         modes.append(Mode(
             id=m["id"], label=m.get("label", m["id"].title()), icon=m.get("icon", "●"),
-            color=m.get("color", "#f0a04b"), description=m.get("description", ""),
+            color=m.get("color", "auto"), description=m.get("description", ""),
             apps=m.get("apps", []), on_task=m.get("on_task", []), off_task=m.get("off_task", []),
             unknown=m.get("unknown", "ask"), off_task_action=m.get("off_task_action", "nudge"),
             notifications=NotificationRules(

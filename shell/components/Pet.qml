@@ -8,9 +8,11 @@ Item {
     id: pet
     required property var st           // state.json
     required property var shell        // for shell.send
+    required property var theme        // components/Theme.qml (bubble colours, sizes)
     property bool shown: true          // the Dock hides the copy that is not in the configured position
     property real bubbleLift: 14       // gap between the pet's top and the bubble's bottom
     property bool bubbleLeftward: false // grow the bubble to the left (pet at the right end of the dock)
+    property bool bubbleBelow: false    // dock at the top: the bubble hangs below the pet
     readonly property var info: st.pet || {}
     readonly property Item bubble: bubbleBox
     readonly property bool bubbleShown: bubbleBox.visible
@@ -18,13 +20,13 @@ Item {
     readonly property bool active: shown && !!info.pack_dir
 
     visible: shown && !!info.pack_dir
-    implicitWidth: 44
-    implicitHeight: 44
+    implicitWidth: theme.ipx(40)
+    implicitHeight: theme.ipx(40)
 
     PetSprite {
         anchors.fill: parent
         pet: pet.info
-        renderSize: 44
+        renderSize: pet.theme.ipx(40)
         scale: ma.pressed ? 0.9 : (ma.containsMouse ? 1.08 : 1)
         Behavior on scale { NumberAnimation { duration: 120 } }
     }
@@ -54,40 +56,43 @@ Item {
         id: bubbleBox
         // the full-screen overlay shows its own big bubble while the pet is grown
         visible: pet.visible && pet.talking && !!pet.info.line && (pet.info.scale || 1) <= 1.05
-        width: Math.min(260, label.implicitWidth + 20)
-        height: label.implicitHeight + 12 + 6
+        width: Math.min(pet.theme.px(260), label.implicitWidth + pet.theme.px(24))
+        height: label.implicitHeight + pet.theme.px(14) + 6
         x: pet.bubbleLeftward ? pet.width + 6 - width : -6
-        y: -(height + pet.bubbleLift)
+        y: pet.bubbleBelow ? pet.height + pet.bubbleLift : -(height + pet.bubbleLift)
 
         Rectangle {
             id: bubbleRect
             width: parent.width
             height: parent.height - 6
-            radius: 12
-            color: "#fbf7ff"
+            y: pet.bubbleBelow ? 6 : 0
+            radius: pet.theme.px(14)
+            color: pet.theme.bubble
             border.width: 1
-            border.color: Qt.rgba(0.23, 0.18, 0.25, 0.35)
+            border.color: pet.theme.alpha(pet.theme.bubbleText, 0.18)
         }
-        // little tail pointing down at the pet
+        // little tail pointing at the pet
         Rectangle {
             width: 10; height: 10
             rotation: 45
             color: bubbleRect.color
             x: pet.width / 2 - bubbleBox.x - 5
-            y: bubbleRect.height - 6
+            y: pet.bubbleBelow ? 1 : bubbleRect.height - 6
         }
         Text {
             id: label
-            x: 10; y: 6
-            width: Math.min(240, implicitWidth)
+            x: pet.theme.px(12); y: bubbleRect.y + pet.theme.px(7)
+            width: Math.min(pet.theme.px(236), implicitWidth)
             text: pet.info.line || ""
             wrapMode: Text.Wrap
-            color: "#3a2e3f"
-            font.pixelSize: 12
+            color: pet.theme.bubbleText
+            font.pixelSize: pet.theme.fpx(12)
+            font.family: pet.theme.family
             font.weight: Font.DemiBold
         }
         scale: visible ? 1 : 0.6
-        transformOrigin: pet.bubbleLeftward ? Item.BottomRight : Item.BottomLeft
+        transformOrigin: pet.bubbleBelow ? (pet.bubbleLeftward ? Item.TopRight : Item.TopLeft)
+                                         : (pet.bubbleLeftward ? Item.BottomRight : Item.BottomLeft)
         Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
     }
 }

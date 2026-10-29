@@ -3,19 +3,21 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // Agent inbox: one chip per running coding agent (state.json `agents`).
-// Red pulsing dot = waiting for you, green = working, grey = idle / done. Click focuses its window.
+// State dot: danger = waiting for you (the chip's outline pulses in the accent), success =
+// working, muted = idle / done. Click focuses its window.
 RowLayout {
     id: strip
     required property var st          // state.json
     required property var shell       // for shell.send([...])
+    required property var theme
 
     readonly property var agents: st.agents || []
     readonly property bool active: agents.length > 0
-    spacing: 6
+    spacing: theme.px(6)
     visible: agents.length > 0
 
     function dotColor(state) {
-        return state === "needs_input" ? "#ff5a4e" : state === "working" ? "#5fd38d" : Qt.rgba(1, 1, 1, 0.35)
+        return state === "needs_input" ? theme.danger : state === "working" ? theme.success : theme.textMuted
     }
 
     Repeater {
@@ -25,49 +27,51 @@ RowLayout {
             required property var modelData
             readonly property bool needs: modelData.state === "needs_input"
             readonly property bool quiet: modelData.state === "done" || modelData.state === "idle"
+            property real pulse: 1
 
-            implicitHeight: 40
-            implicitWidth: content.implicitWidth + 24
-            radius: 20
-            color: needs ? Qt.rgba(1, 0.35, 0.3, ma.containsMouse ? 0.32 : 0.22)
-                         : (ma.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.07))
-            border.width: needs ? 1 : 0
-            border.color: Qt.rgba(1, 0.35, 0.3, 0.7)
+            implicitHeight: strip.theme.ipx(40)
+            implicitWidth: content.implicitWidth + strip.theme.px(28)
+            radius: height / 2
+            color: ma.containsMouse ? strip.theme.surfaceHover : strip.theme.alpha(strip.theme.surfaceHover, strip.theme.dark ? 0.85 : 0.6)
+            border.width: needs ? strip.theme.px(1.5) : 0
+            border.color: strip.theme.alpha(strip.theme.paletteAccent, chip.pulse)
             Behavior on color { ColorAnimation { duration: 150 } }
+            SequentialAnimation on pulse {
+                running: chip.needs
+                loops: Animation.Infinite
+                onRunningChanged: if (!running) chip.pulse = 1
+                NumberAnimation { to: 0.2; duration: 700; easing.type: Easing.InOutQuad }
+                NumberAnimation { to: 1; duration: 700; easing.type: Easing.InOutQuad }
+            }
 
             RowLayout {
                 id: content
                 anchors.centerIn: parent
-                spacing: 7
+                spacing: strip.theme.px(7)
                 Text {
                     text: chip.modelData.glyph || "◆"
-                    font.pixelSize: 15
-                    color: "#eaeaea"
+                    font.pixelSize: strip.theme.fpx(15)
+                    font.family: strip.theme.family
+                    color: strip.theme.text
                     opacity: chip.quiet ? 0.6 : 1
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Text {
                     text: chip.modelData.label
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                    color: "#eaeaea"
-                    opacity: chip.quiet ? 0.6 : 1
+                    font.pixelSize: strip.theme.fpx(13)
+                    font.family: strip.theme.family
+                    font.weight: Font.Medium
+                    color: strip.theme.text
+                    opacity: chip.quiet ? 0.65 : 1
                     elide: Text.ElideRight
-                    Layout.maximumWidth: 120
+                    Layout.maximumWidth: strip.theme.px(120)
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Rectangle {
-                    id: dot
-                    width: 8; height: 8; radius: 4
+                    implicitWidth: strip.theme.px(7); implicitHeight: implicitWidth; radius: implicitWidth / 2
                     color: strip.dotColor(chip.modelData.state)
+                    opacity: chip.needs ? Math.max(0.35, chip.pulse) : 1
                     Layout.alignment: Qt.AlignVCenter
-                    SequentialAnimation on opacity {
-                        running: chip.needs
-                        loops: Animation.Infinite
-                        onRunningChanged: if (!running) dot.opacity = 1
-                        NumberAnimation { to: 0.25; duration: 600; easing.type: Easing.InOutQuad }
-                        NumberAnimation { to: 1; duration: 600; easing.type: Easing.InOutQuad }
-                    }
                 }
             }
 

@@ -9,6 +9,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: overlay
     required property var st
+    readonly property var theme: Theme { st: overlay.st }
     readonly property var info: st.pet || {}
     readonly property real base: info.size || 48
     readonly property real cap: (info.max_screen_fraction || 0.9) * (screen ? screen.height : 1080)
@@ -52,9 +53,9 @@ PanelWindow {
             width: parent.width
             height: parent.height - 16
             radius: 22
-            color: "#fbf7ff"
+            color: overlay.theme.bubble
             border.width: 3
-            border.color: "#3a2e3f"
+            border.color: overlay.theme.bubbleText
         }
         // tail toward the pet
         Rectangle {
@@ -63,7 +64,7 @@ PanelWindow {
             x: 26; y: bubbleRect.height - 13
             color: bubbleRect.color
             border.width: 3
-            border.color: "#3a2e3f"
+            border.color: overlay.theme.bubbleText
             z: -1
         }
         Text {
@@ -72,7 +73,8 @@ PanelWindow {
             width: Math.min(overlay.width * 0.4 - 44, implicitWidth)
             text: overlay.info.line || ""
             wrapMode: Text.Wrap
-            color: "#3a2e3f"
+            color: overlay.theme.bubbleText
+            font.family: overlay.theme.family
             font.pixelSize: Math.max(20, Math.min(40, sprite.height / 14))
             font.weight: Font.Black
         }

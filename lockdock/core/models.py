@@ -33,7 +33,7 @@ class Mode:
     id: str
     label: str
     icon: str = "●"
-    color: str = "#f0a04b"
+    color: str = "auto"                                 # "#rrggbb", or "auto" = the palette accent
     description: str = ""
     apps: list[str] = field(default_factory=list)       # desktop ids shown in the dock
     on_task: list[str] = field(default_factory=list)    # regex on "class|title" -> on task

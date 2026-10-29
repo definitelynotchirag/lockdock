@@ -9,7 +9,7 @@ RowLayout {
     required property color accent
     required property var theme
 
-    spacing: theme.px(6)
+    spacing: theme.px(2)
     // sections report whether they have anything to show through `active` (see Dock.qml)
     readonly property bool active: (activeMode.apps || []).length + shownUnpinned.length > 0
     visible: active
@@ -48,7 +48,12 @@ RowLayout {
         }
     }
     // ---- running but not pinned ----
-    Rectangle { visible: strip.shownUnpinned.length > 0; width: 1; height: strip.theme.px(28); color: Qt.rgba(1, 1, 1, 0.1) }
+    Rectangle {
+        visible: strip.shownUnpinned.length > 0
+        implicitWidth: 1; implicitHeight: strip.theme.px(26)
+        color: strip.theme.alpha(strip.theme.text, 0.16)
+        Layout.leftMargin: strip.theme.px(5); Layout.rightMargin: strip.theme.px(5)
+    }
     Repeater {
         model: strip.shownUnpinned
         AppButton {

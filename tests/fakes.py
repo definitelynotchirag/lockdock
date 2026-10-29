@@ -199,6 +199,25 @@ def make_config(**overrides: Any) -> Config:
     return Config(**kw)
 
 
+class FakePaletteSource:
+    """PaletteSource with an in-memory Material dict (None = no colors.json) and a dark flag."""
+
+    def __init__(self, material: dict | None = None, dark: bool = True, origin: str = "/fake/colors.json") -> None:
+        self.roles = material
+        self.dark = dark
+        self.origin = origin
+        self.on_change: Callable[[], None] | None = None
+
+    def material(self) -> tuple[dict, str] | None:
+        return (self.roles, self.origin) if self.roles is not None else None
+
+    def prefers_dark(self) -> bool:
+        return self.dark
+
+    async def watch(self, on_change: Callable[[], None]) -> None:
+        self.on_change = on_change
+
+
 class FakeSpeaker:
     """Speaker that answers with a fixed line and records the calls."""
 

@@ -4,27 +4,32 @@ import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// The dock window. Everything visual comes from st.theme (theme.json) through
-// components/Theme.qml. The row is built from theme.sections: each id is looked
-// up in `sectionMap` below. To add a feature's component (Pet, AgentStrip, ...):
+// The dock window. Everything visual comes from st.theme (theme.json + the desktop
+// palette) through components/Theme.qml. The row is built from theme.sections: each id
+// is looked up in `sectionMap` below. To add a feature's component (Pet, AgentStrip, ...):
 //   1. add a Component for it under "section components",
 //   2. add one entry to `sectionMap`.
 // A section component may expose `readonly property bool active` (default true)
-// to say whether it has anything to show; hidden sections get no divider.
+// to say whether it has anything to show; hidden sections get no divider / island.
+//
+// layout "islands" (default): sections are grouped (`groups`) and each group is drawn
+// on its own Island; the pet shares the island of the section next to it.
+// layout "slab": one Island (the card) holds every section, with dividers between them.
 PanelWindow {
     id: dock
     required property var shell
     readonly property var st: shell.state
     readonly property var theme: Theme { st: dock.st }
-    readonly property var activeMode: (st.modes || []).find(m => m.id === st.mode) || { id: "", label: "", icon: "", color: "#888", apps: [] }
+    readonly property var activeMode: (st.modes || []).find(m => m.id === st.mode) || { id: "", label: "", icon: "", color: "auto", apps: [] }
     readonly property bool offTask: (st.activity || {}).verdict === "off"
     readonly property bool nudgeShown: offTask && theme.nudge
-    readonly property color accent: theme.accentOverride !== "" ? theme.accentOverride : (activeMode.color || "#f0a04b")
+    readonly property color accent: theme.modeColor(activeMode)
     // the pet registers itself here when its section is loaded (see components/Pet.qml)
     property Item petItem: null
     readonly property bool petAfterModes: theme.sections.indexOf("pet") > theme.sections.indexOf("modes")
     // the pet's bubble clears the nudge row while off task
-    readonly property real petLift: theme.px(nudgeShown ? 42 : 8)
+    readonly property real petLift: theme.px(nudgeShown ? 48 : 12)
+    readonly property real islandHeight: theme.ipx(theme.islands ? 56 : 62)
 
     // section id -> component. Unknown ids in theme.sections are skipped.
     readonly property var sectionMap: ({
@@ -34,8 +39,25 @@ PanelWindow {
         agents: agentStripComp,
         held: heldBadgeComp,
     })
-    // sections drawn right after their neighbour with no divider (like the held badge)
+    // slab: sections drawn right after their neighbour with no divider (like the held badge)
     readonly property var inlineSections: ({ held: true })
+    // islands: sections that share the island of their neighbour (the next one, or the previous when last)
+    readonly property var joinSections: ({ pet: true })
+
+    // theme.sections -> list of groups (lists of ids); one group per island
+    readonly property var groups: {
+        const secs = theme.sections
+        if (!theme.islands) return [secs]
+        const out = []
+        for (let i = 0; i < secs.length; i++) {
+            const id = secs[i]
+            const last = out.length ? out[out.length - 1] : null
+            const prevJoins = last && last.length === 1 && dock.joinSections[last[0]] && i === secs.indexOf(last[0]) + 1
+            if (prevJoins || (dock.joinSections[id] && i === secs.length - 1 && last)) last.push(id)
+            else out.push([id])
+        }
+        return out
+    }
 
     anchors.bottom: !theme.atTop
     anchors.top: theme.atTop
@@ -43,10 +65,11 @@ PanelWindow {
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "lockdock"
-    implicitWidth: card.implicitWidth + 24
+    // room around the card for the islands' shadows
+    implicitWidth: card.implicitWidth + theme.px(56)
     // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble shows
     implicitHeight: card.implicitHeight + theme.margin
-                    + Math.max(theme.px(12 + 34), (petItem ? petItem.headroom : 0) - 4)
+                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4)
     mask: Region {
         item: cardHit
         Region { item: nudgeBox }
@@ -76,71 +99,92 @@ PanelWindow {
         HoverHandler { id: edgeHover }
     }
 
-    // input region of the card: none while it is slid away
+    // input region of the card (every island and the gaps between them): none while slid away
     Item {
         id: cardHit
         x: card.x; y: card.y; width: card.width
         height: dock.shown ? card.height : 0
     }
 
-    Rectangle {
+    // the bounding box of all islands (or the slab card)
+    Item {
         id: card
         anchors.horizontalCenter: parent.horizontalCenter
         y: dock.theme.atTop ? dock.theme.margin : dock.height - height - dock.theme.margin
-        implicitWidth: row.implicitWidth + dock.theme.px(20)
-        implicitHeight: dock.theme.ipx(64)
-        radius: dock.theme.px(dock.theme.radius)
-        color: dock.theme.background
+        implicitWidth: groupRow.implicitWidth
+        implicitHeight: dock.islandHeight
+        width: implicitWidth; height: implicitHeight
         opacity: dock.theme.opacity
-        border.width: dock.theme.borderWidth
-        border.color: dock.offTask ? dock.theme.offTaskBorderColor : dock.theme.borderColor
-        Behavior on border.color { ColorAnimation { duration: 250 } }
         HoverHandler { id: cardHover }
 
         transform: Translate {
-            y: dock.shown ? 0 : (dock.theme.atTop ? -1 : 1) * (card.height + dock.theme.margin + 4)
+            y: dock.shown ? 0 : (dock.theme.atTop ? -1 : 1) * (card.height + dock.theme.margin + dock.theme.px(12))
             Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
         }
 
-        RowLayout {
-            id: row
-            anchors.centerIn: parent
-            spacing: dock.theme.px(6)
+        Row {
+            id: groupRow
+            spacing: dock.theme.islands ? dock.theme.px(dock.theme.gap) : 0
 
             Repeater {
-                model: dock.theme.sections
-                delegate: RowLayout {
-                    id: sec
-                    required property string modelData
-                    required property int index
-                    readonly property bool shown: loader.item ? (loader.item.active !== undefined ? loader.item.active : true) : false
-                    readonly property bool inlineSection: dock.inlineSections[modelData] === true
-                    visible: shown
-                    spacing: dock.theme.px(6)
-                    Layout.leftMargin: inlineSection ? dock.theme.px(6) : 0
+                model: dock.groups
+                delegate: Item {
+                    id: grp
+                    required property var modelData     // section ids on this island
+                    readonly property real pad: dock.theme.px(dock.theme.islands ? 8 : 10)
+                    visible: modelData.some(id => dock.shownSections[id] === true)
+                    implicitWidth: secRow.implicitWidth + 2 * pad
+                    implicitHeight: dock.islandHeight
+                    width: implicitWidth; height: implicitHeight
 
-                    onShownChanged: dock.markShown(modelData, shown)
-                    Component.onCompleted: dock.markShown(modelData, shown)
-                    Component.onDestruction: dock.markShown(modelData, false)
-
-                    Rectangle {
-                        visible: sec.shown && !sec.inlineSection
-                                 && dock.theme.sections.slice(0, sec.index).some(id => dock.shownSections[id] === true)
-                        implicitWidth: 1; implicitHeight: dock.theme.px(36)
-                        color: Qt.rgba(1, 1, 1, 0.14)
-                        Layout.leftMargin: dock.theme.px(4); Layout.rightMargin: dock.theme.px(4)
+                    Island {
+                        anchors.fill: parent
+                        theme: dock.theme
+                        alert: dock.offTask
                     }
-                    Loader {
-                        id: loader
-                        sourceComponent: dock.sectionMap[sec.modelData]
+
+                    RowLayout {
+                        id: secRow
+                        anchors.centerIn: parent
+                        spacing: dock.theme.px(6)
+
+                        Repeater {
+                            model: grp.modelData
+                            delegate: RowLayout {
+                                id: sec
+                                required property string modelData
+                                required property int index
+                                readonly property bool shown: loader.item ? (loader.item.active !== undefined ? loader.item.active : true) : false
+                                readonly property bool inlineSection: dock.inlineSections[modelData] === true
+                                visible: shown
+                                spacing: dock.theme.px(6)
+                                Layout.leftMargin: inlineSection && !dock.theme.islands ? dock.theme.px(6) : 0
+
+                                onShownChanged: dock.markShown(modelData, shown)
+                                Component.onCompleted: dock.markShown(modelData, shown)
+                                Component.onDestruction: dock.markShown(modelData, false)
+
+                                // slab only: a hairline between sections
+                                Rectangle {
+                                    visible: sec.shown && !sec.inlineSection && !dock.theme.islands
+                                             && grp.modelData.slice(0, sec.index).some(id => dock.shownSections[id] === true)
+                                    implicitWidth: 1; implicitHeight: dock.theme.px(32)
+                                    color: dock.theme.alpha(dock.theme.text, 0.14)
+                                    Layout.leftMargin: dock.theme.px(4); Layout.rightMargin: dock.theme.px(4)
+                                }
+                                Loader {
+                                    id: loader
+                                    sourceComponent: dock.sectionMap[sec.modelData]
+                                }
+                            }
+                        }
                     }
                 }
             }
-
         }
     }
 
-    // which section ids currently have something to show (drives the dividers)
+    // which section ids currently have something to show (drives the dividers and islands)
     property var shownSections: ({})
     function markShown(id, v) {
         if (dock.shownSections[id] === v) return
@@ -173,8 +217,11 @@ PanelWindow {
         Pet {
             st: dock.st
             shell: dock.shell
+            theme: dock.theme
             bubbleLift: dock.petLift
             bubbleLeftward: dock.petAfterModes
+            bubbleBelow: dock.theme.atTop
+            Layout.leftMargin: dock.theme.px(2)
             Layout.rightMargin: dock.theme.px(2)
             Component.onCompleted: dock.petItem = this
             Component.onDestruction: if (dock.petItem === this) dock.petItem = null
@@ -182,7 +229,7 @@ PanelWindow {
     }
     Component {
         id: agentStripComp
-        AgentStrip { st: dock.st; shell: dock.shell }
+        AgentStrip { st: dock.st; shell: dock.shell; theme: dock.theme }
     }
     Component {
         id: heldBadgeComp
@@ -200,7 +247,7 @@ PanelWindow {
         visible: dock.nudgeShown
         theme: dock.theme
         opacity: dock.theme.opacity
-        y: dock.theme.atTop ? card.y + card.height + dock.theme.px(6) : card.y - height - dock.theme.px(6)
+        y: dock.theme.atTop ? card.y + card.height + dock.theme.px(8) : card.y - height - dock.theme.px(8)
         anchors.horizontalCenter: card.horizontalCenter
         reason: (dock.st.activity || {}).reason || ""
     }

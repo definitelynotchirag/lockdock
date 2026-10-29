@@ -29,7 +29,7 @@ def test_snapshot_shape(tmp_path):
     assert set(st) == KEYS
     assert st["mode"] == "free" and st["pending"] is None
     assert st["agents"] == [] and st["pet"] == {} and st["theme"] == {}
-    assert st["modes"][1] == {"id": "writing", "label": "Writing", "icon": "●", "color": "#f0a04b",
+    assert st["modes"][1] == {"id": "writing", "label": "Writing", "icon": "●", "color": "auto",
                               "apps": ["md.obsidian.Obsidian", "helium"], "description": ""}
     assert st["updated_ms"] == 1000000
     json.dumps(st)

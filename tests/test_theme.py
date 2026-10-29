@@ -4,28 +4,38 @@ import pytest
 
 from lockdock.adapters.json_config import JsonFileWatcher
 from lockdock.core.daemon import Daemon
+from lockdock.core.palette import DARK, LIGHT, ROLES
 from lockdock.core.theme import ThemeConfig, ThemeService, parse_color, set_dotted
 from lockdock.features import theme as theme_feature
 
-from .fakes import (FakeClassifier, FakeClock, FakeConfigSource, FakeJsonDocument, FakePublisher, FakeRunner,
-                    FakeSink, make_config)
+from .fakes import (FakeClassifier, FakeClock, FakeConfigSource, FakeJsonDocument, FakePaletteSource, FakePublisher,
+                    FakeRunner, FakeSink, make_config)
+
+MATERIAL_LIGHT = {"primary": "#2c638b", "on_primary": "#ffffff", "primary_container": "#cde5ff",
+                  "on_primary_container": "#001d31", "surface": "#f7f9ff", "surface_container": "#ebeef3",
+                  "surface_container_high": "#e6e8ee", "surface_container_highest": "#e0e2e8",
+                  "on_surface": "#181c20", "on_surface_variant": "#42474e", "outline_variant": "#c2c7ce",
+                  "error": "#ba1a1a", "on_error": "#ffffff", "inverse_surface": "#2d3135",
+                  "inverse_on_surface": "#eef1f6", "shadow": "#000000"}
 
 
-def make_service(raw=None, **kw):
+def make_service(raw=None, palette=None, **kw):
     changes: list[int] = []
     logs: list[tuple] = []
     doc = FakeJsonDocument(raw, **kw)
-    svc = ThemeService(doc, lambda: changes.append(1), lambda kind, **d: logs.append((kind, d)))
+    svc = ThemeService(doc, lambda: changes.append(1), lambda kind, **d: logs.append((kind, d)), palette)
     return svc, doc, changes, logs
 
 
-def test_defaults_match_the_shipped_look():
-    t = ThemeConfig.from_dict({})
-    assert (t.position, t.margin, t.scale, t.radius, t.icon_size, t.opacity) == ("bottom", 10, 1.0, 22, 36, 1.0)
+def test_defaults_are_the_islands_look():
+    t = ThemeConfig.from_dict({"palette": "system"})
+    assert (t.position, t.margin, t.scale, t.radius, t.icon_size, t.opacity) == ("bottom", 10, 1.0, 20, 34, 1.0)
+    assert (t.layout, t.palette, t.gap, t.fill_opacity) == ("islands", "system", 8, 1.0)
     assert t.sections == ["pet", "modes", "apps", "agents", "held"]
-    assert t.show_unpinned and t.nudge.enabled and not t.autohide.enabled
+    assert t.show_unpinned and t.nudge.enabled and not t.autohide.enabled and t.shadow.enabled
     assert (t.autohide.reveal_px, t.autohide.hide_delay_ms) == (4, 600)
-    assert t.accent_override is None and t.font.family == "" and t.font.size == 14
+    assert t.accent_override is None and t.font.family == "Inter Display" and t.font.size == 14
+    assert t.background is None and t.border.color is None and t.border.off_task_color is None
     assert t.problems == []
 
 
@@ -78,12 +88,85 @@ def test_parse_color_forms():
 
 def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
-    assert set(snap) == {"position", "margin", "scale", "radius", "background", "border", "accent_override",
-                         "font", "icon_size", "sections", "show_unpinned", "autohide", "nudge", "opacity"}
-    assert snap["background"] == "#DB1C1C21"
-    assert snap["border"] == {"color": "#1FFFFFFF", "width": 1, "off_task_color": "#CCFF594D"}
+    assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
+                         "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
+                         "show_unpinned", "autohide", "nudge", "opacity", "colors", "palette_source"}
+    assert snap["background"] is None
+    assert snap["border"] == {"color": None, "width": 1, "off_task_color": None}
+    assert set(snap["colors"]) == set(ROLES) and snap["colors"]["bg"] == DARK.bg
     json.dumps(snap)
     assert ThemeConfig.from_dict({"accent_override": "rgb(255,0,0)"}).snapshot()["accent_override"] == "#FFFF0000"
+
+
+def test_legacy_colour_keys_still_apply_when_set():
+    t = ThemeConfig.from_dict({"palette": "system", "background": "#102030", "border": {"color": "rgba(1,1,1,0.5)"}})
+    snap = t.snapshot()
+    assert snap["background"] == "#FF102030" and snap["border"]["color"] == "#80FFFFFF"
+    assert snap["colors"]["bg"] == DARK.bg  # the role is still published; the shell prefers the legacy key
+
+
+def test_v1_seeded_file_gets_the_new_look():
+    v1 = {"position": "top", "radius": 22, "icon_size": 36, "background": "rgba(0.11,0.11,0.13,0.86)",
+          "border": {"color": "rgba(1,1,1,0.12)", "width": 1, "off_task_color": "rgba(1,0.35,0.3,0.8)"},
+          "font": {"family": "", "size": 14}, "margin": 30}
+    t = ThemeConfig.from_dict(v1)
+    assert t.background is None and t.border.color is None and t.radius == 20 and t.icon_size == 34
+    assert t.font.family == "Inter Display" and t.position == "top" and t.margin == 30  # real choices kept
+    assert t.problems == []
+    # a changed v1 value is a choice; a current file (has palette/layout) is taken as written
+    assert ThemeConfig.from_dict({"background": "#000000"}).background == "#000000"
+    assert ThemeConfig.from_dict({"palette": "dark", "radius": 22}).radius == 22
+
+
+def test_set_on_a_v1_file_migrates_it():
+    svc, doc, _, _ = make_service({"radius": 22, "background": "rgba(0.11,0.11,0.13,0.86)", "margin": 4})
+    svc.set({"key": "radius", "value": 22})
+    assert doc.raw == {"radius": 22, "margin": 4, "palette": "system"}
+    assert svc.theme.radius == 22
+
+
+def test_layout_and_palette_validation():
+    t = ThemeConfig.from_dict({"layout": "grid", "palette": "neon", "shadow": {"opacity": 2}})
+    assert t.layout == "islands" and t.palette == "system" and t.shadow.opacity == 0.28
+    assert {p.split(":")[0] for p in t.problems} == {"layout", "palette", "shadow.opacity"}
+    t = ThemeConfig.from_dict({"layout": "slab", "palette": {"base": "light", "accent": "#ff0000", "bogus": "#fff",
+                                                             "danger": "red"}})
+    assert t.layout == "slab" and t.palette["accent"] == "#ff0000"
+    assert {p.split(":")[0] for p in t.problems} == {"palette.bogus", "palette.danger"}
+    snap = t.snapshot()
+    assert snap["colors"]["accent"] == "#FFFF0000" and snap["colors"]["bg"] == LIGHT.bg
+    assert snap["colors"]["danger"] == LIGHT.danger
+
+
+def test_service_follows_the_system_palette():
+    src = FakePaletteSource(MATERIAL_LIGHT, dark=True)
+    svc, _, changes, logs = make_service({"palette": "system"}, palette=src)
+    svc.load()
+    snap = svc.snapshot()
+    assert snap["colors"]["accent"] == "#FF2C638B" and snap["colors"]["bg"] == "#FFEBEEF3"
+    assert snap["palette_source"] == "/fake/colors.json (light)"  # light from the file's surface, not the probe
+    n = len(changes)
+    svc.refresh_palette()
+    assert len(changes) == n  # nothing changed: no publish
+    src.roles = dict(MATERIAL_LIGHT, primary="#8b2c2c")
+    svc.refresh_palette()
+    assert len(changes) == n + 1 and svc.snapshot()["colors"]["accent"] == "#FF8B2C2C"
+    assert logs[-1][0] == "palette"
+
+
+def test_service_falls_back_to_builtins_by_scheme():
+    src = FakePaletteSource(None, dark=False)
+    svc, _, _, _ = make_service({"palette": "system"}, palette=src)
+    svc.load()
+    assert svc.snapshot()["colors"] == LIGHT.to_dict()
+    assert "fallback" in svc.snapshot()["palette_source"]
+    src.dark = True
+    svc.refresh_palette()
+    assert svc.snapshot()["colors"] == DARK.to_dict()
+    svc.set({"key": "palette", "value": "light"})
+    assert svc.snapshot()["colors"] == LIGHT.to_dict() and svc.snapshot()["palette_source"] == "built-in light"
+    got = svc.get()
+    assert got["palette"]["source"] == "built-in light" and got["palette"]["colors"]["bg"] == LIGHT.bg
 
 
 def test_set_dotted():
@@ -98,7 +181,7 @@ def test_set_dotted():
 def test_service_set_writes_and_applies():
     svc, doc, changes, _ = make_service({"scale": 0.9})
     assert svc.set({"key": "autohide.enabled", "value": True})
-    assert doc.raw == {"scale": 0.9, "autohide": {"enabled": True}}
+    assert doc.raw == {"scale": 0.9, "autohide": {"enabled": True}, "palette": "system"}
     assert svc.theme.autohide.enabled and svc.theme.scale == 0.9
     assert svc.snapshot()["autohide"]["enabled"] is True
     assert changes
@@ -156,8 +239,9 @@ def test_feature_installs_section_and_commands(tmp_path):
     pub = FakePublisher()
     d = Daemon(config_source=FakeConfigSource(make_config()), classifier=FakeClassifier(), sink=FakeSink(),
                publisher=pub, runner=FakeRunner(), clock=FakeClock())
-    for w in theme_feature.install(d, tmp_path / "theme.json"):
+    for w in theme_feature.install(d, tmp_path / "theme.json", palette=FakePaletteSource(MATERIAL_LIGHT)):
         w.close()
+    assert d.snapshot()["theme"]["colors"]["accent"] == "#FF2C638B"
     assert d.snapshot()["theme"]["position"] == "bottom"
     assert (tmp_path / "theme.json").exists()  # seeded from the example on first run
     d.handle("theme_set", {"key": "position", "value": "top"})

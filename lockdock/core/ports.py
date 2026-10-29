@@ -101,3 +101,11 @@ class PetPackSource(Protocol):
 
     def resolve(self, name: str) -> tuple[str, dict] | None: ...  # (pack_dir, pack.json manifest)
     def available(self) -> list[dict]: ...                        # [{name, title, author, source, dir}]
+
+
+class PaletteSource(Protocol):
+    """The desktop's colour scheme: Material You roles (e.g. matugen's colors.json) and dark/light."""
+
+    def material(self) -> tuple[dict[str, Any], str] | None: ...  # (roles, where they came from) or None
+    def prefers_dark(self) -> bool: ...
+    async def watch(self, on_change: Callable[[], None]) -> None: ...  # calls on_change after an edit

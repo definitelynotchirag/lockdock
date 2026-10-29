@@ -4,7 +4,7 @@
 
 | key | meaning |
 |---|---|
-| `id`, `label`, `icon`, `color` | identity; `icon` is a text glyph (emoji / unicode) |
+| `id`, `label`, `icon`, `color` | identity; `icon` is a text glyph (emoji / unicode); `color` is `"auto"` (default: the palette accent, see `theme.md`) or `"#rrggbb"` |
 | `description` | one or two sentences; **this is the prompt the classifier sees**, write it like a brief |
 | `apps` | desktop-entry ids shown in the dock for this mode (`ls /usr/share/applications`) |
 | `on_task` / `off_task` | regexes (case-insensitive) matched against `class\|title`; off wins |
@@ -37,6 +37,6 @@ A line like `"verdict": "off", "reason": "matches off_task rule 'docs'"` tells y
 
 ## Examples
 
-- "Add a Research mode": copy a mode object, give it a new `id`, `label`, `icon`, `color`, a `description` that says what research means for this user, `apps`, and `on_task` regexes for the sites they use.
+- "Add a Research mode": copy a mode object, give it a new `id`, `label`, `icon`, `color` (`"auto"` unless they want a colour), a `description` that says what research means for this user, `apps`, and `on_task` regexes for the sites they use.
 - "Stop flagging the Rust book as off task": add `"rust-lang\\.org|doc\\.rust"` to the active mode's `on_task` (and remove the matching `off_task` rule if one exists, since off wins).
 - "Let Linear notifications through in Building": add `"Linear"` to that mode's `notifications.allow_from`.

@@ -33,6 +33,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | `ProcessScanner` | `scan() -> list[ProcessInfo(pid, ppid, cmdline, cwd, cpu_s)]` | `adapters/proc_scan.py` `ProcScanner` (also `ancestor_pids()`) |
 | `Speaker` | `async line(mood, mode, app, title, reason) -> str \| None` | `adapters/claude_cli.py` `ClaudeCliSpeaker` (one line of at most 12 words in the pet.json `persona`, cached per (mood, app)) |
 | `PetPackSource` | `resolve(name) -> (pack_dir, manifest) \| None`, `available() -> [{name, title, author, source, dir}]` | `adapters/pet_packs.py` `DirPetPacks` (user `~/.config/lockdock/pets/` before built-in `shell/pets/`) |
+| `PaletteSource` | `material() -> (roles, origin) \| None`, `prefers_dark()`, `async watch(on_change)` | `adapters/system_palette.py` `MatugenPaletteSource` (first existing of `paths.PALETTE_FILES`: `~/.config/lockdock/colors.json`, then end-4's `~/.local/state/quickshell/user/generated/colors.json`; mtime polling) with `GsettingsSchemeProbe` (`color-scheme`; dark if gsettings is missing) |
 
 Fakes for every port are in `tests/fakes.py`.
 
@@ -83,7 +84,7 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | `browser` | `{enabled, url, connected, last_seen_ms}` from `features/browser_urls.py` |
 | `agents` | `[{id, kind, label, state, since_ms, pid, cwd, window_address, last_message, session_id, glyph}]`, needs_input first, then working, idle, done. `state` is `working` / `needs_input` / `done` / `idle`; `id` is `<kind>:<pid>` (or `<kind>:<session>` for a hook-only agent) |
 | `pet` | `{name, mood, scale, line, line_id, off_seconds, pack, pack_dir, manifest, size, muted, forced, position, max_screen_fraction}` from `features/pet.py`. `mood` is content / suspicious / annoyed / furious; `scale` is the size in dock sprites (1.0 = in the dock; the overlay shows above 1.05, capped at `max_screen_fraction` of the screen); `line_id` bumps on every new line; `manifest` is the pack's `pack.json`, frames relative to `pack_dir`; `forced` is a previewed mood or null |
-| `theme` | the effective theme (`features/theme.py`; see `ThemeConfig.snapshot()` in `core/theme.py`); `{}` without the feature |
+| `theme` | the effective theme (`features/theme.py`; see `ThemeConfig.snapshot()` in `core/theme.py`) plus `colors` (the resolved palette: `{bg, bg_elevated, surface, surface_hover, text, text_muted, outline, accent, on_accent, accent_container, on_accent_container, secondary, tertiary, danger, on_danger, success, warning, bubble, bubble_text, shadow}` as `#AARRGGBB`) and `palette_source` (file path or built-in fallback); `{}` without the feature |
 | `updated_ms` | write time |
 
 `Daemon.window_enrichers` (callables `WindowInfo -> WindowInfo` applied on every focus
@@ -126,16 +127,29 @@ Control verbs added by `features/agents.py`: `agent_event {kind, state, payload,
 
 `theme.json` (`features/theme.py`, `core/theme.py`) is the single place for the
 dock's look; `ThemeService` validates it, writes it (`theme_set`, `theme_reset`
-commands) and publishes `st.theme`. Defaults reproduce the original look.
+commands) and publishes `st.theme`. Colours come from `core/palette.py`:
+`resolve(theme.palette, material, origin, prefers_dark)` maps the desktop's
+Material You roles (`Palette.from_material`) or picks the built-in `DARK` /
+`LIGHT`, then merges role overrides; `ThemeService.refresh_palette()` runs when
+the `PaletteSource` reports an edit and republishes only on a real change.
 
 In the shell, `components/Theme.qml` wraps `st.theme` with typed properties
 that all have fallbacks (a missing key never breaks the dock). Use
 `theme.px(n)` for sizes (applies `scale`), `theme.ipx(n)` for sizes that
 should also follow `icon_size`, `theme.fpx(n)` for font pixel sizes, and
-`theme.family` for `font.family`. Pass the `theme` object down to components.
+`theme.family` for `font.family`. Colours are palette roles (`theme.bg`,
+`theme.text`, `theme.textMuted`, `theme.surfaceHover`, `theme.paletteAccent`,
+`theme.accentContainer` / `theme.accentContainerInk`, `theme.danger` /
+`theme.dangerInk`, `theme.bubble`, ...; never a literal colour, and never a
+property named `onX`, which QML reads as a signal handler). `theme.modeColor(mode)`
+resolves a mode's `"auto"` colour. `components/Island.qml` is the rounded,
+bordered, shadowed surface used by every island, the slab card and the nudge.
+Pass the `theme` object down to components.
 
-`Dock.qml` renders `theme.sections` with a `Repeater`; each id is looked up in
-`sectionMap` and loaded with a `Loader`. Unknown ids render nothing, ids that
+`Dock.qml` groups `theme.sections` into `groups` (layout `islands`: one group
+per section, sections in `joinSections` (the pet) share their neighbour's
+island; layout `slab`: one group) and renders one `Island` per group, each id
+looked up in `sectionMap` and loaded with a `Loader`. Unknown ids render nothing, ids that
 are not listed are hidden. A section component may expose
 `readonly property bool active` (default true) to say it has nothing to show,
 which also drops its divider. List a section in `inlineSections` to draw it

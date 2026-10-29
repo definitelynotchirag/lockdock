@@ -1,20 +1,28 @@
 {
+  "palette": "system",
+  "layout": "islands",
   "position": "bottom",
   "margin": 10,
   "scale": 1.0,
-  "radius": 22,
-  "background": "rgba(0.11,0.11,0.13,0.86)",
+  "radius": 20,
+  "gap": 8,
+  "fill_opacity": 1.0,
+  "background": null,
   "border": {
-    "color": "rgba(1,1,1,0.12)",
+    "color": null,
     "width": 1,
-    "off_task_color": "rgba(1,0.35,0.3,0.8)"
+    "off_task_color": null
+  },
+  "shadow": {
+    "enabled": true,
+    "opacity": 0.28
   },
   "accent_override": null,
   "font": {
-    "family": "",
+    "family": "Inter Display",
     "size": 14
   },
-  "icon_size": 36,
+  "icon_size": 34,
   "sections": [
     "pet",
     "modes",

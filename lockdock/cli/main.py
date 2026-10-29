@@ -24,7 +24,7 @@
   lockdock pet mute|unmute   keep the mood, drop the lines and the growth
   lockdock pet pack <name>   switch sprite pack (lockdock pet packs lists them)
   lockdock pet say "<text>"  show a line now
-  lockdock theme             print the effective theme (and any problems in theme.json)
+  lockdock theme             print the effective theme, the resolved palette and its source (and problems)
   lockdock theme set K V     set a dotted key to a JSON value, e.g. theme set position '"top"'
   lockdock theme reset       restore the default theme
   lockdock theme path        print the theme.json path
@@ -95,6 +95,11 @@ def _theme(rest: list[str]) -> None:
     elif sub == "get":
         res = call("theme_get")
         print(json.dumps(res["theme"], indent=2))
+        pal = res.get("palette") or {}
+        if pal:
+            print(f"\npalette: {pal['source']}")
+            for role, colour in pal["colors"].items():
+                print(f"  {role:<20} {colour}")
         for p in res["problems"]:
             print(f"problem: {p}", file=sys.stderr)
     elif sub == "set":

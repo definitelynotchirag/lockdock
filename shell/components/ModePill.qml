@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// One mode. Active: a filled pill (accent_container, or the mode's own colour when modes.json
+// sets one) with a small accent dot, glyph and label. Inactive: the glyph only, muted; a
+// pending switch widens it and fills it left to right as the countdown runs.
 Item {
     id: pill
     required property var theme
@@ -12,28 +15,34 @@ Item {
     property bool offTask: false
     signal clicked()
 
-    readonly property color c: theme.accentOverride !== "" ? theme.accentOverride : (mode.color || "#f0a04b")
+    readonly property bool auto: theme.modeIsAuto(mode)
+    readonly property color c: theme.modeColor(mode)
+    // active fill and its text: Material container roles for "auto", else the mode's colour
+    readonly property color fill: auto ? theme.accentContainer : c
+    readonly property color ink: auto ? theme.accentContainerInk : theme.readableOn(c)
+    readonly property color dotColor: auto ? theme.paletteAccent : ink
     readonly property real remaining: pending ? Math.max(0, pending.deadline_ms - now) : 0
     readonly property real progress: pending && pending.total_ms > 0 ? 1 - remaining / pending.total_ms : 0
     readonly property bool wide: active || pending !== null
 
     implicitHeight: theme.ipx(40)
-    implicitWidth: wide ? content.implicitWidth + theme.px(26) : implicitHeight
+    implicitWidth: wide ? content.implicitWidth + theme.px(30) : implicitHeight
     Behavior on implicitWidth { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: pill.active ? pill.c : (pill.pending ? Qt.rgba(1, 1, 1, 0.14) : (ma.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.07)))
+        color: pill.active ? pill.fill
+                           : (pill.pending || ma.containsMouse ? pill.theme.surfaceHover : "transparent")
         Behavior on color { ColorAnimation { duration: 150 } }
 
         // countdown fill while a switch is pending
         Rectangle {
             visible: pill.pending !== null
             anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom
-            width: parent.width * pill.progress
+            width: Math.max(height, parent.width * pill.progress)
             radius: parent.radius
-            color: Qt.rgba(pill.c.r, pill.c.g, pill.c.b, 0.55)
+            color: pill.theme.alpha(pill.c, 0.35)
         }
     }
 
@@ -41,11 +50,18 @@ Item {
         id: content
         anchors.centerIn: parent
         spacing: pill.theme.px(7)
+        Rectangle {
+            visible: pill.active
+            implicitWidth: pill.theme.px(6); implicitHeight: implicitWidth; radius: implicitWidth / 2
+            color: pill.dotColor
+            Layout.alignment: Qt.AlignVCenter
+            Layout.rightMargin: pill.theme.px(1)
+        }
         Text {
             text: pill.mode.icon || "●"
-            font.pixelSize: pill.theme.fpx(17)
+            font.pixelSize: pill.theme.fpx(16)
             font.family: pill.theme.family
-            color: pill.active ? "#161616" : "#eaeaea"
+            color: pill.active ? pill.ink : (ma.containsMouse || pill.pending ? pill.theme.text : pill.theme.textMuted)
             Layout.alignment: Qt.AlignVCenter
         }
         Text {
@@ -54,7 +70,8 @@ Item {
             font.pixelSize: pill.theme.fpx(14)
             font.family: pill.theme.family
             font.weight: Font.DemiBold
-            color: pill.active ? "#161616" : "#eaeaea"
+            font.letterSpacing: 0.2
+            color: pill.active ? pill.ink : pill.theme.text
             Layout.alignment: Qt.AlignVCenter
         }
     }
