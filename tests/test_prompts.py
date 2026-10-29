@@ -101,6 +101,13 @@ def test_site_card_without_wait_and_by_class():
     assert p["title"] == "kitty" and p["actions"][1]["label"] == "Go to Building"
 
 
+def test_newer_site_card_replaces_one_from_the_same_window_class():
+    h = Harness()
+    h.c.on_activity(x_activity(url=None))       # judged by title before the URL arrived
+    h.c.on_activity(x_activity())
+    assert [p["title"] for p in h.c.snapshot()] == ["x.com"]
+
+
 def test_on_task_or_neutral_opens_no_site_card():
     h = Harness()
     h.c.on_activity(x_activity(verdict="on"))

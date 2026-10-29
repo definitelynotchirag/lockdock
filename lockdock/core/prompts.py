@@ -259,6 +259,9 @@ class PromptCenter:
                 p.kind == "site" and p.target == target for p in self.prompts):
             return
         self._snooze(target)
+        # one site card per window class: a browser judged first by title (target = class), then by
+        # URL (target = host), or a new tab in the same browser, replaces its older card
+        self._close_where(lambda p: p.kind == "site" and p.icon == w.cls)
         actions = [{"id": "stay", "label": "Stay", "style": "plain"}, switch_action(other, mode.exit_delay_s)]
         self._open(Prompt(self._next_id(), "site", now, None, w.cls, target, f"belongs to {other.label}",
                           "Stay focused, or switch?", None, actions, target))
