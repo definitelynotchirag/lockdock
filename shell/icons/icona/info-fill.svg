@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="icona-info-fill-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <path d="M12 11V16.5" stroke="#000"/>
+      <path d="M12 7.75H12.01" stroke="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#icona-info-fill-cutout)">
+    <path d="M12 3.5A8.5 8.5 0 1 1 12 20.5A8.5 8.5 0 1 1 12 3.5" fill="currentColor"/>
+  </g>
+</svg>

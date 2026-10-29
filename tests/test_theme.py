@@ -1,4 +1,6 @@
 import json
+from dataclasses import fields
+from pathlib import Path
 
 import pytest
 
@@ -142,8 +144,8 @@ def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
     assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
                          "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
-                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "opacity", "colors",
-                         "palette_source"}
+                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "icons", "opacity",
+                         "colors", "palette_source"}
     assert snap["background"] is None
     assert snap["border"] == {"color": None, "width": 1, "off_task_color": None}
     assert set(snap["colors"]) == set(ROLES) and snap["colors"]["bg"] == DARK.bg
@@ -303,3 +305,65 @@ def test_feature_installs_section_and_commands(tmp_path):
     assert pub.snapshots[-1]["theme"]["position"] == "top"
     d.handle("theme_reset", None)
     assert d.snapshot()["theme"]["position"] == "bottom"
+
+
+# ---------- icons ----------
+ROOT = Path(__file__).resolve().parent.parent
+ICONA_DIR = ROOT / "shell" / "icons" / "icona"
+
+
+def _icon_names(icons) -> list[str]:
+    out: list[str] = []
+    for f in fields(icons):
+        v = getattr(icons, f.name)
+        out += list(v.values()) if isinstance(v, dict) else [v] if isinstance(v, str) else []
+    return out
+
+
+def test_icon_defaults_are_icona_and_every_slug_exists():
+    icons = ThemeConfig().icons
+    assert (icons.pack, icons.stroke, icons.held, icons.timer) == ("icona", 1.75, "icona:bell", "icona:hourglass")
+    assert icons.agent_kinds["claude"] == "icona:sparkles" and icons.agent_kinds["codex"] == "icona:terminal"
+    names = [n for n in _icon_names(icons) if n.startswith("icona:")]
+    assert len(names) > 15
+    assert [n for n in names if not (ICONA_DIR / (n[6:] + ".svg")).is_file()] == []
+    assert (ICONA_DIR / "LICENSE").is_file() and (ICONA_DIR / "INDEX.md").is_file()
+
+
+def test_example_modes_use_existing_icona_slugs():
+    modes = json.loads((ROOT / "modes.example.json").read_text())["modes"]
+    icons = {m["id"]: m["icon"] for m in modes}
+    assert icons == {"free": "icona:coffee", "writing": "icona:pen-tool", "building": "icona:code"}
+    assert all((ICONA_DIR / (i[6:] + ".svg")).is_file() for i in icons.values())
+
+
+def test_icon_keys_validate_and_agent_kinds_merge():
+    t = ThemeConfig.from_dict({"icons": {"held": "🔔", "timer": "icona:clock", "stay": "",
+                                         "agent_kinds": {"goose": "icona:rocket", "claude": "C"}}})
+    assert t.problems == []
+    assert (t.icons.held, t.icons.timer, t.icons.stay) == ("🔔", "icona:clock", "")
+    assert t.icons.agent_kinds["goose"] == "icona:rocket" and t.icons.agent_kinds["claude"] == "C"
+    assert t.icons.agent_kinds["codex"] == "icona:terminal"   # defaults kept
+    bad = ThemeConfig.from_dict({"icons": {"held": "icona:Bad Slug", "nudge": 3, "pack": "material",
+                                           "stroke": 9, "agent_kinds": {"x": 1}, "bogus": "x"}})
+    assert bad.icons == ThemeConfig().icons
+    assert len(bad.problems) == 6
+    assert any("icons.held" in p for p in bad.problems) and any("icons.bogus: unknown" in p for p in bad.problems)
+
+
+def test_text_pack_restores_glyphs_but_keeps_explicit_keys():
+    t = ThemeConfig.from_dict({"icons": {"pack": "text", "held": "icona:bell", "agent_kinds": {"claude": "✻"}}})
+    assert t.problems == []
+    assert t.icons.held == "icona:bell"                 # set explicitly: kept
+    assert t.icons.mode_fallback == "●" and t.icons.card_site == "🌐" and t.icons.timer == ""
+    assert t.icons.agent_kinds == {"claude": "✻"}       # only the kinds the file names
+
+
+def test_icons_set_through_the_service_and_snapshot():
+    svc, doc, _, _ = make_service({"palette": "system"})
+    svc.set({"key": "icons.agent_kinds.claude", "value": "icona:ghost"})
+    assert doc.raw["icons"] == {"agent_kinds": {"claude": "icona:ghost"}}
+    snap = svc.snapshot()
+    assert snap["icons"]["agent_kinds"]["claude"] == "icona:ghost" and snap["icons"]["agent_kinds"]["t3"] == "icona:zap"
+    with pytest.raises(ValueError):
+        svc.set({"key": "icons.timer", "value": "icona:NOPE"})

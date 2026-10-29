@@ -1,0 +1,42 @@
+{
+  "name": "Nori",
+  "author": "lockdock, from Icona's Black Cat (MIT, https://icona.works)",
+  "size": 48,
+  "pixel": false,
+  "moods": {
+    "content": {
+      "frames": [
+        "content-1.svg",
+        "content-1.svg",
+        "content-2.svg",
+        "content-1.svg",
+        "content-1.svg",
+        "content-3.svg"
+      ],
+      "fps": 2
+    },
+    "suspicious": {
+      "frames": [
+        "suspicious-1.svg",
+        "suspicious-2.svg"
+      ],
+      "fps": 1
+    },
+    "annoyed": {
+      "frames": [
+        "annoyed-1.svg",
+        "annoyed-2.svg",
+        "annoyed-1.svg",
+        "annoyed-3.svg"
+      ],
+      "fps": 4
+    },
+    "furious": {
+      "frames": [
+        "furious-1.svg",
+        "furious-2.svg"
+      ],
+      "fps": 8
+    }
+  }
+}

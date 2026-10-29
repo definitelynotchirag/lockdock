@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // The list the agents pill opens: a header ("3 agents · 1 needs you") and one row per agent
-// (state.json `agents`, already sorted needs_input -> working -> idle -> done): kind glyph,
+// (state.json `agents`, already sorted needs_input -> working -> idle -> done): kind icon,
 // project label, last message, age and a state dot; the cwd is in the tooltip. Clicking a row
 // focuses that agent's window and closes the panel. Up to theme.agentsMaxRows rows, then
 // it scrolls. The Dock positions it (x, y), adds it to the input mask while `visible`, and
@@ -157,11 +157,12 @@ Item {
                     implicitWidth: panel.theme.px(30); implicitHeight: implicitWidth; radius: implicitWidth / 2
                     color: panel.theme.alpha(panel.theme.surfaceHover, panel.theme.dark ? 0.9 : 0.7)
                     Layout.alignment: Qt.AlignVCenter
-                    Text {
+                    Icon {
                         anchors.centerIn: parent
-                        text: row.modelData.glyph || "◆"
-                        font.pixelSize: panel.theme.fpx(14)
-                        font.family: panel.theme.family
+                        name: panel.theme.agentIcon(row.modelData)
+                        size: panel.theme.fpx(16)
+                        stroke: panel.theme.iconStroke
+                        family: panel.theme.family
                         color: panel.theme.text
                         opacity: row.quiet ? 0.6 : 1
                     }

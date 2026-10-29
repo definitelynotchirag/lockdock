@@ -86,7 +86,7 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | key | content |
 |---|---|
 | `mode` | active mode id |
-| `modes` | `[{id, label, icon, color, apps, description}]` |
+| `modes` | `[{id, label, icon, color, apps, description, notifications}]`; `notifications` is the mode's default notification policy (`pass` / `hold` / `ask`) |
 | `pending` | `{mode, deadline_ms, total_ms}` or `null` |
 | `activity` | `{verdict, reason, app, title, source}` (+ `url` when a UrlSource supplied one); `source` is `rule` / `llm` / `cache` |
 | `held` | last 50 held notifications `{app, summary, body, urgency, ts, id}` |
@@ -173,7 +173,17 @@ should also follow `icon_size`, `theme.fpx(n)` for font pixel sizes, and
 `theme.accentContainer` / `theme.accentContainerInk`, `theme.danger` /
 `theme.dangerInk`, `theme.bubble`, ...; never a literal colour, and never a
 property named `onX`, which QML reads as a signal handler). `theme.modeColor(mode)`
-resolves a mode's `"auto"` colour. `components/Island.qml` is the rounded,
+resolves a mode's `"auto"` colour.
+
+Icons: `components/Icon.qml` (`name`, `color`, `size`, `stroke`, `family`) draws
+`icona:<slug>` from `shell/icons/icona/<slug>.svg` (read with `FileView`,
+`currentColor` and the stroke width replaced, passed to an `Image` as a `data:` URL,
+rasterised at the drawn size), a freedesktop icon name (`IconImage`), or a text
+glyph / emoji (`Text`); an unknown slug draws a dot and logs once. Never hard-code
+a glyph: take the name from `theme.icon(key, fallback)` (theme.json `icons`,
+`IconsTheme` in `core/theme.py`, add a key there and to `theme.example.json`),
+`theme.modeIcon(mode)` or `theme.agentIcon(agent)`, and pass
+`stroke: theme.iconStroke`. `components/Island.qml` is the rounded,
 bordered, shadowed surface used by every island, the slab card and the nudge.
 Pass the `theme` object down to components.
 

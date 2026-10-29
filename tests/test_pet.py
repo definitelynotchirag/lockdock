@@ -231,9 +231,12 @@ def test_pack_resolution(tmp_path):
     assert DirPetPacks([("user", tmp_path / "missing")]).available() == []
 
 
-def test_builtin_cat_pack_is_complete():
-    pack_dir, manifest = DirPetPacks([("built-in", BUILTIN_PETS_DIR)]).resolve("cat")
+@pytest.mark.parametrize("pack", ["cat", "icona-cat"])
+def test_builtin_packs_are_complete(pack):
+    pack_dir, manifest = DirPetPacks([("built-in", BUILTIN_PETS_DIR)]).resolve(pack)
+    assert Path(pack_dir).name == pack
     assert set(manifest["moods"]) == set(MOODS) and manifest["size"] == 48
+    assert manifest.get("pixel", True) is (pack == "cat")   # icona-cat is vector art, drawn smoothed
     for mood in manifest["moods"].values():
         assert mood["fps"] > 0
         for frame in mood["frames"]:

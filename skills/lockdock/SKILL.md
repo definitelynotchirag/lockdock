@@ -36,6 +36,7 @@ After every change:
 
 - `modes.md` - modes.json keys, rules of thumb, debugging a wrong verdict
 - `theme.md` - theme.json keys and recipes
+- `icons.md` - the dock's icons (theme.json `icons`): Icona slugs, emoji, picking a slug from INDEX.md
 - `pet.md` - the dock pet
 - `agents.md` - agents in the dock
 - `browser.md` - browser tab integration

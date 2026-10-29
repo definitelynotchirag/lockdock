@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="icona-diff-fill-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <path d="M12 6.5V11.5" stroke="#000"/>
+      <path d="M9.5 9H14.5" stroke="#000"/>
+      <path d="M9.5 15.5H14.5" stroke="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#icona-diff-fill-cutout)">
+    <path d="M6 3.5H18A2.5 2.5 0 0 1 20.5 6V18A2.5 2.5 0 0 1 18 20.5H6A2.5 2.5 0 0 1 3.5 18V6A2.5 2.5 0 0 1 6 3.5Z" fill="currentColor"/>
+  </g>
+</svg>

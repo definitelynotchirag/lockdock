@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="icona-sketch-black-cat-signature" data-animate="loop" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    @keyframes icona-sketch-black-cat-signature-n1-1{
+  0%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:cubic-bezier(0.65,0,0.35,1);}
+  24.845%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+  100%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+}
+@keyframes icona-sketch-black-cat-signature-n1-2{
+  0%{opacity:0;animation-timing-function:cubic-bezier(0.42,0,0.58,1);}
+  0.621%{opacity:1;}
+  100%{opacity:1;}
+}
+@keyframes icona-sketch-black-cat-signature-n2-1{
+  0%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:linear;}
+  7.453%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:cubic-bezier(0.65,0,0.35,1);}
+  32.298%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+  100%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+}
+@keyframes icona-sketch-black-cat-signature-n2-2{
+  0%{opacity:0;animation-timing-function:linear;}
+  7.453%{opacity:0;animation-timing-function:cubic-bezier(0.42,0,0.58,1);}
+  8.075%{opacity:1;}
+  100%{opacity:1;}
+}
+@keyframes icona-sketch-black-cat-signature-n3-1{
+  0%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:linear;}
+  14.907%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:cubic-bezier(0.65,0,0.35,1);}
+  39.752%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+  100%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+}
+@keyframes icona-sketch-black-cat-signature-n3-2{
+  0%{opacity:0;animation-timing-function:linear;}
+  14.907%{opacity:0;animation-timing-function:cubic-bezier(0.42,0,0.58,1);}
+  15.528%{opacity:1;}
+  100%{opacity:1;}
+}
+@keyframes icona-sketch-black-cat-signature-n4-1{
+  0%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:linear;}
+  22.36%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:cubic-bezier(0.65,0,0.35,1);}
+  47.205%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+  100%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+}
+@keyframes icona-sketch-black-cat-signature-n4-2{
+  0%{opacity:0;animation-timing-function:linear;}
+  22.36%{opacity:0;animation-timing-function:cubic-bezier(0.42,0,0.58,1);}
+  22.981%{opacity:1;}
+  100%{opacity:1;}
+}
+@keyframes icona-sketch-black-cat-signature-n4-3{
+  0%{fill-opacity:0;animation-timing-function:linear;}
+  39.752%{fill-opacity:0;animation-timing-function:cubic-bezier(0.22,1,0.36,1);}
+  55.28%{fill-opacity:1;}
+  100%{fill-opacity:1;}
+}
+@keyframes icona-sketch-black-cat-signature-n5-1{
+  0%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:linear;}
+  29.814%{stroke-dasharray:0 1;stroke-dashoffset:0;animation-timing-function:cubic-bezier(0.65,0,0.35,1);}
+  54.658%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+  100%{stroke-dasharray:1 1;stroke-dashoffset:0;}
+}
+@keyframes icona-sketch-black-cat-signature-n5-2{
+  0%{opacity:0;animation-timing-function:linear;}
+  29.814%{opacity:0;animation-timing-function:cubic-bezier(0.42,0,0.58,1);}
+  30.435%{opacity:1;}
+  100%{opacity:1;}
+}
+@keyframes icona-sketch-black-cat-signature-n5-3{
+  0%{fill-opacity:0;animation-timing-function:linear;}
+  47.205%{fill-opacity:0;animation-timing-function:cubic-bezier(0.22,1,0.36,1);}
+  62.733%{fill-opacity:1;}
+  100%{fill-opacity:1;}
+}
+.icona-sketch-black-cat-signature[data-animate="loop"] .n1,.icona-sketch-black-cat-signature[data-animate="hover"]:is(:hover,:focus-visible) .n1{animation:icona-sketch-black-cat-signature-n1-1 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n1-2 1.61s linear var(--icona-iter,1)}
+.icona-sketch-black-cat-signature[data-animate="loop"] .n2,.icona-sketch-black-cat-signature[data-animate="hover"]:is(:hover,:focus-visible) .n2{animation:icona-sketch-black-cat-signature-n2-1 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n2-2 1.61s linear var(--icona-iter,1)}
+.icona-sketch-black-cat-signature[data-animate="loop"] .n3,.icona-sketch-black-cat-signature[data-animate="hover"]:is(:hover,:focus-visible) .n3{animation:icona-sketch-black-cat-signature-n3-1 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n3-2 1.61s linear var(--icona-iter,1)}
+.icona-sketch-black-cat-signature[data-animate="loop"] .n4,.icona-sketch-black-cat-signature[data-animate="hover"]:is(:hover,:focus-visible) .n4{animation:icona-sketch-black-cat-signature-n4-1 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n4-2 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n4-3 1.61s linear var(--icona-iter,1)}
+.icona-sketch-black-cat-signature[data-animate="loop"] .n5,.icona-sketch-black-cat-signature[data-animate="hover"]:is(:hover,:focus-visible) .n5{animation:icona-sketch-black-cat-signature-n5-1 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n5-2 1.61s linear var(--icona-iter,1),icona-sketch-black-cat-signature-n5-3 1.61s linear var(--icona-iter,1)}
+.icona-sketch-black-cat-signature[data-animate="loop"]{--icona-iter:infinite}
+@media (prefers-reduced-motion:reduce){.icona-sketch-black-cat-signature *{animation:none!important}}
+  </style>
+  <g class="fx">
+    <path d="M4.5 9.5L5 3.8L9.3 6.4C10.9 5.9 13.1 5.9 14.7 6.4L19 3.8L19.5 9.5C20.4 11 20.6 12.6 20 14.4C19 18.2 15.8 20.2 12 20.2C8.2 20.2 5 18.2 4 14.4C3.4 12.6 3.6 11 4.5 9.5Z" class="n1" pathLength="1"/>
+    <circle cx="9" cy="12.8" r="1.9" class="n2" pathLength="1"/>
+    <circle cx="15" cy="12.8" r="1.9" class="n3" pathLength="1"/>
+    <circle cx="9.3" cy="12.9" r="0.8" fill="currentColor" class="n4" pathLength="1"/>
+    <circle cx="14.7" cy="12.9" r="0.8" fill="currentColor" class="n5" pathLength="1"/>
+  </g>
+</svg>

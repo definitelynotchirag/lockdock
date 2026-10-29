@@ -44,7 +44,9 @@ Tease the activity, never the person.
 
 Put it in `~/.config/lockdock/pets/<name>/` (a user pack with the same name as a
 built-in one wins), then `lockdock pet pack <name>`. `lockdock pet packs` lists them.
-`shell/pets/cat/` is the built-in example. `pack.json`:
+`shell/pets/cat/` is the built-in example. A second built-in pack, `icona-cat` (Nori, a
+black line-art cat drawn from Icona's Black Cat icon), is one command away:
+`lockdock pet pack icona-cat` (back: `lockdock pet pack cat`). `pack.json`:
 
 ```json
 {"name": "Miso", "author": "you", "size": 48,
@@ -56,5 +58,6 @@ built-in one wins), then `lockdock pet pack <name>`. `lockdock pet packs` lists 
 
 Frames are paths relative to the pack dir (SVG or PNG), square, `size` px nominal. All
 four moods should exist; a missing mood shows nothing. They are scaled without smoothing,
-so pixel art stays crisp. Frames can repeat in the list to hold a pose longer. If a pack
+so pixel art stays crisp; a vector pack sets `"pixel": false` in pack.json to be drawn
+smoothed at its real size instead (icona-cat does). Frames can repeat in the list to hold a pose longer. If a pack
 is missing or its pack.json is invalid, the daemon falls back to `cat`.

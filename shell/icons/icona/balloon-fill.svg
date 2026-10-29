@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="icona-balloon-fill-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <path d="M9 7.5A3 3 0 0 1 10.5 6" stroke="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#icona-balloon-fill-cutout)">
+    <path d="M12 3A6 6 0 0 1 18 9C18 12.8 15 15.5 12 15.5C9 15.5 6 12.8 6 9A6 6 0 0 1 12 3Z" fill="currentColor"/>
+    <path d="M11 15.5L12 17L13 15.5"/>
+    <path d="M12 17C11 18.5 13 19.5 12 21"/>
+  </g>
+</svg>

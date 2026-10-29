@@ -9,7 +9,7 @@
     {
       "id": "free",
       "label": "Free",
-      "icon": "☕",
+      "icon": "icona:coffee",
       "color": "auto",
       "description": "No restrictions. Everything is on task, all notifications pass.",
       "apps": ["helium", "kitty", "dev.zed.Zed", "md.obsidian.Obsidian"],
@@ -20,7 +20,7 @@
     {
       "id": "writing",
       "label": "Writing",
-      "icon": "✎",
+      "icon": "icona:pen-tool",
       "color": "auto",
       "description": "Long-form writing in Obsidian or a docs tab. Reading reference material is fine; chat, social media and video are off task.",
       "apps": ["md.obsidian.Obsidian", "helium"],
@@ -39,7 +39,7 @@
     {
       "id": "building",
       "label": "Building",
-      "icon": "⚒",
+      "icon": "icona:code",
       "color": "auto",
       "description": "Coding: editor, terminal, docs for libraries, GitHub, Claude Code. Video and social media are off task unless it is a programming tutorial directly relevant to the work.",
       "apps": ["dev.zed.Zed", "kitty", "helium", "com.t3tools.T3Code"],
