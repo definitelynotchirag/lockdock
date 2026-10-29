@@ -10,7 +10,7 @@ from typing import Any
 from ..paths import SOCKET_FILE
 
 
-def call(cmd: str, arg: str | None = None, path: Path = SOCKET_FILE) -> Any:
+def call(cmd: str, arg: Any = None, path: Path = SOCKET_FILE) -> Any:
     """Send one command and return its result; exits if the daemon is down or errors."""
     s = socket.socket(socket.AF_UNIX)
     try:
@@ -25,3 +25,21 @@ def call(cmd: str, arg: str | None = None, path: Path = SOCKET_FILE) -> Any:
     if not res.get("ok"):
         sys.exit(res.get("error"))
     return res["result"]
+
+
+def try_call(cmd: str, arg: Any = None, path: Path = SOCKET_FILE, timeout: float = 2.0) -> Any | None:
+    """Like `call`, but silent: returns None when the daemon is down, slow, or errors (for hooks)."""
+    s = socket.socket(socket.AF_UNIX)
+    s.settimeout(timeout)
+    try:
+        s.connect(str(path))
+        s.sendall((json.dumps({"cmd": cmd, "arg": arg}) + "\n").encode())
+        data = b""
+        while chunk := s.recv(65536):
+            data += chunk
+        res = json.loads(data)
+    except (OSError, ValueError):
+        return None
+    finally:
+        s.close()
+    return res.get("result") if res.get("ok") else None

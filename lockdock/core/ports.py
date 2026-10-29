@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from .models import Config, Mode, Notification, Verdict, WindowInfo
+from .models import Config, Mode, Notification, ProcessInfo, Verdict, WindowInfo
 
 
 class WindowSource(Protocol):
@@ -73,3 +73,9 @@ class Clock(Protocol):
 
     def now(self) -> float: ...
     async def sleep(self, seconds: float) -> None: ...
+
+
+class ProcessScanner(Protocol):
+    """Lists the user's processes (pid, ppid, argv, cwd, cpu time)."""
+
+    def scan(self) -> list[ProcessInfo]: ...

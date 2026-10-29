@@ -9,9 +9,10 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
  Hyprland ─ HyprlandWindowSource ─┐                    ┌─ AtomicJsonStatePublisher ─ state.json ─ shell/
  busctl monitor ─ BusctlObserver ─┤                    ├─ BusctlNotificationSink ─ close / re-send
  modes.json ─ JsonConfigLoader ───┼─▶ core.Daemon ─────┼─ SubprocessCommandRunner ─ on_enter / on_exit
- unix socket ─ UnixSocketControl ─┘   ├ ModeManager    ├─ ClaudeCliClassifier ─ claude -p (+ JsonFileCache)
-                                      ├ ActivityJudge  └─ EventLog ─ events.jsonl
-                                      └ NotificationGate
+ unix socket ─ UnixSocketControl ─┤   ├ ModeManager    ├─ ClaudeCliClassifier ─ claude -p (+ JsonFileCache)
+ /proc ─ ProcScanner ─────────────┘   ├ ActivityJudge  └─ EventLog ─ events.jsonl
+                                      ├ NotificationGate
+                                      └ AgentRegistry (feature: agents)
 ```
 
 ## Ports (`core/ports.py`)
@@ -28,6 +29,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | `ConfigSource` | `load() -> Config`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonConfigLoader` |
 | `CommandHandler` | `handle(cmd, arg) -> result` | implemented by `core.daemon.Daemon`; served by `adapters/control_socket.py` |
 | `Clock` | `now()`, `async sleep(s)` | `adapters/clock.py` `SystemClock` |
+| `ProcessScanner` | `scan() -> list[ProcessInfo(pid, ppid, cmdline, cwd, cpu_s)]` | `adapters/proc_scan.py` `ProcScanner` (also `ancestor_pids()`) |
 
 Fakes for every port are in `tests/fakes.py`.
 
@@ -41,7 +43,18 @@ Fakes for every port are in `tests/fakes.py`.
   ask, the held list, `release_messages()` (<= 5 one by one, else a summary).
 - `StateSnapshot` (`core/state.py`) and `EventLog` (`core/events.py`).
 - `Daemon` (`core/daemon.py`): owns the above, publishes a snapshot whenever
-  one changes, dispatches control commands.
+  one changes, dispatches control commands. `focus_listeners` get every focus
+  change (`WindowInfo.address` is the Hyprland window address).
+- `AgentRegistry` (`core/agents.py`, feature `features/agents.py`): the agent
+  inbox. Merges `ProcessScanner` results (every 3 s; kinds from the
+  data-driven `AgentKind` table, `DEFAULT_KINDS` + modes.json `agents.kinds`)
+  with hook events (`lockdock agent-event`). A hook state beats the CPU-based
+  scan guess; unseen for 10 s drops an agent, `done` ones stay 10 min;
+  `needs_input` is sticky until a working/done event or until its window gets
+  focus, and sends one desktop notification (tagged `x-lockdock`, so the
+  NotificationGate never holds it). Window: walk the ppid chain to a Hyprland
+  client pid. Merge logic for `lockdock agents install-hooks` is in
+  `core/agent_hooks.py`.
 
 ## state.json
 
@@ -56,7 +69,7 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | `held` | last 50 held notifications `{app, summary, body, urgency, ts, id}` |
 | `held_count` | number held |
 | `browser` | `{enabled, url, connected, last_seen_ms}` from `features/browser_urls.py` |
-| `agents` | reserved: list, empty until a feature registers it |
+| `agents` | `[{id, kind, label, state, since_ms, pid, cwd, window_address, last_message, session_id, glyph}]`, needs_input first, then working, idle, done. `state` is `working` / `needs_input` / `done` / `idle`; `id` is `<kind>:<pid>` (or `<kind>:<session>` for a hook-only agent) |
 | `pet` | reserved: dict, empty until a feature registers it |
 | `theme` | reserved: dict, empty until a feature registers it |
 | `updated_ms` | write time |
@@ -89,6 +102,9 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    outside the card). Read your section as `st.<name>`.
 5. **Tests.** `tests/test_<feature>.py` with the fakes;
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
+
+Control verbs added by `features/agents.py`: `agent_event {kind, state, payload, pids}`,
+`agent_focus <id>`, `agents`.
 
 ## Running a second instance for development
 

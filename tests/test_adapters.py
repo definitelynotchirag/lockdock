@@ -40,3 +40,14 @@ def test_busctl_parse():
     parse_monitor_line(b"garbage", notes.append, lambda *a: replies.append(a))
     assert len(notes) == 1 and notes[0].summary == "Alice" and notes[0].ts == 2.0
     assert replies == [(4, 77, ":1.9")]
+
+
+def test_busctl_sink_negative_timeout_is_not_an_option(monkeypatch):
+    import subprocess
+
+    from lockdock.adapters import dbus_notifications
+    calls = []
+    monkeypatch.setattr(subprocess, "Popen", lambda args, **kw: calls.append(args))
+    dbus_notifications.BusctlNotificationSink().send("lockdock", "s", "b")
+    args = calls[0]
+    assert args[-1] == "-1" and args.index("--") < args.index("call")

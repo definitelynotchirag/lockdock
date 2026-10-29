@@ -59,6 +59,10 @@ PanelWindow {
                 accent: dock.accent
             }
 
+            Rectangle { visible: agentStrip.visible; width: 1; height: 36; color: Qt.rgba(1, 1, 1, 0.14); Layout.leftMargin: 4; Layout.rightMargin: 4 }
+
+            AgentStrip { id: agentStrip; st: dock.st; shell: dock.shell }
+
             HeldBadge {
                 Layout.leftMargin: 6
                 st: dock.st

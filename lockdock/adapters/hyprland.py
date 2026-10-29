@@ -41,6 +41,19 @@ def pid_for_class(cls: str) -> int | None:
     return None
 
 
+def normalize_address(addr: str) -> str | None:
+    """`55a3...` or `0x55a3...` -> `0x55a3...`; empty -> None."""
+    addr = addr.strip()
+    if not addr:
+        return None
+    return addr if addr.startswith("0x") else "0x" + addr
+
+
+def window_index() -> dict[int, str]:
+    """pid -> address of every Hyprland client (one `hyprctl -j clients` call)."""
+    return {int(c["pid"]): str(c["address"]) for c in clients() if c.get("pid") and c.get("address")}
+
+
 def dispatch(*args: str) -> None:
     subprocess.Popen(["hyprctl", "dispatch", *args], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -54,17 +67,24 @@ class HyprlandWindowSource:
             return WindowInfo()
         pid = d.get("pid")
         return WindowInfo(cls=d.get("class", ""), title=d.get("title", ""),
-                          pid=int(pid) if isinstance(pid, int) and pid > 0 else None)
+                          pid=int(pid) if isinstance(pid, int) and pid > 0 else None,
+                          address=normalize_address(str(d.get("address", ""))))
 
     async def watch(self, on_focus: Callable[[WindowInfo], None]) -> None:
-        """Call on_focus for every activewindow event. Reconnects on error."""
+        """Call on_focus for every focus change. Reconnects on error.
+
+        Hyprland sends `activewindow>>class,title` then `activewindowv2>>address`;
+        we report on the second so the WindowInfo carries the window address.
+        """
         while True:
             try:
                 reader, _ = await asyncio.open_unix_connection(str(_sock(".socket2.sock")))
+                cls = title = ""
                 while line := await reader.readline():
                     ev, _, data = line.decode(errors="replace").rstrip("\n").partition(">>")
                     if ev == "activewindow":
                         cls, _, title = data.partition(",")
-                        on_focus(WindowInfo(cls=cls, title=title))
+                    elif ev == "activewindowv2":
+                        on_focus(WindowInfo(cls=cls, title=title, address=normalize_address(data)))
             except (OSError, asyncio.IncompleteReadError):
                 await asyncio.sleep(2)
