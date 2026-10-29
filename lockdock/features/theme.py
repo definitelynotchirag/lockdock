@@ -1,5 +1,5 @@
 """Theme feature: theme.json + the desktop palette -> `theme` state section, plus theme_get / theme_set /
-theme_reset. The palette follows the Material You colors.json (end-4 / matugen) live."""
+theme_reset, and pin (on / off / toggle `pinned`). The palette follows the Material You colors.json (end-4 / matugen) live."""
 from __future__ import annotations
 
 from collections.abc import Awaitable
@@ -29,4 +29,5 @@ def install(daemon: Daemon, path: Path = THEME_FILE, example: Path = EXAMPLE,
     daemon.register_command("theme_get", service.get)
     daemon.register_command("theme_set", service.set)
     daemon.register_command("theme_reset", service.reset)
+    daemon.register_command("pin", service.pin)
     return [doc.watch(service.apply, service.on_file_error), palette.watch(service.refresh_palette)]

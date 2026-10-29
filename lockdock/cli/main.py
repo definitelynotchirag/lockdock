@@ -34,6 +34,9 @@
   lockdock theme set K V     set a dotted key to a JSON value, e.g. theme set position '"top"'
   lockdock theme reset       restore the default theme
   lockdock theme path        print the theme.json path
+  lockdock pin [on|off|toggle]
+                             pin the dock: reserve its space so windows stop at it
+  lockdock unpin             let windows cover the dock again (theme `pinned`)
   lockdock skill path        print the agent skill directory (skills/lockdock)
 """
 from __future__ import annotations
@@ -212,6 +215,11 @@ def main(argv: list[str] | None = None) -> None:
         print(MODES_FILE)
     elif cmd == "theme":
         _theme(rest)
+    elif cmd in ("pin", "unpin"):
+        arg = "off" if cmd == "unpin" else (rest[0] if rest else "on")
+        if (cmd == "unpin" and rest) or arg not in ("on", "off", "toggle"):
+            sys.exit("usage: lockdock pin [on|off|toggle] | lockdock unpin")
+        print(call("pin", arg))
     elif cmd == "skill":
         if rest[:1] != ["path"]:
             sys.exit("usage: lockdock skill path")

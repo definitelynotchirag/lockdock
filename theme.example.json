@@ -51,6 +51,12 @@
   "mode_strip": {
     "stay_button": true
   },
+  "tooltips": {
+    "enabled": true,
+    "delay_ms": 350
+  },
+  "pinned": false,
+  "reduced_motion": false,
   "icons": {
     "pack": "icona",
     "stroke": 1.75,
@@ -76,7 +82,9 @@
     "card_notification": "icona:bell",
     "card_site": "icona:compass",
     "card_verdict": "icona:check-circle",
-    "app_fallback": "icona:layers"
+    "app_fallback": "icona:layers",
+    "pin": "icona:map-pin-fill",
+    "pin_off": "icona:map-pin"
   },
   "opacity": 1.0
 }

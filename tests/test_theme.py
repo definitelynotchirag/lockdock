@@ -144,7 +144,8 @@ def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
     assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
                          "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
-                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "icons", "opacity",
+                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "tooltips", "pinned",
+                             "reduced_motion", "icons", "opacity",
                          "colors", "palette_source"}
     assert snap["background"] is None
     assert snap["border"] == {"color": None, "width": 1, "off_task_color": None}
@@ -367,3 +368,58 @@ def test_icons_set_through_the_service_and_snapshot():
     assert snap["icons"]["agent_kinds"]["claude"] == "icona:ghost" and snap["icons"]["agent_kinds"]["t3"] == "icona:zap"
     with pytest.raises(ValueError):
         svc.set({"key": "icons.timer", "value": "icona:NOPE"})
+
+
+# ---------- tooltips, motion, pinning ----------
+def test_tooltips_reduced_motion_and_pinned_defaults():
+    t = ThemeConfig()
+    assert (t.tooltips.enabled, t.tooltips.delay_ms) == (True, 350)
+    assert t.pinned is False and t.reduced_motion is False
+    assert (t.icons.pin, t.icons.pin_off) == ("icona:map-pin-fill", "icona:map-pin")
+    snap = t.snapshot()
+    assert snap["tooltips"] == {"enabled": True, "delay_ms": 350}
+    assert snap["pinned"] is False and snap["reduced_motion"] is False
+
+
+def test_tooltips_reduced_motion_and_pinned_validate():
+    t = ThemeConfig.from_dict({"tooltips": {"enabled": False, "delay_ms": 0}, "pinned": True,
+                               "reduced_motion": True})
+    assert t.problems == []
+    assert (t.tooltips.enabled, t.tooltips.delay_ms, t.pinned, t.reduced_motion) == (False, 0, True, True)
+    bad = ThemeConfig.from_dict({"tooltips": {"enabled": "yes", "delay_ms": 2.5, "style": "x"},
+                                 "pinned": 1, "reduced_motion": "on"})
+    assert (bad.tooltips, bad.pinned, bad.reduced_motion) == (ThemeConfig().tooltips, False, False)
+    assert {p.split(":")[0] for p in bad.problems} == {"tooltips.enabled", "tooltips.delay_ms", "tooltips.style",
+                                                       "pinned", "reduced_motion"}
+    assert ThemeConfig.from_dict({"tooltips": {"delay_ms": 6000}}).tooltips.delay_ms == 350
+    assert ThemeConfig.from_dict({"tooltips": True}).problems
+
+
+def test_text_pack_has_pin_glyphs():
+    t = ThemeConfig.from_dict({"icons": {"pack": "text"}})
+    assert (t.icons.pin, t.icons.pin_off) == ("📌", "📍")
+
+
+def test_service_pin_on_off_toggle():
+    svc, doc, changes, _ = make_service({"palette": "system"})
+    assert svc.pin("on") == "pinned" and doc.raw["pinned"] is True and svc.snapshot()["pinned"] is True
+    assert svc.pin("toggle") == "unpinned" and doc.raw["pinned"] is False
+    assert svc.pin(None) == "pinned" and svc.theme.pinned
+    assert svc.pin("off") == "unpinned" and svc.pin(True) == "pinned"
+    assert len(changes) == 5
+    with pytest.raises(ValueError):
+        svc.pin("sideways")
+    assert doc.raw["pinned"] is True
+
+
+def test_feature_registers_pin(tmp_path):
+    d = Daemon(config_source=FakeConfigSource(make_config()), classifier=FakeClassifier(), sink=FakeSink(),
+               publisher=FakePublisher(), runner=FakeRunner(), clock=FakeClock())
+    for w in theme_feature.install(d, tmp_path / "theme.json", palette=FakePaletteSource(MATERIAL_LIGHT)):
+        w.close()
+    assert d.snapshot()["theme"]["pinned"] is False
+    d.handle("pin", "toggle")
+    assert d.snapshot()["theme"]["pinned"] is True
+    assert json.loads((tmp_path / "theme.json").read_text())["pinned"] is True
+    d.handle("pin", "off")
+    assert d.snapshot()["theme"]["pinned"] is False

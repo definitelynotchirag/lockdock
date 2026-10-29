@@ -91,7 +91,7 @@ TEXT_ICONS: dict[str, Any] = {
     "mode_fallback": "●", "agents": "◆", "agent_kinds": {}, "held": "🔕", "held_muted": "🔕",
     "timer": "", "stay": "", "nudge": "", "tag_urgent": "✦", "tag_info": "✦", "tag_ok": "✅",
     "card_notification": "🔔", "card_site": "🌐", "card_verdict": "✦",
-    "app_fallback": "application-x-executable",
+    "app_fallback": "application-x-executable", "pin": "📌", "pin_off": "📍",
 }
 
 
@@ -150,6 +150,13 @@ class PromptsTheme:
 
 
 @dataclass
+class TooltipsTheme:
+    """The dock's own tooltips (components/Tip.qml): shown after hovering `delay_ms`."""
+    enabled: bool = True
+    delay_ms: int = 350
+
+
+@dataclass
 class ModeStripTheme:
     """The mode pills: stay_button shows a Stay pill (cancel) next to the countdown pill while a
     switch is pending."""
@@ -181,6 +188,8 @@ class IconsTheme:
     card_site: str = "icona:compass"
     card_verdict: str = "icona:check-circle"
     app_fallback: str = "icona:layers"
+    pin: str = "icona:map-pin-fill"
+    pin_off: str = "icona:map-pin"
 
 
 _ICON_WANT = '"icona:<slug>", a glyph, an icon name or ""'
@@ -215,12 +224,17 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "prompts.max_visible": (_int(1, 10), "an integer 1..10"),
     "prompts.width": (_num(200, 1000), "a number 200..1000"),
     "mode_strip.stay_button": (_is_bool, "true or false"),
+    "tooltips.enabled": (_is_bool, "true or false"),
+    "tooltips.delay_ms": (_int(0, 5000), "an integer 0..5000"),
+    "pinned": (_is_bool, "true or false"),
+    "reduced_motion": (_is_bool, "true or false"),
     "icons.pack": (lambda v: v in ICON_PACKS, '"icona" or "text"'),
     "icons.stroke": (_num(0.5, 3), "a number 0.5..3"),
     "icons.agent_kinds": (_is_icon_map, "an object of agent kind -> " + _ICON_WANT),
     **{f"icons.{k}": (is_icon, _ICON_WANT) for k in TEXT_ICONS if k != "agent_kinds"},
 }
-_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip", "icons")
+_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip", "tooltips",
+           "icons")
 
 
 @dataclass
@@ -248,6 +262,9 @@ class ThemeConfig:
     agents: AgentsTheme = field(default_factory=AgentsTheme)
     prompts: PromptsTheme = field(default_factory=PromptsTheme)
     mode_strip: ModeStripTheme = field(default_factory=ModeStripTheme)
+    tooltips: TooltipsTheme = field(default_factory=TooltipsTheme)
+    pinned: bool = False
+    reduced_motion: bool = False
     icons: IconsTheme = field(default_factory=IconsTheme)
     opacity: float = 1.0
     problems: list[str] = field(default_factory=list, compare=False)
@@ -442,6 +459,20 @@ class ThemeService:
         self.doc.write(new_raw)
         self.apply(new_raw)
         return f"{arg['key']} = {arg['value']!r}"
+
+    def pin(self, arg: Any = "toggle") -> str:
+        """Pin (reserve the dock's space so windows stop at it) or unpin: arg "on" / "off" /
+        "toggle" (or true / false). Writes `pinned` through `set`."""
+        if arg is None or arg in ("", "toggle"):
+            value = not self.theme.pinned
+        elif arg is True or arg == "on":
+            value = True
+        elif arg is False or arg == "off":
+            value = False
+        else:
+            raise ValueError('pin expects "on", "off" or "toggle"')
+        self.set({"key": "pinned", "value": value})
+        return "pinned" if value else "unpinned"
 
     def reset(self, _arg: Any = None) -> str:
         """Overwrite the theme file with the defaults."""
