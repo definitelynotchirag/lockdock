@@ -1,0 +1,35 @@
+{
+  "position": "bottom",
+  "margin": 10,
+  "scale": 1.0,
+  "radius": 22,
+  "background": "rgba(0.11,0.11,0.13,0.86)",
+  "border": {
+    "color": "rgba(1,1,1,0.12)",
+    "width": 1,
+    "off_task_color": "rgba(1,0.35,0.3,0.8)"
+  },
+  "accent_override": null,
+  "font": {
+    "family": "",
+    "size": 14
+  },
+  "icon_size": 36,
+  "sections": [
+    "pet",
+    "modes",
+    "apps",
+    "agents",
+    "held"
+  ],
+  "show_unpinned": true,
+  "autohide": {
+    "enabled": false,
+    "reveal_px": 4,
+    "hide_delay_ms": 600
+  },
+  "nudge": {
+    "enabled": true
+  },
+  "opacity": 1.0
+}

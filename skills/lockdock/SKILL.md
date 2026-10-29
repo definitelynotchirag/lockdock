@@ -1,0 +1,41 @@
+---
+name: lockdock
+description: Tune and debug lockdock, the mode-aware Hyprland dock. Use when the user mentions "lockdock", "my dock", "the dock", "focus mode", "the cat" (the dock pet), asks to "add a mode", change how the dock looks (position, size, autohide, sections), says "the dock is flagging X" or "stop flagging X as off task", asks which notifications are held, or wants agents or the browser tab connected to the dock. You edit config files and read the log through the `lockdock` CLI; you do not patch the daemon for a one-off rule.
+---
+
+# lockdock
+
+- lockdock is a dock for Hyprland with focus **modes** (Writing, Building, ...). A Python daemon watches the focused window and judges it against the active mode (rules first, then `claude -p` for unknowns); a Quickshell dock renders the result.
+- Off-task windows turn the dock red with a reason; notifications that do not fit the mode are held and re-delivered when the mode ends.
+- You are the agent that tunes it: change behaviour by editing a config file, never by patching code for a single rule.
+- Every config file is hot-reloaded (modes.json within 2 s). A JSON error keeps the previous config active and logs an error.
+- Code changes (new features) are a different job: see `AGENTS.md` and `docs/architecture.md` in the repo (`lockdock skill path` prints this skill's directory; the repo is two levels up).
+
+## Config files and their CLI verbs
+
+| file | what it controls | CLI | page |
+|---|---|---|---|
+| `~/.config/lockdock/modes.json` | modes, rules, notification policy, LLM | `lockdock config` (path), `modes`, `mode <id>`, `reload` | `modes.md` |
+| `~/.config/lockdock/theme.json` | every visual knob of the dock | `lockdock theme`, `theme set <key> <json>`, `theme reset`, `theme path` | `theme.md` |
+| pet config (the cat) | the dock pet | see page | `pet.md` |
+| agents config | coding agents shown in the dock | see page | `agents.md` |
+
+Browser tab titles and URLs reach the dock through the browser integration: `browser.md`.
+
+Prefer the CLI verbs over hand-editing when one exists (`theme set` validates and rejects bad values; a hand edit that is wrong falls back to defaults and is logged).
+
+## Verification loop
+
+After every change:
+
+1. `lockdock status` - mode, verdict for the current window, held count. It must not error.
+2. `lockdock log -n 30` - recent events. Look for `config_error` / `theme_error` (your edit was rejected) and for the `reason` on each verdict.
+3. For visual changes, look at the dock (a screenshot) before telling the user it is done.
+
+## Pages
+
+- `modes.md` - modes.json keys, rules of thumb, debugging a wrong verdict
+- `theme.md` - theme.json keys and recipes
+- `pet.md` - the dock pet
+- `agents.md` - agents in the dock
+- `browser.md` - browser tab integration

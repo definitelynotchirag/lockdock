@@ -62,6 +62,15 @@ class ConfigSource(Protocol):
                     on_error: Callable[[Exception], None] | None = None) -> None: ...
 
 
+class JsonDocument(Protocol):
+    """A JSON file the user or an agent edits: read, write, and report external edits."""
+
+    def read(self) -> Any: ...
+    def write(self, raw: Any) -> None: ...
+    async def watch(self, on_change: Callable[[Any], None],
+                    on_error: Callable[[Exception], None] | None = None) -> None: ...
+
+
 class CommandHandler(Protocol):
     """Handles one control command (from the unix socket or elsewhere)."""
 

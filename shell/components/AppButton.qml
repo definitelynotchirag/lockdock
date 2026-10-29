@@ -5,6 +5,7 @@ import Quickshell.Widgets
 
 Item {
     id: btn
+    required property var theme
     property string appId
     property var windows: []
     property color accent: "#f0a04b"
@@ -15,12 +16,12 @@ Item {
     readonly property bool running: windows.length > 0
     readonly property bool focused: windows.some(w => w.activated)
 
-    implicitWidth: 48
-    implicitHeight: 52
+    implicitWidth: theme.ipx(48)
+    implicitHeight: theme.ipx(52)
 
     Rectangle {
         anchors.fill: parent
-        radius: 12
+        radius: btn.theme.px(12)
         color: ma.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : "transparent"
     }
 
@@ -28,8 +29,8 @@ Item {
         id: icon
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
-        anchors.topMargin: 5
-        implicitSize: 36
+        anchors.topMargin: btn.theme.px(5)
+        implicitSize: btn.theme.px(btn.theme.iconSize)
         source: Quickshell.iconPath(btn.entry?.icon ?? btn.appId, "application-x-executable")
         opacity: btn.dim ? 0.75 : 1
         scale: ma.pressed ? 0.9 : (ma.containsMouse ? 1.08 : 1)
@@ -41,8 +42,8 @@ Item {
         visible: btn.running
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 3
-        width: btn.focused ? 14 : 5; height: 5; radius: 3
+        anchors.bottomMargin: btn.theme.px(3)
+        width: btn.theme.px(btn.focused ? 14 : 5); height: btn.theme.px(5); radius: height / 2
         color: btn.focused ? btn.accent : Qt.rgba(1, 1, 1, 0.7)
         Behavior on width { NumberAnimation { duration: 120 } }
     }

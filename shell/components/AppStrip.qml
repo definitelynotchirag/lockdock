@@ -7,9 +7,12 @@ RowLayout {
     id: strip
     required property var activeMode
     required property color accent
+    required property var theme
 
-    spacing: 6
-    visible: (activeMode.apps || []).length + unpinned.length > 0
+    spacing: theme.px(6)
+    // sections report whether they have anything to show through `active` (see Dock.qml)
+    readonly property bool active: (activeMode.apps || []).length + shownUnpinned.length > 0
+    visible: active
 
     readonly property var toplevels: ToplevelManager.toplevels.values
     function norm(s) { return (s || "").toLowerCase() }
@@ -31,6 +34,8 @@ RowLayout {
         return out
     }
 
+    readonly property var shownUnpinned: theme.showUnpinned ? unpinned : []
+
     // ---- pinned apps of the mode ----
     Repeater {
         model: strip.activeMode.apps || []
@@ -39,17 +44,19 @@ RowLayout {
             appId: modelData
             windows: strip.runningFor(modelData)
             accent: strip.accent
+            theme: strip.theme
         }
     }
     // ---- running but not pinned ----
-    Rectangle { visible: strip.unpinned.length > 0; width: 1; height: 28; color: Qt.rgba(1, 1, 1, 0.1) }
+    Rectangle { visible: strip.shownUnpinned.length > 0; width: 1; height: strip.theme.px(28); color: Qt.rgba(1, 1, 1, 0.1) }
     Repeater {
-        model: strip.unpinned
+        model: strip.shownUnpinned
         AppButton {
             required property var modelData
             appId: modelData
             windows: strip.runningFor(modelData)
             accent: strip.accent
+            theme: strip.theme
             dim: true
         }
     }

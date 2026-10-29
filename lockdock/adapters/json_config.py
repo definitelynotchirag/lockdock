@@ -1,4 +1,4 @@
-"""JSON config files (modes.json, pet.json): seed from an example, parse, hot-reload on mtime change."""
+"""User-edited JSON files (modes.json, pet.json, theme.json): seed from an example, parse, hot-reload."""
 from __future__ import annotations
 
 import asyncio
@@ -45,39 +45,36 @@ def config_from_dict(raw: dict) -> Config:
                                if isinstance(raw.get("agents"), dict) else None))
 
 
-class JsonConfigLoader(Generic[T]):
-    """ConfigSource for a JSON file seeded from an example on first run.
+class JsonFileWatcher:
+    """JsonDocument for a user-edited JSON file: seeded from an example, polled by mtime.
 
-    Defaults to ~/.config/lockdock/modes.json -> Config; pass `parse` for another
-    file (pet.json uses `pet_config_from_dict`).
+    `read()` creates the file from `example` when missing; `write()` is atomic and does not
+    count as an external edit; `watch()` hands every externally edited, parsed file to on_change.
     """
 
-    def __init__(self, path: Path, example: Path = EXAMPLE, poll_s: float = 2.0,
-                 parse: Callable[[dict], T] = config_from_dict) -> None:  # type: ignore[assignment]
+    def __init__(self, path: Path, example: Path, poll_s: float = 2.0) -> None:
         self.path = path
         self.example = example
         self.poll_s = poll_s
-        self.parse = parse
         self._mtime = 0.0
 
-    def load(self) -> T:
+    def read(self) -> Any:
         if not self.path.exists():
             self.path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(self.example, self.path)
         self._mtime = self.path.stat().st_mtime
-        return self.parse(json.loads(self.path.read_text()))
+        return json.loads(self.path.read_text())
 
-    def update(self, changes: dict[str, Any]) -> T:
-        """Set top-level keys in the file (rewrites it as indented JSON) and return the parsed result."""
-        self.load()
-        raw = json.loads(self.path.read_text())
-        raw.update(changes)
-        self.path.write_text(json.dumps(raw, indent=2, ensure_ascii=False) + "\n")
-        return self.load()
+    def write(self, raw: Any) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_name(self.path.name + ".tmp")
+        tmp.write_text(json.dumps(raw, indent=2, ensure_ascii=False) + "\n")
+        tmp.replace(self.path)
+        self._mtime = self.path.stat().st_mtime
 
-    async def watch(self, on_change: Callable[[T], None],
+    async def watch(self, on_change: Callable[[Any], None],
                     on_error: Callable[[Exception], None] | None = None) -> None:
-        """Poll the mtime; on a change, load and hand the new Config to on_change."""
+        """Poll the mtime; on a change, parse the file and hand it to on_change."""
         while True:
             await asyncio.sleep(self.poll_s)
             try:
@@ -86,11 +83,49 @@ class JsonConfigLoader(Generic[T]):
                 continue
             if mt == self._mtime:
                 continue
-            self._mtime = mt
             try:
-                cfg = self.load()
-            except (ValueError, KeyError, TypeError, OSError) as e:
+                raw = self.read()
+            except (ValueError, OSError) as e:
+                self._mtime = mt
                 if on_error:
                     on_error(e)
                 continue
+            on_change(raw)
+
+
+class JsonConfigLoader(Generic[T]):
+    """ConfigSource for a JSON file, parsed into a typed config.
+
+    Defaults to ~/.config/lockdock/modes.json -> Config; pass `parse` for another
+    file (pet.json uses `pet_config_from_dict`). Built on JsonFileWatcher.
+    """
+
+    def __init__(self, path: Path, example: Path = EXAMPLE, poll_s: float = 2.0,
+                 parse: Callable[[dict], T] = config_from_dict) -> None:  # type: ignore[assignment]
+        self.file = JsonFileWatcher(path, example, poll_s)
+        self.path = path
+        self.parse = parse
+
+    def load(self) -> T:
+        return self.parse(self.file.read())
+
+    def update(self, changes: dict[str, Any]) -> T:
+        """Set top-level keys in the file (rewrites it as indented JSON) and return the parsed result."""
+        raw = self.file.read()
+        raw.update(changes)
+        self.file.write(raw)
+        return self.load()
+
+    async def watch(self, on_change: Callable[[T], None],
+                    on_error: Callable[[Exception], None] | None = None) -> None:
+        """On an edit, parse and hand the new config to on_change; bad edits go to on_error."""
+        def changed(raw: Any) -> None:
+            try:
+                cfg = self.parse(raw)
+            except (ValueError, KeyError, TypeError) as e:
+                if on_error:
+                    on_error(e)
+                return
             on_change(cfg)
+
+        await self.file.watch(changed, on_error)

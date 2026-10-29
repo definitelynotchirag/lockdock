@@ -15,6 +15,7 @@ Item {
     readonly property Item bubble: bubbleBox
     readonly property bool bubbleShown: bubbleBox.visible
     readonly property real headroom: bubbleShown ? bubbleBox.height + bubbleLift : 0
+    readonly property bool active: shown && !!info.pack_dir
 
     visible: shown && !!info.pack_dir
     implicitWidth: 44

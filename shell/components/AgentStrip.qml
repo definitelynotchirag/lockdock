@@ -10,6 +10,7 @@ RowLayout {
     required property var shell       // for shell.send([...])
 
     readonly property var agents: st.agents || []
+    readonly property bool active: agents.length > 0
     spacing: 6
     visible: agents.length > 0
 

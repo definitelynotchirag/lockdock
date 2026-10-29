@@ -23,7 +23,9 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   that fills most of the screen; go back to the task and it shrinks right away.
   Click it to calm it. Lines, thresholds, growth and sprite packs live in
   `pet.json` (see `skills/lockdock/pet.md`).
-- Modes live in one JSON file that an agent edits. See `AGENTS.md`.
+- Modes live in one JSON file and the look in another (`theme.json`: position,
+  scale, sections, autohide, ...); an agent edits them. See `AGENTS.md` and
+  `skills/lockdock/`.
 
 ## Requirements
 
@@ -53,6 +55,8 @@ lockdock agents install-hooks --dry-run   # show the hook changes, then run with
 lockdock agent focus <id> # focus an agent's window
 lockdock pet              # the pet's mood; also: calm, mood <m>|auto, mute, unmute,
                           #   pack <name>, packs, say "<text>"
+lockdock theme            # effective theme; `theme set <key> <json>`, `theme reset`, `theme path`
+lockdock skill path       # the agent skill (also linked to ~/.claude/skills/lockdock)
 ```
 
 ## Layout
@@ -71,6 +75,7 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
     agents.py         AgentRegistry: agent kinds table, scan + hook merge, window walk
     agent_hooks.py    install-hooks merge for Claude Code settings.json / Codex config.toml
     pet.py            PetBrain: mood, growth and speech lines of the dock pet
+    theme.py          ThemeConfig (validated theme.json) and ThemeService
     rules.py events.py
   adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache, pet speaker),
                       json_config, pet_packs, file_state, control_socket, shell_commands, clock,
@@ -78,9 +83,9 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
   features/           optional features, auto-discovered (install(daemon)): agents, pet, browser_urls
   cli/                main.py (verbs), agents.py (agent verbs), client.py (control socket client)
 shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
-  Dock.qml            the panel window; lays out components/ in one row
-  components/         ModeStrip, AppStrip, AgentStrip, HeldBadge, Nudge, ModePill, AppButton,
-                      Pet, PetSprite, PetOverlay (the grown pet, one per screen)
+  Dock.qml            the panel window; builds the row from theme.sections (sectionMap)
+  components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentStrip, HeldBadge, Nudge,
+                      ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen)
   pets/cat/           the built-in sprite pack (pack.json + SVG frames)
 browser-extension/    WebExtension that reports the active tab URL to the daemon
 tests/                pytest with fakes for every port
@@ -88,6 +93,8 @@ docs/architecture.md  ports, adapters, state.json sections, how to add a feature
 skills/lockdock/      the Claude Code skill: pages for modes, theme, pet, agents, browser
 modes.example.json    default modes; copied to ~/.config/lockdock/modes.json
 pet.example.json      default pet config; copied to ~/.config/lockdock/pet.json
+theme.example.json    default theme; copied to ~/.config/lockdock/theme.json
+skills/lockdock/      agent skill: SKILL.md index + modes.md, theme.md, ...
 ```
 
 Tests: `uv run --no-project --python 3.14 --with pytest pytest -q`

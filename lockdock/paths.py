@@ -13,6 +13,7 @@ STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")) / _DIR
 
 MODES_FILE = CONFIG_DIR / "modes.json"
+THEME_FILE = CONFIG_DIR / "theme.json"
 STATE_FILE = RUNTIME_DIR / "state.json"
 SOCKET_FILE = RUNTIME_DIR / "sock"
 EVENTS_LOG = STATE_DIR / "events.jsonl"
