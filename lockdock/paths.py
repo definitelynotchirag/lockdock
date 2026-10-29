@@ -1,3 +1,6 @@
+"""Where lockdock keeps its config, state and runtime files (XDG)."""
+from __future__ import annotations
+
 import os
 from pathlib import Path
 

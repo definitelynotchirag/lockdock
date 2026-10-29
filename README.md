@@ -42,13 +42,30 @@ lockdock config           # path to modes.json
 ## Layout
 
 ```
-lockdock/        Python daemon + CLI (stdlib only)
-  daemon.py      event loop: Hyprland focus, DBus notifications, modes.json watch, control socket
-  classify.py    rules, then `claude -p` with a persistent cache
-  notifications.py  busctl monitor parser, close/re-send
-shell/           Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
-modes.example.json  default modes; copied to ~/.config/lockdock/modes.json
+lockdock/             Python daemon + CLI (stdlib only), ports and adapters
+  app.py              composition root: builds adapters, wires the Daemon, runs the loop
+  core/               pure logic, no I/O besides events.jsonl
+    models.py         Mode, Config, Verdict, WindowInfo, Notification, PendingSwitch
+    ports.py          Protocol interfaces the adapters implement
+    daemon.py         thin orchestrator; register_section / register_command
+    modes.py          ModeManager: switching and the exit countdown
+    activity.py       ActivityJudge: dwell, rules, classifier fallback
+    notifications.py  NotificationGate: pass / hold / ask, release
+    state.py          state.json snapshot (+ agents / pet / theme sections)
+    rules.py events.py
+  adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache),
+                      json_config, file_state, control_socket, shell_commands, clock
+  features/           optional features, auto-discovered (install(daemon))
+  cli/                main.py (verbs), client.py (control socket client)
+shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
+  Dock.qml            the panel window; lays out components/ in one row
+  components/         ModeStrip, AppStrip, HeldBadge, Nudge, ModePill, AppButton
+tests/                pytest with fakes for every port
+docs/architecture.md  ports, adapters, state.json sections, how to add a feature
+modes.example.json    default modes; copied to ~/.config/lockdock/modes.json
 ```
+
+Tests: `uv run --no-project --python 3.14 --with pytest pytest -q`
 
 ## Known limits
 

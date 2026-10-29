@@ -50,3 +50,12 @@ changed a description and want it re-judged.
 - Critical-urgency notifications always pass; do not try to hold them.
 - Keep `lockdock status` green after an edit: a JSON error logs
   `config_error` and the previous config stays active.
+
+## Changing the code (not the config)
+
+Only when the user asks for a new capability. The daemon is ports and
+adapters: read `docs/architecture.md` first. Core logic lives in
+`lockdock/core/` (no subprocesses, no adapter imports), I/O in
+`lockdock/adapters/`, new features as a module in `lockdock/features/`, dock
+UI in `shell/components/`. Run the tests with
+`uv run --no-project --python 3.14 --with pytest pytest -q`.
