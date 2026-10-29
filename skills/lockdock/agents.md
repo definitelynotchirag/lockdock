@@ -68,7 +68,7 @@ ancestor (how T3 Code children become `t3`). `label_arg`: flag whose value
 names the chip. `hook_kind`: the kind its hook events use. New names go
 before the built-ins; the first match wins. Reloads within 2 s.
 
-Icons: theme.json `icons.agent_kinds` (kind -> icon, see `theme.md` Icons) wins over a
+Icons: theme.json `icons.agent_kinds` (kind -> icon, see `icons.md`) wins over a
 kind's `glyph`, and ships Icona icons for the built-in kinds. So `"glyph": "C"` for claude
 only shows after `lockdock theme set icons.agent_kinds.claude '"C"'`; a new kind's glyph
 (goose above) shows as is. A `glyph` of `"icona:<slug>"` always wins.

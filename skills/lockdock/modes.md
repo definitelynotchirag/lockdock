@@ -4,7 +4,7 @@
 
 | key | meaning |
 |---|---|
-| `id`, `label`, `icon`, `color` | identity; `icon` is `"icona:<slug>"` (an Icona line icon tinted with the palette, slugs in `shell/icons/icona/INDEX.md`, see `theme.md` Icons) or a text glyph / emoji (`"☕"`); none = theme `icons.mode_fallback`; `color` is `"auto"` (default: the palette accent, see `theme.md`) or `"#rrggbb"` |
+| `id`, `label`, `icon`, `color` | identity; `icon` is `"icona:<slug>"` (an Icona line icon tinted with the palette, slugs in `shell/icons/icona/INDEX.md`, see `icons.md`) or a text glyph / emoji (`"☕"`); none = theme `icons.mode_fallback`; `color` is `"auto"` (default: the palette accent, see `theme.md`) or `"#rrggbb"` |
 | `description` | one or two sentences; **this is the prompt the classifier sees**, write it like a brief |
 | `apps` | desktop-entry ids shown in the dock for this mode (`ls /usr/share/applications`) |
 | `on_task` / `off_task` | regexes (case-insensitive) matched against `class\|title`; off wins |

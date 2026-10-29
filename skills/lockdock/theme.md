@@ -34,37 +34,8 @@ lockdock theme reset                 # back to the defaults
 | `agents` | `{style: "pill", max_rows: 8}` | agent inbox: `"pill"` = one pill (count, red dot + "N need you" when an agent waits) that opens a list, `max_rows` rows (1-50) before it scrolls; `"chips"` = one chip per agent. See `agents.md` |
 | `prompts` | `{enabled: true, max_visible: 3, width: 360}` | decision cards above the dock (below it at the top): a held message that needs an answer, a site that belongs to another mode, a verdict toast for an unknown site. `max_visible` 1-10 (the newest win), `width` 200-1000 px before `scale` (toasts may be up to 1.45x wider). `enabled: false` hides them |
 | `mode_strip` | `{stay_button: true}` | while a switch is pending the mode strip shows a timer pill (`icons.timer`, label, m:ss; click to shorten the wait) and a Stay pill that cancels; `false` drops the Stay pill |
-| `icons` | Icona set, see below | every icon the dock draws that is not an app icon |
+| `icons` | Icona set | every icon the dock draws that is not an app icon: see `icons.md` |
 | `opacity` | 1.0 | whole dock |
-
-## Icons
-
-The dock's icons are [Icona](https://icona.works/icons) line icons (MIT), shipped as SVGs in
-`shell/icons/icona/` and tinted with the palette. An icon value is any of:
-`"icona:<slug>"` (a file `shell/icons/icona/<slug>.svg`), a text glyph or emoji (`"☕"`), a
-freedesktop icon name (`"firefox"`), or `""` for no icon.
-
-| key | default | where |
-|---|---|---|
-| `icons.pack` | `"icona"` | `"text"`: every icon key you do not set falls back to the old text glyphs (●, ◆, 🔕, 🔔, 🌐, ✦, ✅) |
-| `icons.stroke` | 1.75 | Icona line width on the 24 px grid (0.5 - 3; Icona's own is 1.5, thin at 16 px) |
-| `icons.mode_fallback` | `icona:target` | a mode without an `icon` in modes.json |
-| `icons.agents` | `icona:sparkles` | the agents pill when agents of several kinds run; a kind with no icon |
-| `icons.agent_kinds` | claude `sparkles`, codex `terminal`, t3 `zap`, opencode `code`, aider `git-branch`, gemini `star`, cursor-agent `cursor` (all `icona:`) | kind -> icon; merges over the defaults. Wins over the kind's `glyph` in modes.json unless that glyph is itself `icona:...` |
-| `icons.held` / `icons.held_muted` | `icona:bell` / `icona:snooze` | held badge; `held_muted` while the active mode's `notifications.default` is `"hold"` |
-| `icons.timer` / `icons.stay` | `icona:hourglass` / `icona:target` | countdown pill / Stay pill (`timer: ""` shows the target mode's icon) |
-| `icons.nudge` | `icona:alert` | the off-task bubble |
-| `icons.tag_urgent` / `tag_info` / `tag_ok` | `icona:alert` / `icona:info` / `icona:check-circle` | decision-card tag by level |
-| `icons.card_notification` / `card_site` / `card_verdict` | `icona:bell` / `icona:compass` / `icona:check-circle` | a card whose app has no desktop icon |
-| `icons.app_fallback` | `icona:layers` | an app in the strip with no desktop icon |
-
-**Picking a slug.** `shell/icons/icona/INDEX.md` lists every slug with its name and style
-(596: outline, `-fill` and `-color` variants, pixel art `pixel-*`, doodles `doodle-*`). Grep it
-(`grep -i rocket shell/icons/icona/INDEX.md`), prefer the plain outline slug (it takes the palette
-colour; `-color` variants keep their own colours), and check the file exists before setting it:
-`ls "$(lockdock skill path)/../../shell/icons/icona/rocket.svg"` (the repo is two levels above the
-skill). A slug that does not exist draws a small dot and the shell logs `unknown icon`. The
-validator only checks the form (`icona:` + lowercase words joined by `-`).
 
 ## Palette (colours)
 
@@ -81,13 +52,9 @@ Mode colours: in modes.json `"color": "auto"` (the default) gives the active mod
 - "Hide the held badge": `lockdock theme set sections '["pet","modes","apps","agents"]'`; "only apps, then modes": `'["apps","modes"]'`
 - "Force dark (or light) colours": `lockdock theme set palette '"dark"'`; back to the wallpaper: `'"system"'`
 - "Use my red as the accent but keep the wallpaper colours": `lockdock theme set palette '{"accent": "#e5484d", "accent_container": "#5c1a1d", "on_accent_container": "#ffdad8"}'` (set the whole object; a role is not a dotted key)
-- "The old single-card look": `lockdock theme set layout '"slab"'`; "glassier islands": `theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`
-- "A fixed background colour": `theme set background '"#FF1C1C21"'` (`null` to follow the palette again)
+- "The old single-card look": `lockdock theme set layout '"slab"'`; "glassier islands": `theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`; "a fixed background": `theme set background '"#FF1C1C21"'` (`null`: palette)
 - "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`
 - "No cards above the dock": `lockdock theme set prompts.enabled false`; "only one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`
 - "One chip per agent again": `lockdock theme set agents.style '"chips"'` (back: `'"pill"'`)
-- "A rocket for Claude": `lockdock theme set icons.agent_kinds.claude '"icona:rocket"'`; "a different held icon": `theme set icons.held '"icona:inbox-zero"'`
-- "Bolder icons": `lockdock theme set icons.stroke 2`; "the old emoji / glyph look": `theme set icons.pack '"text"'`
-- "No icon on the Stay pill": `lockdock theme set icons.stay '""'`
 
 Check the result with a screenshot (`grim`) before telling the user it is done.
