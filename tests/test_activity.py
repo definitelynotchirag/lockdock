@@ -1,7 +1,7 @@
 import asyncio
 
 from lockdock.core.activity import ActivityJudge, rule_activity
-from lockdock.core.models import Verdict, WindowInfo
+from lockdock.core.models import ActivityVerdict, Verdict, WindowInfo
 from lockdock.core.rules import matches, norm_title
 
 from .fakes import FakeClassifier, FakeClock, FakeEvents, Spawner, make_config
@@ -66,7 +66,8 @@ def test_judge_falls_back_to_classifier():
     j.focus = WindowInfo("helium", "Amazon")
     asyncio.run(j.judge())
     assert changes[0]["reason"] == "classifying…"
-    assert j.activity == {"verdict": "off", "reason": "shopping", "app": "helium", "title": "Amazon"}
+    assert j.activity == {"verdict": "off", "reason": "shopping", "app": "helium", "title": "Amazon",
+                          "source": "llm"}
     assert events.records[-1]["verdict"] == "off"
     assert nudges == []  # off_task_action defaults to nudge, not notify
 
@@ -94,7 +95,7 @@ def test_judge_drops_stale_verdict():
     class Moving(FakeClassifier):
         async def activity(self, mode, window):
             j.focus = WindowInfo("kitty", "elsewhere")
-            return Verdict.OFF, "late"
+            return ActivityVerdict(Verdict.OFF, "late")
 
     j.classifier = Moving()
     j.focus = WindowInfo("helium", "Amazon")

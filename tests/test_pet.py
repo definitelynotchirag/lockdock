@@ -249,7 +249,7 @@ def test_daemon_activity_listeners(tmp_path):
     d.start(WindowInfo("kitty", "zsh"))
     spawner.drain()
     assert seen == [{"verdict": "on", "reason": "matches on_task rule '.*'", "app": "kitty", "title": "zsh",
-                     "mode": "Free"}]
+                     "source": "rule", "mode": "Free"}]
 
 
 def test_feature_commands(tmp_path, monkeypatch):

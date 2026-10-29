@@ -12,6 +12,12 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
 - Notifications that do not belong to the mode are **held** (closed as they
   arrive, re-delivered when the mode ends). Keywords like "urgent" and
   critical urgency always pass.
+- **Decision cards**: when a window belongs to another mode ("x.com · belongs
+  to Social"), the dock asks *Stay* or *Go to Social (30s wait)*; a held
+  notification gets a card with *Later* / *Go to X* and a "Time-sensitive" tag
+  when the classifier sees someone waiting; a fresh LLM verdict on a site no
+  mode knows shows as a toast that fades. "Go to X" is the normal exit
+  countdown. `lockdock prompts`, `lockdock prompt <id> <action>`.
 - **Agent inbox**: one pill for every running coding agent (Claude Code, Codex,
   OpenCode, Aider, Gemini CLI, cursor-agent, T3 Code threads). Red and
   pulsing when one waits for you, green while they work, grey when done; click
@@ -72,6 +78,7 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
     modes.py          ModeManager: switching and the exit countdown
     activity.py       ActivityJudge: dwell, rules, classifier fallback
     notifications.py  NotificationGate: pass / hold / ask, release
+    prompts.py        PromptCenter: site / notification / verdict decision cards
     state.py          state.json snapshot (+ agents / pet / theme sections)
     agents.py         AgentRegistry: agent kinds table, scan + hook merge, window walk
     agent_hooks.py    install-hooks merge for Claude Code settings.json / Codex config.toml
@@ -81,7 +88,7 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
   adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache, pet speaker),
                       json_config, pet_packs, file_state, control_socket, shell_commands, clock,
                       proc_scan, http_url_source
-  features/           optional features, auto-discovered (install(daemon)): agents, pet, browser_urls
+  features/           optional features, auto-discovered (install(daemon)): agents, pet, browser_urls, prompts, theme
   cli/                main.py (verbs), agents.py (agent verbs), client.py (control socket client)
 shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
   Dock.qml            the panel window; builds the row from theme.sections (sectionMap)

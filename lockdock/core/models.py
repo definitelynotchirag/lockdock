@@ -127,6 +127,17 @@ class BrowserBridge:
 
 
 @dataclass
+class PromptsConfig:
+    """The `prompts` block: decision cards the dock shows (see core.prompts)."""
+
+    enabled: bool = True
+    site_cards: bool = True            # "x.com belongs to Social: stay or switch?"
+    notification_cards: bool = True    # a held notification with [Later] [Go to X]
+    verdict_toasts: bool = True        # a fresh LLM verdict on a site no mode knows
+    stay_snooze_s: int = 600           # one site card per target per this many seconds
+
+
+@dataclass
 class Config:
     """The whole modes.json, parsed."""
 
@@ -138,6 +149,7 @@ class Config:
     browsers: list[str] = field(default_factory=lambda: list(DEFAULT_BROWSERS))
     browser_bridge: BrowserBridge = field(default_factory=BrowserBridge)
     agent_kinds: list[AgentKind] | None = None   # None = the built-in table (core.agents.DEFAULT_KINDS)
+    prompts: PromptsConfig = field(default_factory=PromptsConfig)
 
     def get(self, mode_id: str | None) -> Mode | None:
         """The mode with this id, or None."""
@@ -189,6 +201,28 @@ class NotificationDecision:
 
     action: str
     reason: str = ""
+
+
+@dataclass(frozen=True)
+class ActivityVerdict:
+    """A classifier's answer about a window. `cached` = answered from the cache, not a live call."""
+
+    verdict: Verdict
+    reason: str = ""
+    cached: bool = False
+
+
+@dataclass(frozen=True)
+class NotificationVerdict:
+    """A classifier's answer about a notification: `pass` or `hold`, and whether it is
+    time-sensitive (someone waits for an answer, or a deadline is near). `deadline` is a short
+    phrase like "3pm" when the text names one."""
+
+    action: str
+    reason: str = ""
+    time_sensitive: bool = False
+    deadline: str | None = None
+    cached: bool = False
 
 
 @dataclass

@@ -7,7 +7,7 @@ import re
 import time
 from pathlib import Path
 
-from ..core.models import Mode, Notification, Verdict, WindowInfo
+from ..core.models import ActivityVerdict, Mode, Notification, NotificationVerdict, Verdict, WindowInfo
 from ..core.rules import norm_title
 
 ACTIVITY_SYS = (
@@ -18,8 +18,11 @@ ACTIVITY_SYS = (
 NOTIF_SYS = (
     "You decide whether a desktop notification should interrupt someone in a focus mode now, "
     "or be held until the mode ends. Answer ONLY compact JSON: "
-    "{\"action\":\"pass\"|\"hold\",\"reason\":\"<=12 words\"}. Pass only if time-sensitive and relevant to the mode "
-    "or clearly important (people waiting, failures, calendar in the next hour)."
+    "{\"action\":\"pass\"|\"hold\",\"reason\":\"<=12 words\",\"time_sensitive\":true|false,"
+    "\"deadline\":\"<=4 words\"|null}. Pass only if time-sensitive and relevant to the mode "
+    "or clearly important (people waiting, failures, calendar in the next hour). "
+    "time_sensitive = someone is waiting for an answer or something happens soon, whatever the action. "
+    "deadline = the time it is needed by, as written or implied (e.g. \"3pm\", \"today\"), else null."
 )
 PET_SYS = (
     "You write one line of speech for a desktop pet that scolds its owner for being off task. "
@@ -82,31 +85,35 @@ class ClaudeCliClassifier:
         async with self._sem:
             return await ask_claude(system, user, self.model, self.timeout_s)
 
-    async def activity(self, mode: Mode, window: WindowInfo) -> tuple[Verdict, str]:
+    async def activity(self, mode: Mode, window: WindowInfo) -> ActivityVerdict:
         key = f"a|{mode.id}|{window.cls}|{norm_title(window.title)}"
         if c := self.cache.get(key):
-            return Verdict(c["verdict"]), c["reason"] + " (cached)"
+            return ActivityVerdict(Verdict(c["verdict"]), c["reason"] + " (cached)", cached=True)
         payload = {"mode": mode.label, "mode_description": mode.description, "mode_apps": mode.apps,
                    "window_class": window.cls, "window_title": window.title}
         if window.url:
             payload["window_url"] = window.url
         res = await self._ask(ACTIVITY_SYS, json.dumps(payload))
         if not res or res.get("verdict") not in ("on", "off", "neutral"):
-            return Verdict.NEUTRAL, "classifier unavailable"
+            return ActivityVerdict(Verdict.NEUTRAL, "classifier unavailable")
         self.cache.put(key, {"verdict": res["verdict"], "reason": res.get("reason", ""), "ts": time.time()})
-        return Verdict(res["verdict"]), res.get("reason", "")
+        return ActivityVerdict(Verdict(res["verdict"]), res.get("reason", ""))
 
-    async def notification(self, mode: Mode, n: Notification) -> tuple[str, str]:
+    async def notification(self, mode: Mode, n: Notification) -> NotificationVerdict:
         key = f"n|{mode.id}|{n.app}|{norm_title(n.summary)}"
         if c := self.cache.get(key):
-            return c["action"], c["reason"] + " (cached)"
+            return NotificationVerdict(c["action"], c["reason"], bool(c.get("time_sensitive")),
+                                       c.get("deadline"), cached=True)
         user = json.dumps({"mode": mode.label, "mode_description": mode.description,
                            "app": n.app, "summary": n.summary, "body": n.body[:400]})
         res = await self._ask(NOTIF_SYS, user)
         if not res or res.get("action") not in ("pass", "hold"):
-            return "pass", "classifier unavailable (fail open)"
-        self.cache.put(key, {"action": res["action"], "reason": res.get("reason", ""), "ts": time.time()})
-        return res["action"], res.get("reason", "")
+            return NotificationVerdict("pass", "classifier unavailable (fail open)")
+        deadline = str(res.get("deadline") or "").strip()[:40] or None
+        v = NotificationVerdict(res["action"], res.get("reason", ""), res.get("time_sensitive") is True, deadline)
+        self.cache.put(key, {"action": v.action, "reason": v.reason, "time_sensitive": v.time_sensitive,
+                             "deadline": v.deadline, "ts": time.time()})
+        return v
 
 
 class ClaudeCliSpeaker:

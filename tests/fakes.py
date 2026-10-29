@@ -5,8 +5,8 @@ import asyncio
 from collections.abc import Callable, Coroutine
 from typing import Any
 
-from lockdock.core.models import (Config, Mode, Notification, NotificationRules, ProcessInfo, Verdict,
-                                  WindowInfo)
+from lockdock.core.models import (ActivityVerdict, Config, Mode, Notification, NotificationRules,
+                                  NotificationVerdict, ProcessInfo, Verdict, WindowInfo)
 
 
 class FakeClock:
@@ -68,17 +68,20 @@ class FakeSink:
 
 
 class FakeClassifier:
-    def __init__(self, activity: tuple[Verdict, str] = (Verdict.NEUTRAL, "fake"),
-                 notification: tuple[str, str] = ("pass", "fake")) -> None:
-        self.activity_result = activity
-        self.notification_result = notification
+    """Answers every call with a fixed verdict (a tuple is shorthand for the verdict's first fields)."""
+
+    def __init__(self, activity: tuple[Verdict, str] | ActivityVerdict = (Verdict.NEUTRAL, "fake"),
+                 notification: tuple[str, str] | NotificationVerdict = ("pass", "fake")) -> None:
+        self.activity_result = activity if isinstance(activity, ActivityVerdict) else ActivityVerdict(*activity)
+        self.notification_result = (notification if isinstance(notification, NotificationVerdict)
+                                    else NotificationVerdict(*notification))
         self.calls: list[tuple[str, Any]] = []
 
-    async def activity(self, mode: Mode, window: WindowInfo) -> tuple[Verdict, str]:
+    async def activity(self, mode: Mode, window: WindowInfo) -> ActivityVerdict:
         self.calls.append(("activity", window))
         return self.activity_result
 
-    async def notification(self, mode: Mode, n: Notification) -> tuple[str, str]:
+    async def notification(self, mode: Mode, n: Notification) -> NotificationVerdict:
         self.calls.append(("notification", n))
         return self.notification_result
 

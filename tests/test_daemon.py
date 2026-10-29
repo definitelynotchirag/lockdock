@@ -10,7 +10,8 @@ from lockdock.core.state import StateSnapshot
 from .fakes import (FakeClassifier, FakeClock, FakeConfigSource, FakePublisher, FakeRunner, FakeSink, Spawner,
                     make_config)
 
-KEYS = {"mode", "modes", "pending", "activity", "held", "held_count", "agents", "pet", "theme", "updated_ms"}
+KEYS = {"mode", "modes", "pending", "activity", "held", "held_count", "agents", "pet", "theme", "prompts",
+        "prompts_count", "updated_ms"}
 
 
 def make_daemon(tmp_path, cfg=None, error=None):

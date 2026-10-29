@@ -36,7 +36,9 @@ def rule_activity(mode: Mode, window: WindowInfo, browsers: list[str] | tuple[st
 class ActivityJudge:
     """Tracks the focused window and publishes a verdict once it has been focused for dwell_s.
 
-    `activity` is the dict published in state.json: verdict, reason, app, title (+ url).
+    `activity` is the dict published in state.json: verdict, reason, app, title, source (+ url).
+    `source` says where the verdict came from: `rule` (rules, policies, no window, llm off),
+    `llm` (a live classifier call) or `cache` (the classifier answered from its cache).
     """
 
     def __init__(self, config: Callable[[], Config], mode: Callable[[], Mode], classifier: Classifier,
@@ -79,8 +81,9 @@ class ActivityJudge:
         await self.clock.sleep(self._config().dwell_s)
         await self.judge()
 
-    def _set(self, verdict: Verdict, reason: str, w: WindowInfo) -> None:
-        self.activity = {"verdict": verdict.value, "reason": reason, "app": w.cls, "title": w.title}
+    def _set(self, verdict: Verdict, reason: str, w: WindowInfo, source: str = "rule") -> None:
+        self.activity = {"verdict": verdict.value, "reason": reason, "app": w.cls, "title": w.title,
+                         "source": source}
         if w.url:
             self.activity["url"] = w.url
 
@@ -92,19 +95,22 @@ class ActivityJudge:
             self._verdict_done()
             return
         res = rule_activity(mode, w, cfg.browsers)
+        source = "rule"
         if res is None:
             if cfg.llm_enabled:
-                self._set(Verdict.NEUTRAL, "classifying…", w)
+                self._set(Verdict.NEUTRAL, "classifying…", w, "llm")
                 self.on_change()
-                res = await self.classifier.activity(mode, w)
+                answer = await self.classifier.activity(mode, w)
+                res, source = (answer.verdict, answer.reason), ("cache" if answer.cached else "llm")
             else:
                 res = (Verdict.NEUTRAL, "unknown app, llm disabled")
         if w.key() != self.focus.key():
             return  # focus moved on while we were thinking
         verdict, reason = res
         prev = self.activity.get("verdict")
-        self._set(verdict, reason, w)
-        self.events.log("activity", app=w.cls, title=w.title, verdict=verdict.value, reason=reason)
+        self._set(verdict, reason, w, source)
+        self.events.log("activity", app=w.cls, title=w.title, verdict=verdict.value, reason=reason,
+                        source=source)
         if verdict == Verdict.OFF and prev != Verdict.OFF.value and mode.off_task_action == "notify":
             self.on_off_task(mode, w, reason)
         self._verdict_done()

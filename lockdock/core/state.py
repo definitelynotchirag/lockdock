@@ -6,12 +6,13 @@ from typing import Any
 
 from .models import Config, Notification, PendingSwitch
 
-SectionProvider = Callable[[], "dict | list"]
+SectionProvider = Callable[[], "dict | list | int"]
 
 CORE_SECTIONS: frozenset[str] = frozenset(
     {"mode", "modes", "pending", "activity", "held", "held_count", "updated_ms"})
 # reserved extension points and their empty defaults
-RESERVED_SECTIONS: dict[str, Callable[[], Any]] = {"agents": list, "pet": dict, "theme": dict}
+RESERVED_SECTIONS: dict[str, Callable[[], Any]] = {"agents": list, "pet": dict, "theme": dict,
+                                                   "prompts": list, "prompts_count": int}
 HELD_IN_SNAPSHOT = 50
 
 

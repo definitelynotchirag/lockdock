@@ -16,7 +16,17 @@
 | `exit_delay_s`, `per_press_s` | exit countdown when leaving this mode; each extra press cuts the wait |
 | `on_enter` / `on_exit` | shell commands (e.g. `hyprctl dispatch workspace 2`) |
 
-Top level: `default_mode`, `dwell_s` (how long a window must stay focused before it is judged), `llm.enabled`, `llm.model` (a `claude -p` model alias), `browsers` (classes judged by tab title, never by being a mode app).
+Top level: `default_mode`, `dwell_s` (how long a window must stay focused before it is judged), `llm.enabled`, `llm.model` (a `claude -p` model alias), `browsers` (classes judged by tab title, never by being a mode app), `prompts` (decision cards, below).
+
+## Decision cards
+
+Top level `"prompts": {"enabled": true, "site_cards": true, "notification_cards": true, "verdict_toasts": true, "stay_snooze_s": 600}` (all defaults). The dock shows at most 3 cards:
+
+- **site**: the window is off task in this mode but another mode's `on_task` or `apps` claims it (first in modes.json order; catch-all modes like Free with `.*` never claim). "x.com · belongs to Social" with [Stay] [Go to Social (Ns wait)]; N is this mode's `exit_delay_s`. One card per host (or window class) per `stay_snooze_s`; resets on a mode switch. To make a card appear for a site, put it in the other mode's `on_task`.
+- **notification**: every held notification. "held for X" when another mode's `notifications.allow_from` or `apps` matches the app (then a [Go to X] button), else "held in <mode>". A "Time-sensitive" tag comes from the classifier (only with `llm.enabled`). [Later] dismisses the card; the notification stays held.
+- **verdict**: a toast for a fresh (uncached) LLM verdict on something no mode's rules know; fades after 6 s. Turn off with `verdict_toasts: false`.
+
+`lockdock prompts` lists open cards; `lockdock prompt <id> later|dismiss|stay|switch` presses a button. Every card is logged as `"kind": "prompt"` in `lockdock log`. A mode switch clears all cards.
 
 ## How to find out what went wrong
 

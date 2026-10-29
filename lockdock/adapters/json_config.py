@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 from ..core.agents import DEFAULT_KINDS, merge_kinds
-from ..core.models import DEFAULT_BROWSERS, BrowserBridge, Config, Mode, NotificationRules
+from ..core.models import DEFAULT_BROWSERS, BrowserBridge, Config, Mode, NotificationRules, PromptsConfig
 
 ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE = ROOT / "modes.example.json"
@@ -37,12 +37,18 @@ def config_from_dict(raw: dict) -> Config:
     bb = raw.get("browser_bridge", {})
     bridge = BrowserBridge(enabled=bool(bb.get("enabled", True)), port=int(bb.get("port", 47231)),
                            token=str(bb.get("token", "")))
+    pr = raw.get("prompts", {})
+    prompts = PromptsConfig(enabled=bool(pr.get("enabled", True)), site_cards=bool(pr.get("site_cards", True)),
+                            notification_cards=bool(pr.get("notification_cards", True)),
+                            verdict_toasts=bool(pr.get("verdict_toasts", True)),
+                            stay_snooze_s=int(pr.get("stay_snooze_s", 600)))
     return Config(modes=modes, default_mode=raw.get("default_mode", modes[0].id),
                   llm_enabled=llm.get("enabled", True), llm_model=llm.get("model", "haiku"),
                   dwell_s=float(raw.get("dwell_s", 2.0)),
                   browsers=raw.get("browsers", list(DEFAULT_BROWSERS)), browser_bridge=bridge,
                   agent_kinds=(merge_kinds(DEFAULT_KINDS, raw["agents"].get("kinds", []))
-                               if isinstance(raw.get("agents"), dict) else None))
+                               if isinstance(raw.get("agents"), dict) else None),
+                  prompts=prompts)
 
 
 class JsonFileWatcher:

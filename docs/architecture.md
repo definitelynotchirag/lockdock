@@ -23,7 +23,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | `UrlSource` | `async watch(on_url(browser_class, url))` | `adapters/http_url_source.py` `HttpUrlSource` (127.0.0.1 HTTP; fed by `browser-extension/`) |
 | `NotificationObserver` | `async watch(on_notify(Notification), on_reply(cookie, id, sender))` | `adapters/dbus_notifications.py` `BusctlNotificationObserver` |
 | `NotificationSink` | `close(id)`, `send(app, summary, body, desktop_entry="", urgency=1, timeout_ms=-1)` | `BusctlNotificationSink` |
-| `Classifier` | `async activity(mode, window) -> (Verdict, reason)`, `async notification(mode, n) -> (action, reason)` | `adapters/claude_cli.py` `ClaudeCliClassifier` |
+| `Classifier` | `async activity(mode, window) -> ActivityVerdict(verdict, reason, cached)`, `async notification(mode, n) -> NotificationVerdict(action, reason, time_sensitive, deadline, cached)` | `adapters/claude_cli.py` `ClaudeCliClassifier` |
 | `StatePublisher` | `publish(snapshot)` | `adapters/file_state.py` `AtomicJsonStatePublisher` |
 | `CommandRunner` | `run(cmd)` | `adapters/shell_commands.py` `SubprocessCommandRunner` |
 | `ConfigSource` | `load() -> Config`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonConfigLoader` (generic: `parse=` builds another type, `update(changes)` rewrites keys; pet.json uses it too) (built on `JsonFileWatcher`; generic: `parse=` builds another type, `update(changes)` rewrites keys; pet.json uses it too) |
@@ -42,9 +42,19 @@ Fakes for every port are in `tests/fakes.py`.
 - `ModeManager` (`core/modes.py`): current mode, `request()` (the dock press),
   exit countdown, `press` math, `cancel`, `activate` (runs on_exit / on_enter).
 - `ActivityJudge` (`core/activity.py`): `rule_activity()` then the classifier,
-  after `dwell_s`; drops a verdict if focus moved on meanwhile.
+  after `dwell_s`; drops a verdict if focus moved on meanwhile. The activity
+  carries `source`: `rule`, `llm` (a live classifier call) or `cache`.
 - `NotificationGate` (`core/notifications.py`): `decide()` -> pass / hold /
   ask, the held list, `release_messages()` (<= 5 one by one, else a summary).
+  `hold_listeners(n, NotificationVerdict | None)` hear every held notification.
+- `PromptCenter` (`core/prompts.py`, feature `features/prompts.py`): decision
+  cards. Inputs: `activity_listeners` (site cards via `belongs_to()`, verdict
+  toasts for `source == "llm"`), `gate.hold_listeners` (notification cards via
+  `held_for()`; a tag call to the classifier when the gate did not ask one),
+  `Daemon.switch_listeners` (a switch clears cards and snoozes), a 1 s tick
+  (expiry). `switch` is `ModeManager.request`, so it starts or presses the
+  countdown. Config: `Config.prompts` (`PromptsConfig`). Every open / act /
+  expire / drop / tag is logged as `kind: "prompt"` with `op`.
 - `StateSnapshot` (`core/state.py`) and `EventLog` (`core/events.py`).
 - `Daemon` (`core/daemon.py`): owns the above, publishes a snapshot whenever
   one changes, dispatches control commands. `focus_listeners` get every focus
@@ -78,13 +88,15 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | `mode` | active mode id |
 | `modes` | `[{id, label, icon, color, apps, description}]` |
 | `pending` | `{mode, deadline_ms, total_ms}` or `null` |
-| `activity` | `{verdict, reason, app, title}` (+ `url` when a UrlSource supplied one) |
+| `activity` | `{verdict, reason, app, title, source}` (+ `url` when a UrlSource supplied one); `source` is `rule` / `llm` / `cache` |
 | `held` | last 50 held notifications `{app, summary, body, urgency, ts, id}` |
 | `held_count` | number held |
 | `browser` | `{enabled, url, connected, last_seen_ms}` from `features/browser_urls.py` |
 | `agents` | `[{id, kind, label, state, since_ms, pid, cwd, window_address, last_message, session_id, glyph}]`, needs_input first, then working, idle, done. `state` is `working` / `needs_input` / `done` / `idle`; `id` is `<kind>:<pid>` (or `<kind>:<session>` for a hook-only agent) |
 | `pet` | `{name, mood, scale, line, line_id, off_seconds, pack, pack_dir, manifest, size, muted, forced, position, max_screen_fraction}` from `features/pet.py`. `mood` is content / suspicious / annoyed / furious; `scale` is the size in dock sprites (1.0 = in the dock; the overlay shows above 1.05, capped at `max_screen_fraction` of the screen); `line_id` bumps on every new line; `manifest` is the pack's `pack.json`, frames relative to `pack_dir`; `forced` is a previewed mood or null |
 | `theme` | the effective theme (`features/theme.py`; see `ThemeConfig.snapshot()` in `core/theme.py`) plus `colors` (the resolved palette: `{bg, bg_elevated, surface, surface_hover, text, text_muted, outline, accent, on_accent, accent_container, on_accent_container, secondary, tertiary, danger, on_danger, success, warning, bubble, bubble_text, shadow}` as `#AARRGGBB`) and `palette_source` (file path or built-in fallback); `{}` without the feature |
+| `prompts` | open decision cards, newest last, at most 3: `[{id, kind, created_ms, expires_ms, icon, title, subtitle, body, tag, actions}]`. `kind` is `notification` / `site` / `verdict`; `expires_ms` is null (stays until acted on) or a time (verdict toasts: created + 6 s); `tag` is `{label, detail, level}` (`level` `urgent` / `info` / `ok`) or null; `actions` are `[{id, label, style, mode?}]` with `id` `later` / `stay` / `switch` (switch has `mode`) and `style` `plain` / `primary`; verdict toasts have none. `[]` without the feature |
+| `prompts_count` | number of open prompts |
 | `updated_ms` | write time |
 
 `Daemon.window_enrichers` (callables `WindowInfo -> WindowInfo` applied on every focus
@@ -124,7 +136,9 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
 
 Control verbs added by `features/agents.py`: `agent_event {kind, state, payload, pids}`,
-`agent_focus <id>`, `agents`.
+`agent_focus <id>`, `agents`. By `features/prompts.py`: `prompts` (the list) and
+`prompt_act {id, action}` with action `later` / `dismiss` (close), `stay` (close and
+snooze that host for `prompts.stay_snooze_s`), `switch` (close and request the mode).
 
 ## Theme and dock sections
 

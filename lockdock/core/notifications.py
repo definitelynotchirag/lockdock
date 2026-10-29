@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from .events import EventSink
-from .models import Mode, Notification, NotificationDecision
+from .models import Mode, Notification, NotificationDecision, NotificationVerdict
 from .ports import Classifier, NotificationSink
 from .rules import matches
 from .tasks import Spawn, spawn_task
@@ -57,7 +57,8 @@ class NotificationGate:
     """Decides pass/hold/ask per notification, keeps the held list, releases it.
 
     A held notification is closed as soon as the notification daemon replies
-    with its id (`on_reply`).
+    with its id (`on_reply`). `hold_listeners` are called with every notification
+    that gets held, plus the classifier's verdict when one was asked (else None).
     """
 
     def __init__(self, mode: Callable[[], Mode], classifier: Classifier, sink: NotificationSink,
@@ -69,6 +70,7 @@ class NotificationGate:
         self.on_change = on_change
         self.spawn = spawn
         self.held: list[Notification] = []
+        self.hold_listeners: list[Callable[[Notification, NotificationVerdict | None], None]] = []
         # notifications to close, keyed by (sender, cookie) until the id reply arrives
         self._awaiting_id: dict[tuple[str, int], Notification] = {}
 
@@ -82,17 +84,22 @@ class NotificationGate:
         self.events.log("notification", app=n.app, summary=n.summary, action=d.action, reason=d.reason)
         if d.action == "hold":
             self._awaiting_id[(n.sender, n.cookie)] = n
-            self.held.append(n)
-            self.on_change()
+            self._hold(n, None)
 
     async def _ask(self, n: Notification) -> None:
-        action, reason = await self.classifier.notification(self._mode(), n)
-        self.events.log("notification", app=n.app, summary=n.summary, action=action, reason=reason)
-        if action == "pass":
+        v = await self.classifier.notification(self._mode(), n)
+        self.events.log("notification", app=n.app, summary=n.summary, action=v.action, reason=v.reason,
+                        time_sensitive=v.time_sensitive, cached=v.cached)
+        if v.action == "pass":
             self.sink.send(n.app, n.summary, n.body, n.desktop_entry, n.urgency)
         else:
-            self.held.append(n)
-            self.on_change()
+            self._hold(n, v)
+
+    def _hold(self, n: Notification, verdict: NotificationVerdict | None) -> None:
+        self.held.append(n)
+        for listener in self.hold_listeners:
+            listener(n, verdict)
+        self.on_change()
 
     def on_reply(self, cookie: int, nid: int, dest: str) -> None:
         n = self._awaiting_id.pop((dest, cookie), None)

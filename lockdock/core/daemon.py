@@ -24,7 +24,9 @@ class Daemon:
     Extension points for features: `register_section` (state.json data),
     `register_command` (control socket verbs), `config_listeners` (reload hooks),
     `focus_listeners` (every focus change, after the judge saw it).
-    `activity_listeners` (called with the activity dict + `mode` label after each verdict).
+    `activity_listeners` (called with the activity dict + `mode` label after each verdict),
+    `switch_listeners` (called with (old, new) after every mode switch), `gate.hold_listeners`
+    (every held notification). `classifier` and `spawn` are shared with features.
     """
 
     def __init__(self, *, config_source: ConfigSource, classifier: Classifier, sink: NotificationSink,
@@ -32,7 +34,9 @@ class Daemon:
                  events_path: Path | None = None, spawn: Spawn = spawn_task) -> None:
         self.config_source = config_source
         self.cfg: Config = config_source.load()
+        self.classifier = classifier
         self.sink = sink
+        self.spawn = spawn
         self.publisher = publisher
         self.clock = clock
         self.events: EventSink = (EventLog(events_path, clock, lambda: self.modes.mode) if events_path
@@ -42,6 +46,7 @@ class Daemon:
         self.window_enrichers: list[Callable[[WindowInfo], WindowInfo]] = []
         self.focus_listeners: list[Callable[[WindowInfo], None]] = []
         self.activity_listeners: list[Callable[[dict], None]] = []
+        self.switch_listeners: list[Callable[[Mode, Mode], None]] = []
         self.modes = ModeManager(lambda: self.cfg, clock, runner, self.events, self._on_switch,
                                  self.publish, spawn)
         self.judge = ActivityJudge(lambda: self.cfg, lambda: self.modes.cur, classifier, clock, self.events,
@@ -120,6 +125,8 @@ class Daemon:
     # ---------- reactions ----------
     def _on_switch(self, old: Mode, new: Mode) -> None:
         self.gate.release(f"while you were in {old.label}")
+        for listener in self.switch_listeners:
+            listener(old, new)
         self.publish()
         self.judge.schedule()
 

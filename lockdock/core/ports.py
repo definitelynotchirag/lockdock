@@ -4,7 +4,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from .models import Config, Mode, Notification, ProcessInfo, Verdict, WindowInfo
+from .models import (ActivityVerdict, Config, Mode, Notification, NotificationVerdict, ProcessInfo,
+                     WindowInfo)
 
 
 class WindowSource(Protocol):
@@ -38,8 +39,8 @@ class NotificationSink(Protocol):
 class Classifier(Protocol):
     """Judges what the rules could not decide."""
 
-    async def activity(self, mode: Mode, window: WindowInfo) -> tuple[Verdict, str]: ...
-    async def notification(self, mode: Mode, n: Notification) -> tuple[str, str]: ...
+    async def activity(self, mode: Mode, window: WindowInfo) -> ActivityVerdict: ...
+    async def notification(self, mode: Mode, n: Notification) -> NotificationVerdict: ...
 
 
 class StatePublisher(Protocol):

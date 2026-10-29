@@ -9,6 +9,9 @@
   lockdock url               last browser URL and bridge health (browser extension)
   lockdock held              list held notifications
   lockdock release           re-deliver held notifications now
+  lockdock prompts [--json]  open decision cards (site / notification / verdict)
+  lockdock prompt <id> <action>
+                             press a card button: later | dismiss | stay | switch
   lockdock reload            reload modes.json (also happens automatically)
   lockdock log [-n N]        tail events.jsonl (what was classified and why)
   lockdock config            print the modes.json path
@@ -70,6 +73,25 @@ def _url(b: dict) -> None:
     seen = f"last seen {b['age_s']}s ago" if b.get("age_s") is not None else "never seen"
     print(f"connected: {'yes' if b.get('connected') else 'no'}  ({seen})")
     print(f"url: {b.get('url') or '(none)'}")
+
+
+def _prompts(rest: list[str]) -> None:
+    res = call("prompts")
+    if "--json" in rest:
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        return
+    if not res:
+        print("no open prompts")
+    for p in res:
+        print(f"{p['id']:<5} {p['kind']:<12} {p['title']} · {p['subtitle']}")
+        if p.get("body"):
+            print(f"      {p['body']}")
+        if p.get("tag"):
+            print(f"      [{p['tag']['label']}] {p['tag']['detail']} ({p['tag']['level']})")
+        if p.get("actions"):
+            print("      actions: " + "  ".join(f"{a['id']}={a['label']!r}" for a in p["actions"]))
+        if p.get("expires_ms"):
+            print(f"      expires_ms: {p['expires_ms']}")
 
 
 def _pet(rest: list[str]) -> None:
@@ -147,6 +169,12 @@ def main(argv: list[str] | None = None) -> None:
     elif cmd == "held":
         for n in call("status").get("held", []):
             print(f"[{n['app']}] {n['summary']} — {n['body'][:80]}")
+    elif cmd == "prompts":
+        _prompts(rest)
+    elif cmd == "prompt":
+        if len(rest) != 2:
+            sys.exit("usage: lockdock prompt <id> later|dismiss|stay|switch")
+        print(call("prompt_act", {"id": rest[0], "action": rest[1]}))
     elif cmd == "log":
         n = int(rest[rest.index("-n") + 1]) if "-n" in rest else 30
         subprocess.run(["tail", f"-n{n}", str(EVENTS_LOG)])
