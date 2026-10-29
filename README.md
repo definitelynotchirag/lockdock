@@ -12,7 +12,9 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
 - Notifications that do not belong to the mode are **held** (closed as they
   arrive, re-delivered when the mode ends). Keywords like "urgent" and
   critical urgency always pass.
-- Modes live in one JSON file that an agent edits. See `AGENTS.md`.
+- Modes live in one JSON file and the look in another (`theme.json`: position,
+  scale, sections, autohide, ...); an agent edits them. See `AGENTS.md` and
+  `skills/lockdock/`.
 
 ## Requirements
 
@@ -37,6 +39,8 @@ lockdock status           # mode, verdict for the current window, held count
 lockdock held / release   # see or re-deliver held notifications
 lockdock log -n 50        # every verdict with its reason
 lockdock config           # path to modes.json
+lockdock theme            # effective theme; `theme set <key> <json>`, `theme reset`, `theme path`
+lockdock skill path       # the agent skill (also linked to ~/.claude/skills/lockdock)
 ```
 
 ## Layout
@@ -52,17 +56,20 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
     activity.py       ActivityJudge: dwell, rules, classifier fallback
     notifications.py  NotificationGate: pass / hold / ask, release
     state.py          state.json snapshot (+ agents / pet / theme sections)
+    theme.py          ThemeConfig (validated theme.json) and ThemeService
     rules.py events.py
   adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache),
                       json_config, file_state, control_socket, shell_commands, clock
   features/           optional features, auto-discovered (install(daemon))
   cli/                main.py (verbs), client.py (control socket client)
 shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
-  Dock.qml            the panel window; lays out components/ in one row
-  components/         ModeStrip, AppStrip, HeldBadge, Nudge, ModePill, AppButton
+  Dock.qml            the panel window; builds the row from theme.sections
+  components/         Theme (st.theme helper), ModeStrip, AppStrip, HeldBadge, Nudge, ModePill, AppButton
 tests/                pytest with fakes for every port
 docs/architecture.md  ports, adapters, state.json sections, how to add a feature
 modes.example.json    default modes; copied to ~/.config/lockdock/modes.json
+theme.example.json    default theme; copied to ~/.config/lockdock/theme.json
+skills/lockdock/      agent skill: SKILL.md index + modes.md, theme.md, ...
 ```
 
 Tests: `uv run --no-project --python 3.14 --with pytest pytest -q`

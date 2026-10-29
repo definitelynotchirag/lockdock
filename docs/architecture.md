@@ -26,6 +26,7 @@ other. No module in `core/` imports `adapters/` or starts a subprocess.
 | `StatePublisher` | `publish(snapshot)` | `adapters/file_state.py` `AtomicJsonStatePublisher` |
 | `CommandRunner` | `run(cmd)` | `adapters/shell_commands.py` `SubprocessCommandRunner` |
 | `ConfigSource` | `load() -> Config`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonConfigLoader` |
+| `JsonDocument` | `read()`, `write(raw)`, `async watch(on_change, on_error=None)` | `adapters/json_config.py` `JsonFileWatcher` (mtime polling, seeded from an example file, atomic writes; `JsonConfigLoader` is built on it) |
 | `CommandHandler` | `handle(cmd, arg) -> result` | implemented by `core.daemon.Daemon`; served by `adapters/control_socket.py` |
 | `Clock` | `now()`, `async sleep(s)` | `adapters/clock.py` `SystemClock` |
 
@@ -57,7 +58,7 @@ Written atomically to `$XDG_RUNTIME_DIR/lockdock/state.json` on every change.
 | `held_count` | number held |
 | `agents` | reserved: list, empty until a feature registers it |
 | `pet` | reserved: dict, empty until a feature registers it |
-| `theme` | reserved: dict, empty until a feature registers it |
+| `theme` | the effective theme (`features/theme.py`; see `ThemeConfig.snapshot()` in `core/theme.py`); `{}` without the feature |
 | `updated_ms` | write time |
 
 `Daemon.register_section(name, provider)` makes `provider()` (a dict or list)
@@ -79,11 +80,38 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    `features.install_all` discovers the module; `app.py` stays untouched.
    Call `daemon.publish()` from the service's `on_change`.
 4. **Shell component.** Add `shell/components/<Thing>.qml` taking
-   `required property var st` (the state) and place it in `Dock.qml`'s `row`
-   (or anchored to `card`, like `Nudge`; add it to the `mask` Region if it sits
-   outside the card). Read your section as `st.<name>`.
+   `required property var st` (the state) and `required property var theme`
+   (see below), and register it in `Dock.qml`'s `sectionMap` (one line:
+   `pet: petComp,` after adding a `Component { id: petComp; Pet { ... } }`).
+   Users then place it with `theme.sections`. Components that float outside
+   the card (like `Nudge`) are anchored to `card` and added to the `mask`
+   Region instead. Read your section as `st.<name>`.
 5. **Tests.** `tests/test_<feature>.py` with the fakes;
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
+
+## Theme and dock sections
+
+`theme.json` (`features/theme.py`, `core/theme.py`) is the single place for the
+dock's look; `ThemeService` validates it, writes it (`theme_set`, `theme_reset`
+commands) and publishes `st.theme`. Defaults reproduce the original look.
+
+In the shell, `components/Theme.qml` wraps `st.theme` with typed properties
+that all have fallbacks (a missing key never breaks the dock). Use
+`theme.px(n)` for sizes (applies `scale`), `theme.ipx(n)` for sizes that
+should also follow `icon_size`, `theme.fpx(n)` for font pixel sizes, and
+`theme.family` for `font.family`. Pass the `theme` object down to components.
+
+`Dock.qml` renders `theme.sections` with a `Repeater`; each id is looked up in
+`sectionMap` and loaded with a `Loader`. Unknown ids render nothing, ids that
+are not listed are hidden. A section component may expose
+`readonly property bool active` (default true) to say it has nothing to show,
+which also drops its divider. List a section in `inlineSections` to draw it
+without a divider (like the held badge). To add a section: one `Component` and
+one `sectionMap` entry; also add its id to `DEFAULT_SECTIONS` in
+`core/theme.py` and `theme.example.json` if it should show by default.
+
+Do not position things with `anchors.x: cond ? a : undefined` in QML: an
+anchor, once set, is not reset by a later `undefined`. Bind `y`/`x` instead.
 
 ## Running a second instance for development
 
@@ -93,4 +121,8 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
 run beside the user's real daemon and dock. The CLI honours the same variable.
 Note the dev dock still shows at the bottom-center and will visually overlap
 the real one; stop the real dock first if you need a clean screenshot
-(`pkill -f "[q]s -p \./shell$"`, and restart it afterwards).
+(`pkill -f "[q]s -p \./shell$"`, and restart it afterwards), or move the dev
+dock with its theme (`LOCKDOCK_INSTANCE=dev lockdock theme set margin 300`).
+Pick a unique instance name when other agents may be testing at the same time:
+instances with the same name share one socket and state file. Quickshell does
+not always hot-reload QML: restart the dev dock after editing it.
