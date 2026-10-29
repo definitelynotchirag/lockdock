@@ -6,6 +6,7 @@ set, and override the palette when set."""
 from __future__ import annotations
 
 import copy
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field, fields
 from typing import Any
@@ -17,6 +18,8 @@ POSITIONS = ("bottom", "top")
 LAYOUTS = ("islands", "slab")
 AGENT_STYLES = ("pill", "chips")
 DEFAULT_SECTIONS = ("pet", "modes", "apps", "agents", "held")
+ICON_PACKS = ("icona", "text")
+ICONA_NAME = re.compile(r"icona:[a-z0-9]+(-[a-z0-9]+)*")
 
 # Values the pre-palette theme.example.json wrote into every theme.json. A file without a
 # `palette` or `layout` key is from then: these values were seeded, not chosen, so they are
@@ -64,6 +67,31 @@ def _is_color(v: Any) -> bool:
 
 def _color_or_null(v: Any) -> bool:
     return v is None or _is_color(v)
+
+
+def is_icon(v: Any) -> bool:
+    """An icon name: "icona:<slug>" (shell/icons/icona/<slug>.svg), a freedesktop icon name, a
+    text glyph / emoji, or "" (no icon). Whether an icona slug exists is checked by the shell."""
+    if not isinstance(v, str) or len(v) > 64:
+        return False
+    return ICONA_NAME.fullmatch(v) is not None if v.startswith("icona:") else True
+
+
+def _is_icon_map(v: Any) -> bool:
+    return isinstance(v, dict) and all(isinstance(k, str) and is_icon(i) for k, i in v.items())
+
+
+# icons.agent_kinds: one icon per built-in agent kind (core/agents.py DEFAULT_KINDS)
+DEFAULT_AGENT_ICONS = {"claude": "icona:sparkles", "codex": "icona:terminal", "t3": "icona:zap",
+                       "opencode": "icona:code", "aider": "icona:git-branch", "gemini": "icona:star",
+                       "cursor-agent": "icona:cursor"}
+# what `"pack": "text"` uses for every key theme.json leaves unset: the pre-Icona glyphs. "" is no
+# icon; an empty `timer` shows the pending mode's own icon, an empty `agent_kinds` the kind's glyph.
+TEXT_ICONS: dict[str, Any] = {
+    "mode_fallback": "●", "agents": "◆", "agent_kinds": {}, "held": "🔕", "held_muted": "🔕",
+    "timer": "", "stay": "", "nudge": "", "tag_urgent": "✦", "tag_info": "✦", "tag_ok": "✅",
+    "card_notification": "🔔", "card_site": "🌐", "card_verdict": "✦",
+}
 
 
 @dataclass
@@ -127,6 +155,34 @@ class ModeStripTheme:
     stay_button: bool = True
 
 
+@dataclass
+class IconsTheme:
+    """Every icon the dock draws that is not an app icon. Values are icon names: "icona:<slug>"
+    (see shell/icons/icona/INDEX.md), a text glyph or emoji, a freedesktop icon name, or "" for
+    none. `pack: "text"` swaps the defaults for the old text glyphs. `stroke` is the Icona line
+    width on the 24 px grid. `agent_kinds` (kind -> icon) merges over the defaults. `held_muted`
+    replaces `held` while the active mode holds every notification (`notifications.default`
+    "hold")."""
+    pack: str = "icona"
+    stroke: float = 1.75
+    mode_fallback: str = "icona:target"
+    agents: str = "icona:sparkles"
+    agent_kinds: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_AGENT_ICONS))
+    held: str = "icona:bell"
+    held_muted: str = "icona:snooze"
+    timer: str = "icona:hourglass"
+    stay: str = "icona:target"
+    nudge: str = "icona:alert"
+    tag_urgent: str = "icona:alert"
+    tag_info: str = "icona:info"
+    tag_ok: str = "icona:check-circle"
+    card_notification: str = "icona:bell"
+    card_site: str = "icona:compass"
+    card_verdict: str = "icona:check-circle"
+
+
+_ICON_WANT = '"icona:<slug>", a glyph, an icon name or ""'
+
 _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "position": (lambda v: v in POSITIONS, '"bottom" or "top"'),
     "margin": (_num(0, 1000), "a number 0..1000"),
@@ -157,8 +213,12 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "prompts.max_visible": (_int(1, 10), "an integer 1..10"),
     "prompts.width": (_num(200, 1000), "a number 200..1000"),
     "mode_strip.stay_button": (_is_bool, "true or false"),
+    "icons.pack": (lambda v: v in ICON_PACKS, '"icona" or "text"'),
+    "icons.stroke": (_num(0.5, 3), "a number 0.5..3"),
+    "icons.agent_kinds": (_is_icon_map, "an object of agent kind -> " + _ICON_WANT),
+    **{f"icons.{k}": (is_icon, _ICON_WANT) for k in TEXT_ICONS if k != "agent_kinds"},
 }
-_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip")
+_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip", "icons")
 
 
 @dataclass
@@ -186,6 +246,7 @@ class ThemeConfig:
     agents: AgentsTheme = field(default_factory=AgentsTheme)
     prompts: PromptsTheme = field(default_factory=PromptsTheme)
     mode_strip: ModeStripTheme = field(default_factory=ModeStripTheme)
+    icons: IconsTheme = field(default_factory=IconsTheme)
     opacity: float = 1.0
     problems: list[str] = field(default_factory=list, compare=False)
 
@@ -209,11 +270,27 @@ class ThemeConfig:
                 theme._load_palette(val)
             else:
                 theme._load_leaf(theme, key, key, val)
+        theme._apply_icon_pack(raw.get("icons"))
         return theme
+
+    def _apply_icon_pack(self, raw_icons: Any) -> None:
+        """`pack: "text"`: every icon key theme.json does not set takes its text glyph."""
+        if self.icons.pack != "text":
+            return
+        given = raw_icons if isinstance(raw_icons, dict) else {}
+        for key, glyph in TEXT_ICONS.items():
+            if key == "agent_kinds":
+                mine = given.get("agent_kinds")
+                self.icons.agent_kinds = {k: v for k, v in self.icons.agent_kinds.items()
+                                          if isinstance(mine, dict) and k in mine}
+            elif key not in given:
+                setattr(self.icons, key, glyph)
 
     def _load_leaf(self, target: Any, attr: str, path: str, val: Any) -> None:
         ok, want = _VALIDATORS[path]
-        if ok(val):
+        if ok(val) and path == "icons.agent_kinds":
+            target.agent_kinds = {**target.agent_kinds, **val}   # merge over the defaults
+        elif ok(val):
             setattr(target, attr, val)
         else:
             self.problems.append(f"{path}: expected {want}, got {val!r}; using {getattr(target, attr)!r}")
@@ -255,7 +332,8 @@ class ThemeConfig:
             if f.name == "problems":
                 continue
             v = getattr(self, f.name)
-            out[f.name] = {g.name: getattr(v, g.name) for g in fields(v)} if f.name in _GROUPS else copy.deepcopy(v)
+            out[f.name] = ({g.name: copy.deepcopy(getattr(v, g.name)) for g in fields(v)}
+                           if f.name in _GROUPS else copy.deepcopy(v))
         return out
 
     def snapshot(self, palette: Palette | None = None, source: str = "") -> dict:

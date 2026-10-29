@@ -51,5 +51,31 @@
   "mode_strip": {
     "stay_button": true
   },
+  "icons": {
+    "pack": "icona",
+    "stroke": 1.75,
+    "mode_fallback": "icona:target",
+    "agents": "icona:sparkles",
+    "agent_kinds": {
+      "claude": "icona:sparkles",
+      "codex": "icona:terminal",
+      "t3": "icona:zap",
+      "opencode": "icona:code",
+      "aider": "icona:git-branch",
+      "gemini": "icona:star",
+      "cursor-agent": "icona:cursor"
+    },
+    "held": "icona:bell",
+    "held_muted": "icona:snooze",
+    "timer": "icona:hourglass",
+    "stay": "icona:target",
+    "nudge": "icona:alert",
+    "tag_urgent": "icona:alert",
+    "tag_info": "icona:info",
+    "tag_ok": "icona:check-circle",
+    "card_notification": "icona:bell",
+    "card_site": "icona:compass",
+    "card_verdict": "icona:check-circle"
+  },
   "opacity": 1.0
 }

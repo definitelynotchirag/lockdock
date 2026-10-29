@@ -33,7 +33,8 @@ class StateSnapshot:
         st: dict[str, Any] = {
             "mode": mode,
             "modes": [{"id": m.id, "label": m.label, "icon": m.icon, "color": m.color,
-                       "apps": m.apps, "description": m.description} for m in cfg.modes],
+                       "apps": m.apps, "description": m.description,
+                       "notifications": m.notifications.default} for m in cfg.modes],
             "pending": ({"mode": pending.mode, "deadline_ms": int(pending.deadline * 1000),
                          "total_ms": int(pending.total * 1000)} if pending else None),
             "activity": activity,

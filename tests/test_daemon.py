@@ -31,7 +31,8 @@ def test_snapshot_shape(tmp_path):
     assert st["mode"] == "free" and st["pending"] is None
     assert st["agents"] == [] and st["pet"] == {} and st["theme"] == {}
     assert st["modes"][1] == {"id": "writing", "label": "Writing", "icon": "●", "color": "auto",
-                              "apps": ["md.obsidian.Obsidian", "helium"], "description": ""}
+                              "apps": ["md.obsidian.Obsidian", "helium"], "description": "",
+                              "notifications": "hold"}
     assert st["updated_ms"] == 1000000
     json.dumps(st)
     spawner.drain()
