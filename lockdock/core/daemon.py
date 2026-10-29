@@ -22,7 +22,8 @@ class Daemon:
     and dispatches control commands. Implements the CommandHandler port.
 
     Extension points for features: `register_section` (state.json data),
-    `register_command` (control socket verbs), `config_listeners` (reload hooks).
+    `register_command` (control socket verbs), `config_listeners` (reload hooks),
+    `activity_listeners` (called with the activity dict + `mode` label after each verdict).
     """
 
     def __init__(self, *, config_source: ConfigSource, classifier: Classifier, sink: NotificationSink,
@@ -37,10 +38,11 @@ class Daemon:
                                   else _NullEvents())
         self.snapshot_builder = StateSnapshot()
         self.config_listeners: list[Callable[[Config], None]] = []
+        self.activity_listeners: list[Callable[[dict], None]] = []
         self.modes = ModeManager(lambda: self.cfg, clock, runner, self.events, self._on_switch,
                                  self.publish, spawn)
         self.judge = ActivityJudge(lambda: self.cfg, lambda: self.modes.cur, classifier, clock, self.events,
-                                   self.publish, self._nudge_by_notification, spawn)
+                                   self.publish, self._nudge_by_notification, spawn, self._on_verdict)
         self.gate = NotificationGate(lambda: self.modes.cur, classifier, sink, self.events, self.publish, spawn)
         self._commands: dict[str, CommandFn] = {
             "mode": lambda arg: self.modes.request(arg),
@@ -102,6 +104,11 @@ class Daemon:
         self.gate.release(f"while you were in {old.label}")
         self.publish()
         self.judge.schedule()
+
+    def _on_verdict(self, activity: dict) -> None:
+        data = {**activity, "mode": self.modes.cur.label}
+        for listener in self.activity_listeners:
+            listener(data)
 
     def _nudge_by_notification(self, mode: Mode, w: WindowInfo, reason: str) -> None:
         self.sink.send("lockdock", f"Off task in {mode.label}", f"{w.cls}: {w.title}\n{reason}",

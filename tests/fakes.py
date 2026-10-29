@@ -164,3 +164,29 @@ def make_config(**overrides: Any) -> Config:
                           "browsers": ["helium", "firefox"]}
     kw.update(overrides)
     return Config(**kw)
+
+
+class FakeSpeaker:
+    """Speaker that answers with a fixed line and records the calls."""
+
+    def __init__(self, text: str | None = "llm line") -> None:
+        self.text = text
+        self.calls: list[tuple[str, str, str, str, str]] = []
+
+    async def line(self, mood: str, mode: str, app: str, title: str, reason: str) -> str | None:
+        self.calls.append((mood, mode, app, title, reason))
+        return self.text
+
+
+class FakePetPacks:
+    """PetPackSource over an in-memory {name: manifest} dict."""
+
+    def __init__(self, packs: dict[str, dict] | None = None) -> None:
+        self.packs = packs if packs is not None else {"cat": {"name": "Miso", "size": 48, "moods": {}}}
+
+    def resolve(self, name: str) -> tuple[str, dict] | None:
+        return (f"/packs/{name}", self.packs[name]) if name in self.packs else None
+
+    def available(self) -> list[dict]:
+        return [{"name": n, "title": m.get("name", n), "author": "", "source": "fake", "dir": f"/packs/{n}"}
+                for n, m in self.packs.items()]

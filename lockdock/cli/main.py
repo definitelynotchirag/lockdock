@@ -11,6 +11,12 @@
   lockdock reload            reload modes.json (also happens automatically)
   lockdock log [-n N]        tail events.jsonl (what was classified and why)
   lockdock config            print the modes.json path
+  lockdock pet               the pet's mood, size and line
+  lockdock pet calm          reset the pet (also: click it)
+  lockdock pet mood <m>      preview content|suspicious|annoyed|furious, or `auto`
+  lockdock pet mute|unmute   keep the mood, drop the lines and the growth
+  lockdock pet pack <name>   switch sprite pack (lockdock pet packs lists them)
+  lockdock pet say "<text>"  show a line now
 """
 from __future__ import annotations
 
@@ -20,7 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from ..paths import EVENTS_LOG, MODES_FILE, STATE_FILE
+from ..paths import EVENTS_LOG, MODES_FILE, PET_FILE, STATE_FILE
 from .client import call
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +44,22 @@ def _status(rest: list[str]) -> None:
     a = st.get("activity") or {}
     print(f"activity: {a.get('verdict')}  {a.get('app')}: {a.get('title', '')[:60]}\n  why: {a.get('reason')}")
     print(f"held notifications: {st.get('held_count', 0)}")
+
+
+def _pet(rest: list[str]) -> None:
+    res = call("pet", rest)
+    if rest and rest[0] == "packs" and isinstance(res, list):
+        for p in res:
+            print(f"{p['name']:<14} {p['source']:<9} {p['title']} by {p['author']}  {p['dir']}")
+    elif isinstance(res, dict):
+        flags = " ".join(f for f, on in (("forced", res.get("forced")), ("muted", res.get("muted"))) if on)
+        print(f"{res['name']} ({res['pack']}): {res['mood']}  scale {res['scale']}  "
+              f"off task {res['off_seconds']}s  {flags}".rstrip())
+        if res.get("line"):
+            print(f"  \"{res['line']}\"")
+        print(f"config: {PET_FILE}")
+    else:
+        print(res)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -69,6 +91,8 @@ def main(argv: list[str] | None = None) -> None:
     elif cmd == "log":
         n = int(rest[rest.index("-n") + 1]) if "-n" in rest else 30
         subprocess.run(["tail", f"-n{n}", str(EVENTS_LOG)])
+    elif cmd == "pet":
+        _pet(rest)
     elif cmd == "config":
         print(MODES_FILE)
     elif cmd == "state-file":

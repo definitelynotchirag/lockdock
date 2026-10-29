@@ -17,6 +17,9 @@ STATE_FILE = RUNTIME_DIR / "state.json"
 SOCKET_FILE = RUNTIME_DIR / "sock"
 EVENTS_LOG = STATE_DIR / "events.jsonl"
 CACHE_FILE = STATE_DIR / "classify-cache.json"
+PET_FILE = CONFIG_DIR / "pet.json"
+USER_PETS_DIR = CONFIG_DIR / "pets"
+PET_CACHE_FILE = STATE_DIR / "pet-lines-cache.json"
 
 
 def ensure_dirs() -> None:
