@@ -38,7 +38,9 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   Click it to calm it. Lines, thresholds, growth and sprite packs live in
   `pet.json` (see `skills/lockdock/pet.md`).
 - Modes live in one JSON file and the look in another (`theme.json`: position,
-  scale, sections, autohide, icons, ...); an agent edits them. Every icon is an
+  scale, sections, autohide, icons, ...); an agent edits them.
+- `lockdock pin` reserves the dock's row so maximised windows stop at it (`unpin` to
+  overlay again); hover any button for the dock's own tooltip (`skills/lockdock/motion.md`). Every icon is an
   [Icona](https://icona.works/icons) line icon tinted with the palette; any of
   them (or an emoji) can be swapped in theme.json `icons` or a mode's `icon`. See `AGENTS.md` and
   `skills/lockdock/`.
@@ -73,6 +75,7 @@ lockdock agent focus <id> # focus an agent's window
 lockdock pet              # the pet's mood; also: calm, mood <m>|auto, mute, unmute,
                           #   pack <name>, packs, say "<text>"
 lockdock theme            # effective theme; `theme set <key> <json>`, `theme reset`, `theme path`
+lockdock pin / unpin      # windows stop at the dock / cover it again (`pin toggle` flips)
 lockdock skill path       # the agent skill (also linked to ~/.claude/skills/lockdock)
 ```
 
@@ -104,7 +107,8 @@ shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.jso
   Dock.qml            the panel window; builds the row from theme.sections (sectionMap)
   components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentsPill + AgentsPanel
                       (or AgentStrip), HeldBadge, Nudge, PromptStack + PromptCard (decision cards),
-                      ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen)
+                      ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen),
+                      PinButton; Pressable (shared hover / press) and Tip (the one tooltip)
   components/Icon.qml one icon by name: icona:<slug>, a theme icon or a text glyph
   icons/icona/        Icona SVGs (MIT) + INDEX.md (slug -> name)
   pets/cat/           the built-in sprite pack (pack.json + SVG frames)

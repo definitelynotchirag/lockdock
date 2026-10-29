@@ -16,7 +16,7 @@ description: Tune and debug lockdock, the mode-aware Hyprland dock. Use when the
 | file | what it controls | CLI | page |
 |---|---|---|---|
 | `~/.config/lockdock/modes.json` | modes, rules, notification policy, LLM (`llm.provider`) | `lockdock config` (path), `modes`, `mode <id>`, `reload`, `classify <class> "<title>" [--mode <id>]` | `modes.md` |
-| `~/.config/lockdock/theme.json` | every visual knob of the dock | `lockdock theme`, `theme set <key> <json>`, `theme reset`, `theme path` | `theme.md` |
+| `~/.config/lockdock/theme.json` | every visual knob of the dock | `lockdock theme`, `theme set <key> <json>`, `theme reset`, `theme path`, `pin` / `unpin` / `pin toggle` | `theme.md`, `motion.md` |
 | `~/.config/lockdock/pet.json` | the dock pet: persona, lines, thresholds, growth, sprite pack | `lockdock pet`, `pet calm`, `pet mood <m>\|auto`, `pet mute\|unmute`, `pet pack <name>`, `pet packs`, `pet say "<text>"` | `pet.md` |
 | `modes.json` → `agents.kinds` | coding agents shown in the dock (Claude Code, Codex, OpenCode, Aider, Gemini, T3) | `lockdock agents`, `agents install-hooks [--dry-run]`, `agent focus <id>` | `agents.md` |
 
@@ -36,6 +36,7 @@ After every change:
 
 - `modes.md` - modes.json keys, rules of thumb, debugging a wrong verdict
 - `theme.md` - theme.json keys and recipes
+- `motion.md` - pinning the dock (`lockdock pin`, the `"pin"` section), tooltips, reduced motion
 - `icons.md` - the dock's icons (theme.json `icons`): Icona slugs, emoji, picking a slug from INDEX.md
 - `pet.md` - the dock pet
 - `agents.md` - agents in the dock

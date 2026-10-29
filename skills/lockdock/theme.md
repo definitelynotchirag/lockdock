@@ -4,11 +4,9 @@
 
 ```
 lockdock theme                       # effective theme
-lockdock theme set margin 24         # dotted key, JSON value (strings need quotes)
-lockdock theme set position '"top"'
+lockdock theme set position '"top"'  # dotted key, JSON value (strings need quotes)
 lockdock theme reset                 # back to the defaults
 ```
-
 `theme set` validates first: a wrong key or value is rejected and nothing is written.
 
 | key | default | meaning |
@@ -27,13 +25,16 @@ lockdock theme reset                 # back to the defaults
 | `accent_override` | `null` | colour instead of each mode's colour (and the palette accent) |
 | `font` | `{family: "Inter Display", size: 14}` | `""` or a family that is not installed = system font |
 | `icon_size` | 34 | app icon px; buttons, pills and islands grow with it |
-| `sections` | `["pet","modes","apps","agents","held"]` | what is shown, in order; unknown ids are ignored, missing ids are hidden |
+| `sections` | `["pet","modes","apps","agents","held"]` | what is shown, in order; unknown ids are ignored, missing ids are hidden. Optional: `"pin"` (pin button, see `motion.md`) |
 | `show_unpinned` | true | dimmed icons for running apps not pinned to the mode |
 | `autohide` | `{enabled: false, reveal_px: 4, hide_delay_ms: 600}` | slides away when idle; hover the screen edge to reveal. Stays up during a countdown, a nudge, or held notifications |
 | `nudge` | `{enabled: true}` | the "off task" bubble (palette `danger`) |
 | `agents` | `{style: "pill", max_rows: 8}` | agent inbox: `"pill"` = one pill (count, red dot + "N need you" when an agent waits) that opens a list, `max_rows` rows (1-50) before it scrolls; `"chips"` = one chip per agent. See `agents.md` |
 | `prompts` | `{enabled: true, max_visible: 3, width: 360}` | decision cards above the dock (below it at the top): a held message that needs an answer, a site that belongs to another mode, a verdict toast for an unknown site. `max_visible` 1-10 (the newest win), `width` 200-1000 px before `scale` (toasts may be up to 1.45x wider). `enabled: false` hides them |
 | `mode_strip` | `{stay_button: true}` | while a switch is pending the mode strip shows a timer pill (`icons.timer`, label, m:ss; click to shorten the wait) and a Stay pill that cancels; `false` drops the Stay pill |
+| `pinned` | false | reserve the dock's row so windows stop at it (`lockdock pin` / `unpin` / `pin toggle`); never autohides. See `motion.md` |
+| `tooltips` | `{enabled: true, delay_ms: 350}` | the dock's own tooltips; `delay_ms` 0-5000 before the first one. See `motion.md` |
+| `reduced_motion` | false | hover, press, tooltip and slide animations become instant. See `motion.md` |
 | `icons` | Icona set | every icon the dock draws that is not an app icon: see `icons.md` |
 | `opacity` | 1.0 | whole dock |
 
@@ -47,14 +48,13 @@ Mode colours: in modes.json `"color": "auto"` (the default) gives the active mod
 
 ## Recipes
 
-- "Move the dock to the top": `lockdock theme set position '"top"'`; "autohide": `theme set autohide.enabled true`
-- "Make it smaller": `lockdock theme set scale 0.8` (bigger icons only: `icon_size`)
+- "Move the dock to the top": `lockdock theme set position '"top"'`; "autohide": `theme set autohide.enabled true`; "smaller": `theme set scale 0.8` (icons only: `icon_size`)
+- "Windows should not cover the dock": `lockdock pin`; "a pin button": add `"pin"` to `sections` (`motion.md`); "no tooltips": `theme set tooltips.enabled false`
 - "Hide the held badge": `lockdock theme set sections '["pet","modes","apps","agents"]'`; "only apps, then modes": `'["apps","modes"]'`
 - "Force dark (or light) colours": `lockdock theme set palette '"dark"'`; back to the wallpaper: `'"system"'`
 - "Use my red as the accent but keep the wallpaper colours": `lockdock theme set palette '{"accent": "#e5484d", "accent_container": "#5c1a1d", "on_accent_container": "#ffdad8"}'` (set the whole object; a role is not a dotted key)
 - "The old single-card look": `lockdock theme set layout '"slab"'`; "glassier islands": `theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`; "a fixed background": `theme set background '"#FF1C1C21"'` (`null`: palette)
-- "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`
-- "No cards above the dock": `lockdock theme set prompts.enabled false`; "only one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`
+- "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`; "no cards above the dock": `theme set prompts.enabled false`; "one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`
 - "One chip per agent again": `lockdock theme set agents.style '"chips"'` (back: `'"pill"'`)
 
 Check the result with a screenshot (`grim`) before telling the user it is done.

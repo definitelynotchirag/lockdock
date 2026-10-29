@@ -149,6 +149,7 @@ Control verbs may return an awaitable; `UnixSocketControl` awaits it before repl
 (`features/classify.py`: `classify {cls, title, mode?, url?, cached?}` runs the classifier once and
 returns `{mode, provider, verdict, reason, source, ms, rules}`).
 
+`features/theme.py` adds `pin` (arg `on` / `off` / `toggle`).
 Control verbs added by `features/agents.py`: `agent_event {kind, state, payload, pids}`,
 `agent_focus <id>`, `agents`. By `features/prompts.py`: `prompts` (the list) and
 `prompt_act {id, action}` with action `later` / `dismiss` (close), `stay` (close and
@@ -197,6 +198,29 @@ which also drops its divider. List a section in `inlineSections` to draw it
 without a divider (like the held badge). To add a section: one `Component` and
 one `sectionMap` entry; also add its id to `DEFAULT_SECTIONS` in
 `core/theme.py` and `theme.example.json` if it should show by default.
+
+Interaction: every clickable thing is a `components/Pressable.qml` (use it as the root
+of a button or pill, like a MouseArea that animates). It exposes `hovered`, `pressed`,
+`clicked()`, `hoverProgress` (0..1, 180 ms OutCubic in, 240 ms out), `pressProgress`
+(80 ms in, 160 ms OutBack out), `pressScale` (bind `scale: pressScale`) and `lift(px)` (an
+icon's hover translate). Draw hover as a `surface_hover` fill at `hoverProgress`, not with a
+`Behavior` on a colour (it would chase every frame). Durations go through
+`theme.dur(ms)`, which is 0 under `theme.reduced_motion`. Its `tip: {icon, title,
+detail}` is the tooltip: Pressable calls `theme.host.showTip(item, tip)` /
+`hideTip(item)`; `theme.host` is the Dock (`Theme { host: dock }`), which owns the one
+`components/Tip.qml` per window. The Dock waits `theme.tooltipDelayMs` (switching at once
+while a tip shows or just faded), places the tip above the item (below at the top; flipped
+if it does not fit, clamped to the window, the tail on the item's centre; an item on the
+islands points at the island edge), adds it to the `mask` only while visible, and always
+reserves `tipHeadroom` (and a tip's height over the agents list) so hovering never resizes
+the layer surface. Never use `QtQuick.Controls` `ToolTip`.
+
+Pinning: `theme.pinned` sets `exclusiveZone` to `reservedZone` (`islandHeight + margin`:
+the island row only, never the transparent headroom for cards, bubbles and tips), else 0
+(or -1 with autohide). Pinned forces autohide off (`Dock.autohide`). The `pin` control verb
+(`ThemeService.pin`: on / off / toggle, written through `set`) backs `lockdock pin`,
+`unpin`, `pin toggle` and the optional `"pin"` section (`components/PinButton.qml`, in
+`inlineSections` and `joinSections`, not in `DEFAULT_SECTIONS`).
 
 Do not position things with `anchors.x: cond ? a : undefined` in QML: an
 anchor, once set, is not reset by a later `undefined`. Bind `y`/`x` instead.

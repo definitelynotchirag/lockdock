@@ -18,6 +18,7 @@ freedesktop icon name (`"firefox"`), or `""` for no icon.
 | `icons.tag_urgent` / `tag_info` / `tag_ok` | `icona:alert` / `icona:info` / `icona:check-circle` | decision-card tag by level |
 | `icons.card_notification` / `card_site` / `card_verdict` | `icona:bell` / `icona:compass` / `icona:check-circle` | a card whose app has no desktop icon |
 | `icons.app_fallback` | `icona:layers` | an app in the strip with no desktop icon |
+| `icons.pin` / `icons.pin_off` | `icona:map-pin-fill` / `icona:map-pin` | the pin button (section `"pin"`): pinned / not pinned (`motion.md`) |
 
 **Picking a slug.** `shell/icons/icona/INDEX.md` lists every slug with its name and style
 (596: outline, `-fill` and `-color` variants, pixel art `pixel-*`, doodles `doodle-*`). Grep it
