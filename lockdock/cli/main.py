@@ -11,6 +11,12 @@
   lockdock reload            reload modes.json (also happens automatically)
   lockdock log [-n N]        tail events.jsonl (what was classified and why)
   lockdock config            print the modes.json path
+  lockdock agents [--json]   running coding agents and whether they need you
+  lockdock agent focus <id>  focus an agent's window
+  lockdock agents install-hooks [--claude] [--codex] [--dry-run]
+                             report agent state from Claude Code / Codex hooks
+  lockdock agent-event <kind> <state> [json]
+                             (used by hooks) report an agent's state; JSON on stdin
 """
 from __future__ import annotations
 
@@ -46,7 +52,10 @@ def main(argv: list[str] | None = None) -> None:
         print(USAGE)
         return
     cmd, rest = args[0], args[1:]
-    if cmd == "daemon":
+    if cmd in ("agent-event", "agents", "agent"):
+        from .agents import main as agents_main
+        agents_main(cmd, rest)
+    elif cmd == "daemon":
         from ..app import main as run_daemon
         run_daemon()
     elif cmd == "shell":

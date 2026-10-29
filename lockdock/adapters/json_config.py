@@ -7,6 +7,7 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
+from ..core.agents import DEFAULT_KINDS, merge_kinds
 from ..core.models import DEFAULT_BROWSERS, Config, Mode, NotificationRules
 
 EXAMPLE = Path(__file__).resolve().parents[2] / "modes.example.json"
@@ -32,7 +33,9 @@ def config_from_dict(raw: dict) -> Config:
     return Config(modes=modes, default_mode=raw.get("default_mode", modes[0].id),
                   llm_enabled=llm.get("enabled", True), llm_model=llm.get("model", "haiku"),
                   dwell_s=float(raw.get("dwell_s", 2.0)),
-                  browsers=raw.get("browsers", list(DEFAULT_BROWSERS)))
+                  browsers=raw.get("browsers", list(DEFAULT_BROWSERS)),
+                  agent_kinds=(merge_kinds(DEFAULT_KINDS, raw["agents"].get("kinds", []))
+                               if isinstance(raw.get("agents"), dict) else None))
 
 
 class JsonConfigLoader:

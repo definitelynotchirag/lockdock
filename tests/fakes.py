@@ -5,7 +5,8 @@ import asyncio
 from collections.abc import Callable, Coroutine
 from typing import Any
 
-from lockdock.core.models import Config, Mode, Notification, NotificationRules, Verdict, WindowInfo
+from lockdock.core.models import (Config, Mode, Notification, NotificationRules, ProcessInfo, Verdict,
+                                  WindowInfo)
 
 
 class FakeClock:
@@ -122,6 +123,16 @@ class FakeEvents:
 
     def kinds(self) -> list[str]:
         return [r["kind"] for r in self.records]
+
+
+class FakeProcessScanner:
+    """Returns whatever process list the test sets."""
+
+    def __init__(self, procs: list[ProcessInfo] | None = None) -> None:
+        self.procs = procs or []
+
+    def scan(self) -> list[ProcessInfo]:
+        return list(self.procs)
 
 
 class Spawner:

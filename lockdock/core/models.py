@@ -47,6 +47,76 @@ class Mode:
     on_exit: list[str] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class AgentKind:
+    """One row of the agent detection table (see core.agents.DEFAULT_KINDS).
+
+    `patterns` are case-insensitive regexes full-matched against a process's
+    program names (basename of argv[0], or of the script an interpreter runs);
+    a pattern containing "/" is searched in the full path instead. `ancestors`
+    (optional) must match some ancestor's program name; `exclude` full-matches
+    single arguments that disqualify the process (e.g. `-p`). `label_arg` names
+    a flag whose value's basename becomes the label. `hook_kind` is the kind
+    hook events for it arrive as (default: `name`).
+    """
+
+    name: str
+    glyph: str = "◆"
+    patterns: tuple[str, ...] = ()
+    ancestors: tuple[str, ...] = ()
+    exclude: tuple[str, ...] = ()
+    label_arg: str = ""
+    hook_kind: str = ""
+
+    @property
+    def event_kind(self) -> str:
+        return self.hook_kind or self.name
+
+
+class AgentState(StrEnum):
+    """What a coding agent is doing, as far as lockdock can tell."""
+
+    WORKING = "working"
+    NEEDS_INPUT = "needs_input"
+    DONE = "done"
+    IDLE = "idle"
+
+
+@dataclass
+class AgentInfo:
+    """One running (or recently finished) coding agent, as published in state.json `agents`."""
+
+    id: str
+    kind: str
+    label: str
+    state: AgentState = AgentState.IDLE
+    since_ms: int = 0
+    pid: int | None = None
+    cwd: str = ""
+    window_address: str | None = None
+    last_message: str = ""
+    session_id: str = ""
+    glyph: str = "◆"
+
+    def to_dict(self) -> dict:
+        """The form published in state.json."""
+        return {"id": self.id, "kind": self.kind, "label": self.label, "state": str(self.state),
+                "since_ms": self.since_ms, "pid": self.pid, "cwd": self.cwd,
+                "window_address": self.window_address, "last_message": self.last_message,
+                "session_id": self.session_id, "glyph": self.glyph}
+
+
+@dataclass(frozen=True)
+class ProcessInfo:
+    """One process from a ProcessScanner. `cpu_s` is total user+system CPU seconds."""
+
+    pid: int
+    ppid: int
+    cmdline: tuple[str, ...]
+    cwd: str = ""
+    cpu_s: float = 0.0
+
+
 @dataclass
 class Config:
     """The whole modes.json, parsed."""
@@ -57,6 +127,7 @@ class Config:
     llm_model: str = "haiku"
     dwell_s: float = 2.0
     browsers: list[str] = field(default_factory=lambda: list(DEFAULT_BROWSERS))
+    agent_kinds: list[AgentKind] | None = None   # None = the built-in table (core.agents.DEFAULT_KINDS)
 
     def get(self, mode_id: str | None) -> Mode | None:
         """The mode with this id, or None."""
@@ -74,6 +145,7 @@ class WindowInfo:
     title: str = ""
     url: str | None = None
     pid: int | None = None
+    address: str | None = None   # compositor window address ("0x..."), when the source knows it
 
     def key(self) -> tuple[str, str, str | None]:
         """Identity used to detect that focus moved on while a verdict was being computed."""

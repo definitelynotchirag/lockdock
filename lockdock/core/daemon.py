@@ -22,7 +22,8 @@ class Daemon:
     and dispatches control commands. Implements the CommandHandler port.
 
     Extension points for features: `register_section` (state.json data),
-    `register_command` (control socket verbs), `config_listeners` (reload hooks).
+    `register_command` (control socket verbs), `config_listeners` (reload hooks),
+    `focus_listeners` (every focus change, after the judge saw it).
     """
 
     def __init__(self, *, config_source: ConfigSource, classifier: Classifier, sink: NotificationSink,
@@ -37,6 +38,7 @@ class Daemon:
                                   else _NullEvents())
         self.snapshot_builder = StateSnapshot()
         self.config_listeners: list[Callable[[Config], None]] = []
+        self.focus_listeners: list[Callable[[WindowInfo], None]] = []
         self.modes = ModeManager(lambda: self.cfg, clock, runner, self.events, self._on_switch,
                                  self.publish, spawn)
         self.judge = ActivityJudge(lambda: self.cfg, lambda: self.modes.cur, classifier, clock, self.events,
@@ -60,6 +62,8 @@ class Daemon:
 
     def on_focus(self, window: WindowInfo) -> None:
         self.judge.on_focus(window)
+        for listener in self.focus_listeners:
+            listener(window)
 
     # ---------- state ----------
     def register_section(self, name: str, provider: SectionProvider) -> None:

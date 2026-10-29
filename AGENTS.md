@@ -27,7 +27,9 @@ hot-reloads it within 2 s. Per mode:
 
 Top level: `default_mode`, `dwell_s` (how long a window must stay focused
 before it is judged), `llm.enabled`, `llm.model` (a `claude -p` model alias),
-`browsers` (classes judged by tab title, never by being a mode app).
+`browsers` (classes judged by tab title, never by being a mode app),
+`agents.kinds` (extra / overridden coding-agent kinds for the agent inbox;
+see `skills/lockdock/agents.md`).
 
 ## How to find out what went wrong
 
