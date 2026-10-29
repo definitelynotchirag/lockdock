@@ -6,6 +6,7 @@ import json
 import shutil
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from ..core.models import DEFAULT_BROWSERS, Config, Mode, NotificationRules
 
@@ -35,25 +36,36 @@ def config_from_dict(raw: dict) -> Config:
                   browsers=raw.get("browsers", list(DEFAULT_BROWSERS)))
 
 
-class JsonConfigLoader:
-    """ConfigSource for ~/.config/lockdock/modes.json (seeded from modes.example.json)."""
+class JsonFileWatcher:
+    """JsonDocument for a user-edited JSON file: seeded from an example, polled by mtime.
 
-    def __init__(self, path: Path, example: Path = EXAMPLE, poll_s: float = 2.0) -> None:
+    `read()` creates the file from `example` when missing; `write()` is atomic and does not
+    count as an external edit; `watch()` hands every externally edited, parsed file to on_change.
+    """
+
+    def __init__(self, path: Path, example: Path, poll_s: float = 2.0) -> None:
         self.path = path
         self.example = example
         self.poll_s = poll_s
         self._mtime = 0.0
 
-    def load(self) -> Config:
+    def read(self) -> Any:
         if not self.path.exists():
             self.path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(self.example, self.path)
         self._mtime = self.path.stat().st_mtime
-        return config_from_dict(json.loads(self.path.read_text()))
+        return json.loads(self.path.read_text())
 
-    async def watch(self, on_change: Callable[[Config], None],
+    def write(self, raw: Any) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_name(self.path.name + ".tmp")
+        tmp.write_text(json.dumps(raw, indent=2, ensure_ascii=False) + "\n")
+        tmp.replace(self.path)
+        self._mtime = self.path.stat().st_mtime
+
+    async def watch(self, on_change: Callable[[Any], None],
                     on_error: Callable[[Exception], None] | None = None) -> None:
-        """Poll the mtime; on a change, load and hand the new Config to on_change."""
+        """Poll the mtime; on a change, parse the file and hand it to on_change."""
         while True:
             await asyncio.sleep(self.poll_s)
             try:
@@ -62,11 +74,36 @@ class JsonConfigLoader:
                 continue
             if mt == self._mtime:
                 continue
-            self._mtime = mt
             try:
-                cfg = self.load()
-            except (ValueError, KeyError, OSError) as e:
+                raw = self.read()
+            except (ValueError, OSError) as e:
+                self._mtime = mt
                 if on_error:
                     on_error(e)
                 continue
+            on_change(raw)
+
+
+class JsonConfigLoader:
+    """ConfigSource for ~/.config/lockdock/modes.json (seeded from modes.example.json)."""
+
+    def __init__(self, path: Path, example: Path = EXAMPLE, poll_s: float = 2.0) -> None:
+        self.file = JsonFileWatcher(path, example, poll_s)
+        self.path = path
+
+    def load(self) -> Config:
+        return config_from_dict(self.file.read())
+
+    async def watch(self, on_change: Callable[[Config], None],
+                    on_error: Callable[[Exception], None] | None = None) -> None:
+        """On an edit, parse into a Config and hand it to on_change; bad edits go to on_error."""
+        def changed(raw: Any) -> None:
+            try:
+                cfg = config_from_dict(raw)
+            except (ValueError, KeyError) as e:
+                if on_error:
+                    on_error(e)
+                return
             on_change(cfg)
+
+        await self.file.watch(changed, on_error)

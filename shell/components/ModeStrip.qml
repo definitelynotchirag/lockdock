@@ -7,14 +7,16 @@ RowLayout {
     required property var st          // state.json
     required property real now        // ms clock for the countdown
     required property bool offTask
+    required property var theme
     signal modeClicked(string modeId)
 
-    spacing: 6
+    spacing: theme.px(6)
 
     Repeater {
         model: strip.st.modes || []
         ModePill {
             required property var modelData
+            theme: strip.theme
             mode: modelData
             active: modelData.id === strip.st.mode
             pending: strip.st.pending && strip.st.pending.mode === modelData.id ? strip.st.pending : null

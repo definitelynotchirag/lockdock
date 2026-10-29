@@ -11,6 +11,11 @@
   lockdock reload            reload modes.json (also happens automatically)
   lockdock log [-n N]        tail events.jsonl (what was classified and why)
   lockdock config            print the modes.json path
+  lockdock theme             print the effective theme (and any problems in theme.json)
+  lockdock theme set K V     set a dotted key to a JSON value, e.g. theme set position '"top"'
+  lockdock theme reset       restore the default theme
+  lockdock theme path        print the theme.json path
+  lockdock skill path        print the agent skill directory (skills/lockdock)
 """
 from __future__ import annotations
 
@@ -20,7 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from ..paths import EVENTS_LOG, MODES_FILE, STATE_FILE
+from ..paths import EVENTS_LOG, MODES_FILE, STATE_FILE, THEME_FILE
 from .client import call
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +43,29 @@ def _status(rest: list[str]) -> None:
     a = st.get("activity") or {}
     print(f"activity: {a.get('verdict')}  {a.get('app')}: {a.get('title', '')[:60]}\n  why: {a.get('reason')}")
     print(f"held notifications: {st.get('held_count', 0)}")
+
+
+def _theme(rest: list[str]) -> None:
+    sub = rest[0] if rest else "get"
+    if sub == "path":
+        print(THEME_FILE)
+    elif sub == "get":
+        res = call("theme_get")
+        print(json.dumps(res["theme"], indent=2))
+        for p in res["problems"]:
+            print(f"problem: {p}", file=sys.stderr)
+    elif sub == "set":
+        if len(rest) != 3:
+            sys.exit("usage: lockdock theme set <dotted.key> <json-value>   (strings need quotes: '\"top\"')")
+        try:
+            value = json.loads(rest[2])
+        except json.JSONDecodeError as e:
+            sys.exit(f"value must be JSON ({e}); quote strings, e.g. '\"top\"'")
+        print(call("theme_set", {"key": rest[1], "value": value}))
+    elif sub == "reset":
+        print(call("theme_reset"))
+    else:
+        sys.exit(f"unknown theme command {sub!r}\n\n{USAGE}")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -71,6 +99,12 @@ def main(argv: list[str] | None = None) -> None:
         subprocess.run(["tail", f"-n{n}", str(EVENTS_LOG)])
     elif cmd == "config":
         print(MODES_FILE)
+    elif cmd == "theme":
+        _theme(rest)
+    elif cmd == "skill":
+        if rest[:1] != ["path"]:
+            sys.exit("usage: lockdock skill path")
+        print(ROOT / "skills" / "lockdock")
     elif cmd == "state-file":
         print(STATE_FILE)
     else:

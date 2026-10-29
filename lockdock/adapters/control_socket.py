@@ -13,7 +13,7 @@ def handle_line(handler: CommandHandler, line: bytes) -> dict:
     try:
         req = json.loads(line or b"{}")
         return {"ok": True, "result": handler.handle(req.get("cmd"), req.get("arg"))}
-    except (json.JSONDecodeError, OSError) as e:
+    except (ValueError, OSError) as e:
         return {"ok": False, "error": str(e)}
 
 

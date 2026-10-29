@@ -10,8 +10,8 @@ from typing import Any
 from ..paths import SOCKET_FILE
 
 
-def call(cmd: str, arg: str | None = None, path: Path = SOCKET_FILE) -> Any:
-    """Send one command and return its result; exits if the daemon is down or errors."""
+def call(cmd: str, arg: Any = None, path: Path = SOCKET_FILE) -> Any:
+    """Send one command (arg is any JSON value) and return its result; exits if the daemon is down or errors."""
     s = socket.socket(socket.AF_UNIX)
     try:
         s.connect(str(path))

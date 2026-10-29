@@ -145,6 +145,28 @@ class Spawner:
         self.coros.clear()
 
 
+class FakeJsonDocument:
+    """In-memory JsonDocument; `raw` is the file content, `writes` records every write."""
+
+    def __init__(self, raw: Any = None, error: Exception | None = None) -> None:
+        self.raw: Any = {} if raw is None else raw
+        self.error = error
+        self.writes: list[Any] = []
+
+    def read(self) -> Any:
+        if self.error:
+            raise self.error
+        return self.raw
+
+    def write(self, raw: Any) -> None:
+        self.raw = raw
+        self.writes.append(raw)
+
+    async def watch(self, on_change: Callable[[Any], None],
+                    on_error: Callable[[Exception], None] | None = None) -> None:
+        on_change(self.raw)
+
+
 def make_config(**overrides: Any) -> Config:
     """Free / writing / building modes, close to modes.example.json."""
     free = Mode(id="free", label="Free", on_task=[".*"], unknown="neutral",
