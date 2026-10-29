@@ -37,7 +37,9 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   Click it to calm it. Lines, thresholds, growth and sprite packs live in
   `pet.json` (see `skills/lockdock/pet.md`).
 - Modes live in one JSON file and the look in another (`theme.json`: position,
-  scale, sections, autohide, ...); an agent edits them. See `AGENTS.md` and
+  scale, sections, autohide, icons, ...); an agent edits them. Every icon is an
+  [Icona](https://icona.works/icons) line icon tinted with the palette; any of
+  them (or an emoji) can be swapped in theme.json `icons` or a mode's `icon`. See `AGENTS.md` and
   `skills/lockdock/`.
 
 ## Requirements
@@ -101,7 +103,10 @@ shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.jso
   components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentsPill + AgentsPanel
                       (or AgentStrip), HeldBadge, Nudge, PromptStack + PromptCard (decision cards),
                       ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen)
+  components/Icon.qml one icon by name: icona:<slug>, a theme icon or a text glyph
+  icons/icona/        Icona SVGs (MIT) + INDEX.md (slug -> name)
   pets/cat/           the built-in sprite pack (pack.json + SVG frames)
+  pets/icona-cat/     a second pack, drawn from Icona's Black Cat
 browser-extension/    WebExtension that reports the active tab URL to the daemon
 tests/                pytest with fakes for every port
 docs/architecture.md  ports, adapters, state.json sections, how to add a feature
@@ -113,6 +118,12 @@ skills/lockdock/      agent skill: SKILL.md index + modes.md, theme.md, ...
 ```
 
 Tests: `uv run --no-project --python 3.14 --with pytest pytest -q`
+
+## Credits
+
+Icons: [Icona](https://icona.works/icons) by Komal Verma
+([github.com/komalverma22/Icona](https://github.com/komalverma22/Icona)), MIT; the
+licence is in `shell/icons/icona/LICENSE`. The `icona-cat` pet is drawn from its Black Cat.
 
 ## Known limits
 

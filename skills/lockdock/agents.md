@@ -1,10 +1,10 @@
 # lockdock agent inbox
 
-The dock shows one pill for all running coding agents: a glyph, the count and
+The dock shows one pill for all running coding agents: an icon, the count and
 a dot. When an agent waits for you the dot turns red, the pill says "2 need
 you" and its outline pulses (it never opens by itself). Click the pill for the
 list: one row per agent (waiting first, then working, idle, done) with its
-glyph, label (project dir), last message, age and dot; the cwd is in the row's
+icon, label (project dir), last message, age and dot; the cwd is in the row's
 tooltip. Click a row to focus that agent's window. The list closes on a second
 click on the pill, on a row click, or 0.7 s after the pointer leaves it.
 
@@ -67,3 +67,8 @@ disqualify a process (`-p` one-shots). `ancestors`: a program that must be an
 ancestor (how T3 Code children become `t3`). `label_arg`: flag whose value
 names the chip. `hook_kind`: the kind its hook events use. New names go
 before the built-ins; the first match wins. Reloads within 2 s.
+
+Icons: theme.json `icons.agent_kinds` (kind -> icon, see `theme.md` Icons) wins over a
+kind's `glyph`, and ships Icona icons for the built-in kinds. So `"glyph": "C"` for claude
+only shows after `lockdock theme set icons.agent_kinds.claude '"C"'`; a new kind's glyph
+(goose above) shows as is. A `glyph` of `"icona:<slug>"` always wins.
