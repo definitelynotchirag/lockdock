@@ -144,7 +144,10 @@ class Config:
     modes: list[Mode]
     default_mode: str
     llm_enabled: bool = True
-    llm_model: str = "haiku"
+    llm_model: str = "haiku"            # claude -p model alias (classifier with provider claude, and the pet)
+    llm_provider: str = "claude"        # claude | jev; read once at daemon start
+    jev_model: str = "jev-latest"
+    min_confidence: float = 0.35        # jev: a choice below this confidence becomes neutral / pass
     dwell_s: float = 2.0
     browsers: list[str] = field(default_factory=lambda: list(DEFAULT_BROWSERS))
     browser_bridge: BrowserBridge = field(default_factory=BrowserBridge)

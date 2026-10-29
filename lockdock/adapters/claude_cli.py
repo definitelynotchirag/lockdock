@@ -50,6 +50,16 @@ async def ask_claude(system: str, user: str, model: str, timeout_s: float) -> di
         return None
 
 
+def activity_key(mode: Mode, window: WindowInfo) -> str:
+    """Cache key for a window verdict: (mode, class, normalised title). Shared by every classifier."""
+    return f"a|{mode.id}|{window.cls}|{norm_title(window.title)}"
+
+
+def notification_key(mode: Mode, n: Notification) -> str:
+    """Cache key for a notification verdict: (mode, app, normalised summary)."""
+    return f"n|{mode.id}|{n.app}|{norm_title(n.summary)}"
+
+
 class JsonFileCache:
     """A dict persisted to one JSON file after every write."""
 
@@ -65,6 +75,16 @@ class JsonFileCache:
 
     def put(self, key: str, value: dict) -> None:
         self._data[key] = value
+        self._save()
+
+    def drop(self, key: str) -> bool:
+        """Forget one entry; whether it was there."""
+        if self._data.pop(key, None) is None:
+            return False
+        self._save()
+        return True
+
+    def _save(self) -> None:
         try:
             self.path.write_text(json.dumps(self._data, indent=1))
         except OSError:
@@ -74,6 +94,8 @@ class JsonFileCache:
 class ClaudeCliClassifier:
     """Classifier port: one `claude -p` call at a time, no tools, results cached by
     (mode, class, normalised title) or (mode, app, normalised summary)."""
+
+    provider = "claude"
 
     def __init__(self, cache: JsonFileCache, model: str = "haiku", timeout_s: float = 40) -> None:
         self.cache = cache
@@ -86,7 +108,7 @@ class ClaudeCliClassifier:
             return await ask_claude(system, user, self.model, self.timeout_s)
 
     async def activity(self, mode: Mode, window: WindowInfo) -> ActivityVerdict:
-        key = f"a|{mode.id}|{window.cls}|{norm_title(window.title)}"
+        key = activity_key(mode, window)
         if c := self.cache.get(key):
             return ActivityVerdict(Verdict(c["verdict"]), c["reason"] + " (cached)", cached=True)
         payload = {"mode": mode.label, "mode_description": mode.description, "mode_apps": mode.apps,
@@ -100,7 +122,7 @@ class ClaudeCliClassifier:
         return ActivityVerdict(Verdict(res["verdict"]), res.get("reason", ""))
 
     async def notification(self, mode: Mode, n: Notification) -> NotificationVerdict:
-        key = f"n|{mode.id}|{n.app}|{norm_title(n.summary)}"
+        key = notification_key(mode, n)
         if c := self.cache.get(key):
             return NotificationVerdict(c["action"], c["reason"], bool(c.get("time_sensitive")),
                                        c.get("deadline"), cached=True)

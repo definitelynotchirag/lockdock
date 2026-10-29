@@ -21,6 +21,7 @@ CACHE_FILE = STATE_DIR / "classify-cache.json"
 PET_FILE = CONFIG_DIR / "pet.json"
 USER_PETS_DIR = CONFIG_DIR / "pets"
 PET_CACHE_FILE = STATE_DIR / "pet-lines-cache.json"
+ENV_FILE = CONFIG_DIR / ".env"   # secrets (TYPESAFE_API_KEY=...), owner-only
 # Material You palettes the dock follows, first existing wins: a user drop-in, then end-4's matugen output
 PALETTE_FILES = [
     CONFIG_DIR / "colors.json",

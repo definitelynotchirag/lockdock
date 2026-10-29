@@ -1,7 +1,9 @@
-"""The control socket: one newline-terminated JSON request {"cmd", "arg"} per connection."""
+"""The control socket: one newline-terminated JSON request {"cmd", "arg"} per connection.
+A command may return an awaitable (e.g. `classify`); it is awaited before the reply."""
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 from pathlib import Path
 
@@ -28,6 +30,11 @@ class UnixSocketControl:
         try:
             line = await reader.readline()
             res = handle_line(self.handler, line)
+            if inspect.isawaitable(res.get("result")):
+                try:
+                    res = {"ok": True, "result": await res["result"]}
+                except (ValueError, OSError) as e:
+                    res = {"ok": False, "error": str(e)}
             writer.write((json.dumps(res) + "\n").encode())
         except OSError as e:
             writer.write((json.dumps({"ok": False, "error": str(e)}) + "\n").encode())

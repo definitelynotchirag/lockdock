@@ -44,11 +44,20 @@ def config_from_dict(raw: dict) -> Config:
                             stay_snooze_s=int(pr.get("stay_snooze_s", 600)))
     return Config(modes=modes, default_mode=raw.get("default_mode", modes[0].id),
                   llm_enabled=llm.get("enabled", True), llm_model=llm.get("model", "haiku"),
+                  llm_provider=_provider(llm.get("provider", "claude")),
+                  jev_model=str(llm.get("jev_model", "jev-latest")),
+                  min_confidence=float(llm.get("min_confidence", 0.35)),
                   dwell_s=float(raw.get("dwell_s", 2.0)),
                   browsers=raw.get("browsers", list(DEFAULT_BROWSERS)), browser_bridge=bridge,
                   agent_kinds=(merge_kinds(DEFAULT_KINDS, raw["agents"].get("kinds", []))
                                if isinstance(raw.get("agents"), dict) else None),
                   prompts=prompts)
+
+
+def _provider(name: object) -> str:
+    if name not in ("claude", "jev"):
+        raise ValueError(f"llm.provider must be \"claude\" or \"jev\", not {name!r}")
+    return str(name)
 
 
 class JsonFileWatcher:

@@ -1,7 +1,7 @@
 {
   "default_mode": "free",
   "dwell_s": 2.0,
-  "llm": { "enabled": true, "model": "haiku" },
+  "llm": { "enabled": true, "provider": "claude", "model": "haiku", "jev_model": "jev-latest", "min_confidence": 0.35 },
   "browser_bridge": { "enabled": true, "port": 47231, "token": "" },
   "prompts": { "enabled": true, "site_cards": true, "notification_cards": true, "verdict_toasts": true, "stay_snooze_s": 600 },
   "browsers": ["helium", "chrom", "firefox", "zen", "brave", "vivaldi", "librewolf"],
