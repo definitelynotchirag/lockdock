@@ -1,4 +1,4 @@
-"""Classifier backed by `claude -p` (the user's Claude Code login; no API key), with a JSON file cache."""
+"""Classifier and pet Speaker backed by `claude -p` (the user's Claude Code login; no API key), with a JSON file cache."""
 from __future__ import annotations
 
 import asyncio
@@ -21,6 +21,30 @@ NOTIF_SYS = (
     "{\"action\":\"pass\"|\"hold\",\"reason\":\"<=12 words\"}. Pass only if time-sensitive and relevant to the mode "
     "or clearly important (people waiting, failures, calendar in the next hour)."
 )
+PET_SYS = (
+    "You write one line of speech for a desktop pet that scolds its owner for being off task. "
+    "Stay in this character: {persona} The pet's mood is {mood}. At most 12 words, playful, "
+    "tease the distracting activity, never insult the person. "
+    "Answer ONLY compact JSON: {{\"line\":\"...\"}}"
+)
+
+
+async def ask_claude(system: str, user: str, model: str, timeout_s: float) -> dict | None:
+    """One `claude -p` call with no tools; the first JSON object in the reply, or None."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "claude", "-p", "--no-session-persistence", "--model", model,
+            "--output-format", "json", "--tools", "", "--system-prompt", system,
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL)
+        out, _ = await asyncio.wait_for(proc.communicate(user.encode()), timeout=timeout_s)
+        res = json.loads(out)
+        if res.get("is_error"):
+            return None
+        m = re.search(r"\{.*\}", res.get("result", ""), re.S)
+        return json.loads(m.group(0)) if m else None
+    except (asyncio.TimeoutError, json.JSONDecodeError, OSError, ValueError):
+        return None
 
 
 class JsonFileCache:
@@ -56,20 +80,7 @@ class ClaudeCliClassifier:
 
     async def _ask(self, system: str, user: str) -> dict | None:
         async with self._sem:
-            try:
-                proc = await asyncio.create_subprocess_exec(
-                    "claude", "-p", "--no-session-persistence", "--model", self.model,
-                    "--output-format", "json", "--tools", "", "--system-prompt", system,
-                    stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.DEVNULL)
-                out, _ = await asyncio.wait_for(proc.communicate(user.encode()), timeout=self.timeout_s)
-                res = json.loads(out)
-                if res.get("is_error"):
-                    return None
-                m = re.search(r"\{.*\}", res.get("result", ""), re.S)
-                return json.loads(m.group(0)) if m else None
-            except (asyncio.TimeoutError, json.JSONDecodeError, OSError, ValueError):
-                return None
+            return await ask_claude(system, user, self.model, self.timeout_s)
 
     async def activity(self, mode: Mode, window: WindowInfo) -> tuple[Verdict, str]:
         key = f"a|{mode.id}|{window.cls}|{norm_title(window.title)}"
@@ -96,3 +107,29 @@ class ClaudeCliClassifier:
             return "pass", "classifier unavailable (fail open)"
         self.cache.put(key, {"action": res["action"], "reason": res.get("reason", ""), "ts": time.time()})
         return res["action"], res.get("reason", "")
+
+
+class ClaudeCliSpeaker:
+    """Speaker port: one scolding line per (mood, app) from `claude -p`, cached in a JsonFileCache."""
+
+    def __init__(self, cache: JsonFileCache, persona: str, model: str = "haiku", timeout_s: float = 40) -> None:
+        self.cache = cache
+        self.persona = persona
+        self.model = model
+        self.timeout_s = timeout_s
+        self._sem = asyncio.Semaphore(1)
+
+    async def line(self, mood: str, mode: str, app: str, title: str, reason: str) -> str | None:
+        key = f"p|{mood}|{app}"
+        if c := self.cache.get(key):
+            return c["line"]
+        user = json.dumps({"mood": mood, "focus_mode": mode, "app": app, "window_title": title[:120],
+                           "why_off_task": reason})
+        async with self._sem:
+            res = await ask_claude(PET_SYS.format(persona=self.persona, mood=mood), user, self.model,
+                                   self.timeout_s)
+        text = str((res or {}).get("line", "")).strip()
+        if not text or len(text.split()) > 16:
+            return None
+        self.cache.put(key, {"line": text, "ts": time.time()})
+        return text

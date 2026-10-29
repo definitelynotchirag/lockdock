@@ -79,3 +79,16 @@ class ProcessScanner(Protocol):
     """Lists the user's processes (pid, ppid, argv, cwd, cpu time)."""
 
     def scan(self) -> list[ProcessInfo]: ...
+
+
+class Speaker(Protocol):
+    """Writes one short in-character line for the pet (e.g. an LLM); None means "use a template"."""
+
+    async def line(self, mood: str, mode: str, app: str, title: str, reason: str) -> str | None: ...
+
+
+class PetPackSource(Protocol):
+    """Finds sprite packs by name (user packs shadow built-in ones)."""
+
+    def resolve(self, name: str) -> tuple[str, dict] | None: ...  # (pack_dir, pack.json manifest)
+    def available(self) -> list[dict]: ...                        # [{name, title, author, source, dir}]

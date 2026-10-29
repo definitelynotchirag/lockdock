@@ -17,6 +17,12 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   pulsing when it waits for you, green while it works, grey when done; click
   to focus its window. `lockdock agents install-hooks` wires Claude Code and
   Codex so the state is exact rather than guessed. See `skills/lockdock/agents.md`.
+- A **pixel cat** lives in the dock. It is content while you are on task, then
+  suspicious, annoyed and furious the longer you stay off task, and says so in
+  a speech bubble. Keep ignoring it and it grows into a click-through overlay
+  that fills most of the screen; go back to the task and it shrinks right away.
+  Click it to calm it. Lines, thresholds, growth and sprite packs live in
+  `pet.json` (see `skills/lockdock/pet.md`).
 - Modes live in one JSON file that an agent edits. See `AGENTS.md`.
 
 ## Requirements
@@ -45,6 +51,8 @@ lockdock config           # path to modes.json
 lockdock agents           # running coding agents and whether they need you
 lockdock agents install-hooks --dry-run   # show the hook changes, then run without --dry-run
 lockdock agent focus <id> # focus an agent's window
+lockdock pet              # the pet's mood; also: calm, mood <m>|auto, mute, unmute,
+                          #   pack <name>, packs, say "<text>"
 ```
 
 ## Layout
@@ -62,18 +70,24 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
     state.py          state.json snapshot (+ agents / pet / theme sections)
     agents.py         AgentRegistry: agent kinds table, scan + hook merge, window walk
     agent_hooks.py    install-hooks merge for Claude Code settings.json / Codex config.toml
+    pet.py            PetBrain: mood, growth and speech lines of the dock pet
     rules.py events.py
-  adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache),
-                      json_config, file_state, control_socket, shell_commands, clock, proc_scan
-  features/           optional features, auto-discovered (install(daemon)); agents.py
+  adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache, pet speaker),
+                      json_config, pet_packs, file_state, control_socket, shell_commands, clock,
+                      proc_scan, http_url_source
+  features/           optional features, auto-discovered (install(daemon)): agents, pet, browser_urls
   cli/                main.py (verbs), agents.py (agent verbs), client.py (control socket client)
 shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
   Dock.qml            the panel window; lays out components/ in one row
-  components/         ModeStrip, AppStrip, AgentStrip, HeldBadge, Nudge, ModePill, AppButton
+  components/         ModeStrip, AppStrip, AgentStrip, HeldBadge, Nudge, ModePill, AppButton,
+                      Pet, PetSprite, PetOverlay (the grown pet, one per screen)
+  pets/cat/           the built-in sprite pack (pack.json + SVG frames)
+browser-extension/    WebExtension that reports the active tab URL to the daemon
 tests/                pytest with fakes for every port
 docs/architecture.md  ports, adapters, state.json sections, how to add a feature
-skills/lockdock/      pages for agents configuring lockdock (agents.md: the agent inbox)
+skills/lockdock/      the Claude Code skill: pages for modes, theme, pet, agents, browser
 modes.example.json    default modes; copied to ~/.config/lockdock/modes.json
+pet.example.json      default pet config; copied to ~/.config/lockdock/pet.json
 ```
 
 Tests: `uv run --no-project --python 3.14 --with pytest pytest -q`

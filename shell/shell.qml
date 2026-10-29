@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "components"
 
 ShellRoot {
     id: root
@@ -32,6 +33,16 @@ ShellRoot {
             required property var modelData
             screen: modelData
             shell: root
+        }
+    }
+
+    // the pet grown past the dock: a click-through overlay per screen
+    Variants {
+        model: Quickshell.screens
+        PetOverlay {
+            required property var modelData
+            screen: modelData
+            st: root.state
         }
     }
 }

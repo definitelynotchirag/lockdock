@@ -31,6 +31,9 @@ before it is judged), `llm.enabled`, `llm.model` (a `claude -p` model alias),
 `agents.kinds` (extra / overridden coding-agent kinds for the agent inbox;
 see `skills/lockdock/agents.md`).
 
+The dock pet has its own file, `~/.config/lockdock/pet.json` (persona, lines,
+thresholds, growth, sprite pack). See `skills/lockdock/pet.md`.
+
 ## How to find out what went wrong
 
 ```

@@ -1,0 +1,45 @@
+{
+  "name": "",
+  "pack": "cat",
+  "persona": "A small round grey cat who adores your focus, is wildly dramatic about distractions and speaks in short lowercase sentences.",
+  "thresholds": { "suspicious": 45, "annoyed": 120, "furious": 300 },
+  "decay_per_s": 2.0,
+  "grow_s": 240,
+  "shrink_s": 4,
+  "max_scale": 24,
+  "max_screen_fraction": 0.9,
+  "nag_every_s": 60,
+  "llm_lines": false,
+  "muted": false,
+  "position": "left",
+  "lines": {
+    "content": [
+      "purr. this is the good stuff.",
+      "{mode} mode, going great. I approve.",
+      "*slow blink* that means I respect you.",
+      "I'll nap right here while you work.",
+      "focus smells like tuna. keep going."
+    ],
+    "suspicious": [
+      "hmm. {app}? in {mode} mode?",
+      "my whiskers are twitching about this {app} thing.",
+      "I'm watching {app}. very. closely.",
+      "is \"{title}\" part of {mode}? asking for a cat.",
+      "that tab looks like a cardboard box. tempting. still no."
+    ],
+    "annoyed": [
+      "{app} again. my tail is thrashing.",
+      "this is not {mode}. this is {app}.",
+      "I knocked a glass off the desk because of {app}.",
+      "I nap less than you've been on {app}.",
+      "the judge says: {reason}. I agree, loudly."
+    ],
+    "furious": [
+      "HISS. {app} is NOT {mode}.",
+      "I am getting bigger. close {app} and I shrink.",
+      "every second of {app} makes me larger.",
+      "I will sit on your screen until {mode} happens.",
+      "MEOW. {reason}. BACK. TO. {mode}."
+    ]
+  }
+}

@@ -42,7 +42,7 @@ class ActivityJudge:
     def __init__(self, config: Callable[[], Config], mode: Callable[[], Mode], classifier: Classifier,
                  clock: Clock, events: EventSink, on_change: Callable[[], None],
                  on_off_task: Callable[[Mode, WindowInfo, str], None],
-                 spawn: Spawn = spawn_task) -> None:
+                 spawn: Spawn = spawn_task, on_verdict: Callable[[dict], None] | None = None) -> None:
         self._config = config
         self._mode = mode
         self.classifier = classifier
@@ -51,6 +51,7 @@ class ActivityJudge:
         self.on_change = on_change
         self.on_off_task = on_off_task
         self.spawn = spawn
+        self.on_verdict = on_verdict
         self.focus = WindowInfo()
         self.activity: dict = {}
         self._task: asyncio.Task[None] | None = None
@@ -88,7 +89,7 @@ class ActivityJudge:
         w, mode, cfg = self.focus, self._mode(), self._config()
         if not w.cls:
             self._set(Verdict.NEUTRAL, "no window", w)
-            self.on_change()
+            self._verdict_done()
             return
         res = rule_activity(mode, w, cfg.browsers)
         if res is None:
@@ -106,4 +107,10 @@ class ActivityJudge:
         self.events.log("activity", app=w.cls, title=w.title, verdict=verdict.value, reason=reason)
         if verdict == Verdict.OFF and prev != Verdict.OFF.value and mode.off_task_action == "notify":
             self.on_off_task(mode, w, reason)
+        self._verdict_done()
+
+    def _verdict_done(self) -> None:
+        """A final verdict (not "classifying…"): tell the listener, then publish."""
+        if self.on_verdict:
+            self.on_verdict(dict(self.activity))
         self.on_change()

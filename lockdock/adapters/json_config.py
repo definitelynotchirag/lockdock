@@ -1,4 +1,4 @@
-"""modes.json: parse into core Config, hot-reload on mtime change."""
+"""JSON config files (modes.json, pet.json): seed from an example, parse, hot-reload on mtime change."""
 from __future__ import annotations
 
 import asyncio
@@ -6,11 +6,15 @@ import json
 import shutil
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, Generic, TypeVar
 
 from ..core.agents import DEFAULT_KINDS, merge_kinds
 from ..core.models import DEFAULT_BROWSERS, BrowserBridge, Config, Mode, NotificationRules
 
-EXAMPLE = Path(__file__).resolve().parents[2] / "modes.example.json"
+ROOT = Path(__file__).resolve().parents[2]
+EXAMPLE = ROOT / "modes.example.json"
+PET_EXAMPLE = ROOT / "pet.example.json"
+T = TypeVar("T")
 
 
 def config_from_dict(raw: dict) -> Config:
@@ -41,23 +45,37 @@ def config_from_dict(raw: dict) -> Config:
                                if isinstance(raw.get("agents"), dict) else None))
 
 
-class JsonConfigLoader:
-    """ConfigSource for ~/.config/lockdock/modes.json (seeded from modes.example.json)."""
+class JsonConfigLoader(Generic[T]):
+    """ConfigSource for a JSON file seeded from an example on first run.
 
-    def __init__(self, path: Path, example: Path = EXAMPLE, poll_s: float = 2.0) -> None:
+    Defaults to ~/.config/lockdock/modes.json -> Config; pass `parse` for another
+    file (pet.json uses `pet_config_from_dict`).
+    """
+
+    def __init__(self, path: Path, example: Path = EXAMPLE, poll_s: float = 2.0,
+                 parse: Callable[[dict], T] = config_from_dict) -> None:  # type: ignore[assignment]
         self.path = path
         self.example = example
         self.poll_s = poll_s
+        self.parse = parse
         self._mtime = 0.0
 
-    def load(self) -> Config:
+    def load(self) -> T:
         if not self.path.exists():
             self.path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(self.example, self.path)
         self._mtime = self.path.stat().st_mtime
-        return config_from_dict(json.loads(self.path.read_text()))
+        return self.parse(json.loads(self.path.read_text()))
 
-    async def watch(self, on_change: Callable[[Config], None],
+    def update(self, changes: dict[str, Any]) -> T:
+        """Set top-level keys in the file (rewrites it as indented JSON) and return the parsed result."""
+        self.load()
+        raw = json.loads(self.path.read_text())
+        raw.update(changes)
+        self.path.write_text(json.dumps(raw, indent=2, ensure_ascii=False) + "\n")
+        return self.load()
+
+    async def watch(self, on_change: Callable[[T], None],
                     on_error: Callable[[Exception], None] | None = None) -> None:
         """Poll the mtime; on a change, load and hand the new Config to on_change."""
         while True:
@@ -71,7 +89,7 @@ class JsonConfigLoader:
             self._mtime = mt
             try:
                 cfg = self.load()
-            except (ValueError, KeyError, OSError) as e:
+            except (ValueError, KeyError, TypeError, OSError) as e:
                 if on_error:
                     on_error(e)
                 continue
