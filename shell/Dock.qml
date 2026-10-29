@@ -71,21 +71,28 @@ PanelWindow {
     // room around the card for the islands' shadows
     // (wide enough for the agents list to sit centred on its pill)
     implicitWidth: Math.max(card.implicitWidth + theme.px(56),
-                            agentsPill ? 2 * (Math.abs(agentsPanel.pillOffset) + agentsPanel.width / 2 + theme.px(12)) : 0)
-    // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble or
-    // the agents list shows
+                            agentsPill ? 2 * (Math.abs(agentsPanel.pillOffset) + agentsPanel.width / 2 + theme.px(12)) : 0,
+                            promptStack.count > 0 ? promptStack.width + theme.px(48) : 0)
+    // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble, the
+    // agents list or decision cards show
     implicitHeight: card.implicitHeight + theme.margin
-                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom)
+                    + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom, promptsHeadroom)
     readonly property real panelGap: theme.px(10) + (nudgeShown ? nudgeBox.height + theme.px(8) : 0)
     // reserved while the pill shows, not only while the list is open: resizing the layer surface
     // on every open makes Hyprland redraw the whole dock squashed for a frame
     readonly property real agentsHeadroom: agentsPill && agentsPill.visible ? agentsPanel.height + panelGap + theme.px(14) : 0
+    // decision cards: while any card is up, reserve room for max_visible tall cards (or the real
+    // stack, if taller) so the surface does not resize as cards come and go
+    readonly property real promptCardReserve: theme.px(14 + 32 + 10 + 3 * 17 + 10 + 28 + 12 + 32 + 14 + 8)
+    readonly property real promptsHeadroom: promptStack.count > 0
+        ? Math.max(promptStack.height, theme.promptsMaxVisible * promptCardReserve) + panelGap + theme.px(14) : 0
     mask: Region {
         item: cardHit
         Region { item: nudgeBox }
         Region { item: edge }
         Region { item: dock.petItem && dock.petItem.bubbleShown ? dock.petItem.bubble : null }
         Region { item: agentsPanel.visible ? agentsPanel : null }
+        Region { item: promptStack.count > 0 ? promptStack : null }
     }
 
     // countdown clock
@@ -95,7 +102,7 @@ PanelWindow {
     // ---- autohide ----
     property bool shown: true
     readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown || (st.held_count || 0) > 0
-                                 || agentsOpen
+                                 || agentsOpen || promptStack.count > 0
     readonly property bool wantShown: !theme.autohide || cardHover.hovered || edgeHover.hovered || busy
     onWantShownChanged: { if (wantShown) { hideTimer.stop(); shown = true } else hideTimer.restart() }
     Component.onCompleted: if (!wantShown) hideTimer.start()
@@ -214,6 +221,7 @@ PanelWindow {
             offTask: dock.offTask
             theme: dock.theme
             onModeClicked: modeId => dock.shell.send(["mode", modeId])
+            onStayClicked: dock.shell.send(["cancel"])
         }
     }
     Component {
@@ -295,5 +303,20 @@ PanelWindow {
         originX: dock.width / 2 + pillOffset - x
         y: dock.theme.atTop ? card.y + card.height + dock.panelGap : card.y - height - dock.panelGap
         onCloseRequested: if (dock.agentsPill) dock.agentsPill.open = false
+    }
+
+    // decision cards (state.json `prompts`): above the dock (below it at the top), centred,
+    // clear of the nudge; newest nearest the dock
+    PromptStack {
+        id: promptStack
+        st: dock.st
+        shell: dock.shell
+        theme: dock.theme
+        below: dock.theme.atTop
+        z: 11
+        x: Math.round((dock.width - width) / 2)
+        // the slot nearest the dock carries one card gap of its own
+        y: dock.theme.atTop ? card.y + card.height + dock.panelGap - promptStack.gap
+                            : card.y - height - dock.panelGap + promptStack.gap
     }
 }

@@ -6,6 +6,12 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
 - The dock shows the active mode, the other modes as small buttons, and the
   apps that belong to the mode (plus anything else running, dimmed).
 - Leaving a mode has an **exit countdown**; every extra press cuts the wait.
+  While it runs the dock shows a timer pill ("Social 0:10") and a **Stay**
+  button that cancels the switch.
+- **Decision cards** float above the dock when something needs a choice: a
+  held message that looks urgent, a site that belongs to another mode
+  ([Stay] / [Go to Social (15s wait)]), or a short toast with the verdict on an
+  unknown site. Theme key `prompts` (see `skills/lockdock/theme.md`).
 - The daemon watches the focused window and judges it against the mode:
   rules first, then `claude -p --model haiku` for anything unknown. Off-task
   windows turn the dock red with a one-line reason.
@@ -86,7 +92,7 @@ lockdock/             Python daemon + CLI (stdlib only), ports and adapters
 shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
   Dock.qml            the panel window; builds the row from theme.sections (sectionMap)
   components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentsPill + AgentsPanel
-                      (or AgentStrip), HeldBadge, Nudge,
+                      (or AgentStrip), HeldBadge, Nudge, PromptStack + PromptCard (decision cards),
                       ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen)
   pets/cat/           the built-in sprite pack (pack.json + SVG frames)
 browser-extension/    WebExtension that reports the active tab URL to the daemon

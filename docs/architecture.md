@@ -120,6 +120,16 @@ appear under `name` in every snapshot. Core keys cannot be overridden.
    (`petItem`, `agentsPill`) so the dock can add the pop-up to the `mask` and
    to `implicitHeight` (the window's headroom); `AgentsPanel` lives in
    `Dock.qml` next to `Nudge` and is placed from the pill's centre. Read your section as `st.<name>`.
+
+Shell components outside the section row: `Nudge` (off-task bubble), `AgentsPanel` (the
+agents list) and `PromptStack` (decision cards from `st.prompts`: one `PromptCard` per
+prompt, newest nearest the dock, at most `theme.prompts.max_visible`). The stack keeps a
+`ListModel` synced by prompt id so cards animate in and out across state.json rewrites, hides a
+prompt past its `expires_ms`, and on a button sends `["prompt", id, action]` and hides the
+card at once. `Dock.qml` adds it to the `mask` and reserves `promptsHeadroom` (room for
+`max_visible` tall cards) while any card is up. `ModeStrip` shows the pending switch as a
+timer pill (click = `["mode", target]`, press again) and a Stay pill (`["cancel"]`,
+`theme.mode_strip.stay_button`).
 5. **Tests.** `tests/test_<feature>.py` with the fakes;
    `uv run --no-project --python 3.14 --with pytest pytest -q`.
 
