@@ -15,7 +15,8 @@ from typing import Any
 from ..core.models import Notification
 
 OUR_HINT = "x-lockdock"
-_BUS = ["busctl", "--user", "call", "org.freedesktop.Notifications",
+# "--" ends option parsing, so a negative timeout (-1 = server default) is not read as a flag
+_BUS = ["busctl", "--user", "--", "call","org.freedesktop.Notifications",
         "/org/freedesktop/Notifications", "org.freedesktop.Notifications"]
 
 
