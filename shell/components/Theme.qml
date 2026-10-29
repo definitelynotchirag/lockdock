@@ -83,6 +83,12 @@ QtObject {
     // agent inbox: "pill" (one pill + pop-over list) or "chips" (one chip per agent)
     readonly property string agentsStyle: (t.agents || {}).style === "chips" ? "chips" : "pill"
     readonly property int agentsMaxRows: Math.max(1, pick((t.agents || {}).max_rows, 8))
+    // decision cards (state.json `prompts`) above the dock
+    readonly property bool promptsEnabled: pick((t.prompts || {}).enabled, true)
+    readonly property int promptsMaxVisible: Math.max(1, pick((t.prompts || {}).max_visible, 3))
+    readonly property real promptsWidth: pick((t.prompts || {}).width, 360)
+    // a Stay (cancel) pill next to the countdown pill while a switch is pending
+    readonly property bool stayButton: pick((t.mode_strip || {}).stay_button, true)
 
     // icon_size grows or shrinks everything that wraps an icon by the same delta
     readonly property real iconDelta: iconSize - 34

@@ -111,6 +111,22 @@ class AgentsTheme:
     max_rows: int = 8
 
 
+@dataclass
+class PromptsTheme:
+    """Decision cards above the dock (state.json `prompts`): at most max_visible cards (the
+    newest), each `width` px wide (before `scale`)."""
+    enabled: bool = True
+    max_visible: int = 3
+    width: float = 360
+
+
+@dataclass
+class ModeStripTheme:
+    """The mode pills: stay_button shows a Stay pill (cancel) next to the countdown pill while a
+    switch is pending."""
+    stay_button: bool = True
+
+
 _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "position": (lambda v: v in POSITIONS, '"bottom" or "top"'),
     "margin": (_num(0, 1000), "a number 0..1000"),
@@ -137,8 +153,12 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "shadow.opacity": (_num(0, 1), "a number 0..1"),
     "agents.style": (lambda v: v in AGENT_STYLES, '"pill" or "chips"'),
     "agents.max_rows": (_int(1, 50), "an integer 1..50"),
+    "prompts.enabled": (_is_bool, "true or false"),
+    "prompts.max_visible": (_int(1, 10), "an integer 1..10"),
+    "prompts.width": (_num(200, 1000), "a number 200..1000"),
+    "mode_strip.stay_button": (_is_bool, "true or false"),
 }
-_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents")
+_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip")
 
 
 @dataclass
@@ -164,6 +184,8 @@ class ThemeConfig:
     autohide: AutohideTheme = field(default_factory=AutohideTheme)
     nudge: NudgeTheme = field(default_factory=NudgeTheme)
     agents: AgentsTheme = field(default_factory=AgentsTheme)
+    prompts: PromptsTheme = field(default_factory=PromptsTheme)
+    mode_strip: ModeStripTheme = field(default_factory=ModeStripTheme)
     opacity: float = 1.0
     problems: list[str] = field(default_factory=list, compare=False)
 
