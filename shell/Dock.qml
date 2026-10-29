@@ -19,7 +19,8 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "lockdock"
     implicitWidth: card.implicitWidth + 24
-    implicitHeight: card.implicitHeight + 24
+    implicitHeight: card.implicitHeight + 12 + 34   // headroom for the nudge
+    mask: Region { item: card; Region { item: nudgeBox } }
 
     // countdown clock
     property real now: Date.now()
@@ -48,7 +49,8 @@ PanelWindow {
 
     Rectangle {
         id: card
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
         implicitWidth: row.implicitWidth + 20
         implicitHeight: 64
         radius: 22
@@ -128,6 +130,7 @@ PanelWindow {
 
     // off-task nudge above the dock
     Rectangle {
+        id: nudgeBox
         visible: dock.offTask
         anchors.bottom: card.top
         anchors.bottomMargin: 6
