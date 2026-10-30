@@ -76,7 +76,7 @@ of them can be swapped for another Icona slug, an emoji, or a theme icon.
 ## Install
 
 ```
-git clone <this repo> ~/Projects/lockdock
+git clone https://github.com/definitelynotchirag/lockdock.git ~/Projects/lockdock
 cd ~/Projects/lockdock
 ./scripts/install.sh      # links ~/.local/bin/lockdock, installs two user units, links the skill
 lockdock status
