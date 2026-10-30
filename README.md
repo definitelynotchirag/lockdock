@@ -5,6 +5,12 @@ the coding agents running on your machine. A Linux build of
 [the macOS dock trq212 showed](https://x.com/trq212/status/2115135857669881939),
 with a few things added.
 
+<!-- <img width="914" height="177" alt="image" src="https://github.com/user-attachments/assets/82afaa66-2196-473e-b3f5-da04b06b3aa0" /> -->
+
+<img width="1180" height="216" alt="compressO-Recording_10_30_2026_6_45_48_PM (2)" src="https://github.com/user-attachments/assets/a77283d7-4e1a-484f-b318-09952ca784d9" />
+
+
+
 ## What it does
 
 **Modes.** You define modes in a JSON file (Writing, Building, Free, anything).
