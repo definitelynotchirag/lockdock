@@ -5,12 +5,7 @@ the coding agents running on your machine. A Linux build of
 [the macOS dock trq212 showed](https://x.com/trq212/status/2115135857669881939),
 with a few things added.
 
-<!-- <img width="914" height="177" alt="image" src="https://github.com/user-attachments/assets/82afaa66-2196-473e-b3f5-da04b06b3aa0" /> -->
-
-<img width="1180" height="216" alt="Demo" src="https://github.com/user-attachments/assets/f1062953-4237-421b-8ab0-3cd280c3914e" />
-
-
-
+<img width="914" height="177" alt="image" src="https://github.com/user-attachments/assets/82afaa66-2196-473e-b3f5-da04b06b3aa0" />
 
 ## What it does
 
@@ -121,6 +116,10 @@ lockdock skill path         # the Claude Code skill (also linked at ~/.claude/sk
 ```
 
 `lockdock --help` lists every verb.
+
+## Demo
+
+<img width="1180" height="216" alt="Demo" src="https://github.com/user-attachments/assets/f1062953-4237-421b-8ab0-3cd280c3914e" />
 
 ## Configuration
 
