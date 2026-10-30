@@ -232,6 +232,17 @@ the island row only, never the transparent headroom for cards, bubbles and tips)
 `unpin`, `pin toggle` and the optional `"pin"` section (`components/PinButton.qml`, in
 `inlineSections` and `joinSections`, not in `DEFAULT_SECTIONS`).
 
+Quick settings: the `"settings"` section (`components/SettingsButton.qml`, last in
+`DEFAULT_SECTIONS`, in `inlineSections` and `joinSections`) is a gear that registers itself as
+`Dock.settingsBtn` and calls `theme.host.hoverSettings(item, hovered)` from its hover changes
+and `toggleSettings(item)` on click. The Dock owns one `components/QuickSettings.qml` per
+window and drives it like the window previews: open after `theme.tooltipDelayMs`, kept while
+the pointer is on the gear or the panel, closed 250 ms after both are left (a click toggles it
+at once); placed on the gear like the Tip, masked while visible, `settingsHeadroom` (and the
+width to centre it on the gear) reserved whenever the section is listed. Each row reads the
+live theme / `st.pet` and sends a CLI verb through `shell.send` (`theme set <key> <json>`,
+`pin toggle`, `pet mute|unmute`); the gear's tip is off while the panel shows.
+
 Do not position things with `anchors.x: cond ? a : undefined` in QML: an
 anchor, once set, is not reset by a later `undefined`. Bind `y`/`x` instead.
 

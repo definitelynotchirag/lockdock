@@ -17,7 +17,7 @@ from .ports import JsonDocument, PaletteSource
 POSITIONS = ("bottom", "top")
 LAYOUTS = ("islands", "slab")
 AGENT_STYLES = ("pill", "chips")
-DEFAULT_SECTIONS = ("pet", "modes", "apps", "agents", "held")
+DEFAULT_SECTIONS = ("pet", "modes", "apps", "agents", "held", "settings")
 ICON_PACKS = ("icona", "text")
 ICONA_NAME = re.compile(r"(icona|brand):[a-z0-9]+(-[a-z0-9]+)*")
 
@@ -94,7 +94,7 @@ TEXT_ICONS: dict[str, Any] = {
     "timer": "", "stay": "", "nudge": "", "tag_urgent": "✦", "tag_info": "✦", "tag_ok": "✅",
     "card_notification": "🔔", "card_site": "🌐", "card_verdict": "✦",
     "app_fallback": "application-x-executable", "pin": "📌", "pin_off": "📍",
-    "close": "✕",
+    "close": "✕", "settings": "⚙",
 }
 
 
@@ -206,6 +206,7 @@ class IconsTheme:
     pin: str = "icona:map-pin-fill"
     pin_off: str = "icona:map-pin"
     close: str = "icona:x"
+    settings: str = "icona:settings"
 
 
 _ICON_WANT = '"icona:<slug>", "brand:<slug>", a glyph, an icon name or ""'

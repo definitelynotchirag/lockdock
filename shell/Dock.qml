@@ -42,11 +42,12 @@ PanelWindow {
         agents: theme.agentsStyle === "chips" ? agentStripComp : agentsPillComp,
         held: heldBadgeComp,
         pin: pinComp,
+        settings: settingsComp,
     })
     // slab: sections drawn right after their neighbour with no divider (like the held badge)
-    readonly property var inlineSections: ({ held: true, pin: true })
+    readonly property var inlineSections: ({ held: true, pin: true, settings: true })
     // islands: sections that share the island of their neighbour (the next one, or the previous when last)
-    readonly property var joinSections: ({ pet: true, pin: true })
+    readonly property var joinSections: ({ pet: true, pin: true, settings: true })
 
     // theme.sections -> list of groups (lists of ids); one group per island
     readonly property var groups: {
@@ -80,12 +81,13 @@ PanelWindow {
                             theme.tooltips ? tip.maxTextWidth + theme.px(60) : 0,
                             agentsPill ? 2 * (Math.abs(agentsPanel.pillOffset) + agentsPanel.width / 2 + theme.px(12)) : 0,
                             promptStack.count > 0 ? promptStack.width + theme.px(48) : 0,
-                            previewsHeadroom > 0 ? previews.widthFor(previewsMaxCards, previewsMaxMore) + theme.px(24) : 0)
+                            previewsHeadroom > 0 ? previews.widthFor(previewsMaxCards, previewsMaxMore) + theme.px(24) : 0,
+                            settingsHeadroom > 0 ? 2 * (Math.abs(quickSettings.btnOffset) + quickSettings.width / 2 + theme.px(12)) : 0)
     // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble, the
     // agents list or decision cards show
     implicitHeight: card.implicitHeight + theme.margin
                     + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom, promptsHeadroom,
-                               tipHeadroom, previewsHeadroom)
+                               tipHeadroom, previewsHeadroom, settingsHeadroom)
     readonly property real panelGap: theme.px(10) + (nudgeShown ? nudgeBox.height + theme.px(8) : 0)
     // reserved while the pill shows, not only while the list is open: resizing the layer surface
     // on every open makes Hyprland redraw the whole dock squashed for a frame
@@ -111,6 +113,10 @@ PanelWindow {
     readonly property bool previewsMaxMore: mostWindows > theme.previewsMax
     readonly property real previewsHeadroom: theme.previews && mostWindows > 0 && theme.sections.indexOf("apps") >= 0
         ? Math.ceil(previews.maxHeight) + theme.px(16) : 0
+    // quick settings: reserved while the "settings" section is listed (not only while open, so
+    // hovering the gear never resizes the layer surface)
+    readonly property real settingsHeadroom: theme.sections.indexOf("settings") >= 0
+        ? Math.ceil(quickSettings.maxHeight) + theme.px(16) : 0
     // decision cards: while any card is up, reserve room for max_visible tall cards (or the real
     // stack, if taller) so the surface does not resize as cards come and go
     readonly property real promptCardReserve: theme.px(14 + 32 + 10 + 3 * 17 + 10 + 28 + 12 + 32 + 14 + 8)
@@ -125,6 +131,7 @@ PanelWindow {
         Region { item: promptStack.count > 0 ? promptStack : null }
         Region { item: tip.visible ? tip : null }
         Region { item: previews.visible ? previews : null }
+        Region { item: quickSettings.visible ? quickSettings : null }
     }
 
     // countdown clock
@@ -135,6 +142,7 @@ PanelWindow {
     property bool shown: true
     readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown || (st.held_count || 0) > 0
                                  || agentsOpen || promptStack.count > 0 || previews.visible
+                                 || quickSettings.visible
     readonly property bool wantShown: !autohide || cardHover.hovered || edgeHover.hovered || busy
     onWantShownChanged: { if (wantShown) { hideTimer.stop(); shown = true } else hideTimer.restart() }
     Component.onCompleted: if (!wantShown) hideTimer.start()
@@ -307,6 +315,15 @@ PanelWindow {
         id: pinComp
         PinButton { st: dock.st; shell: dock.shell; theme: dock.theme }
     }
+    Component {
+        id: settingsComp
+        SettingsButton {
+            st: dock.st
+            theme: dock.theme
+            Component.onCompleted: dock.settingsBtn = this
+            Component.onDestruction: if (dock.settingsBtn === this) dock.settingsBtn = null
+        }
+    }
 
     // off-task nudge next to the dock (above it at the bottom, below it at the top)
     Nudge {
@@ -462,6 +479,82 @@ PanelWindow {
             card.width; card.x; dock.width; dock.height; previews.open
             if (!t) return Qt.rect(0, 0, 0, 0)
             const p = t.mapToItem(previews.parent, 0, 0)
+            return Qt.rect(p.x, card.y, t.width * t.scale, card.height)
+        }
+        below: dock.theme.atTop
+        x: Math.round(Math.max(dock.theme.px(4), Math.min(dock.width - width - dock.theme.px(4),
+                                                         anchorRect.x + anchorRect.width / 2 - width / 2)))
+        y: Math.round(below ? anchorRect.y + anchorRect.height + gap : anchorRect.y - height - gap)
+        tailX: anchorRect.x + anchorRect.width / 2 - x
+    }
+
+    // ---- quick settings: one panel per window, opened from the gear (section "settings") ----
+    // hoverSettings(item, hovered): open after theme.tooltipDelayMs of hover; it stays open while
+    // the pointer is on the gear or the panel and closes 250 ms after it has left both.
+    // toggleSettings(item): a click opens / closes it at once. closeSettings(item) closes it.
+    property Item settingsBtn: null      // the gear registers itself here
+    property Item settingsTarget: null
+    property bool settingsOpen: false
+    property bool settingsBtnHovered: false
+    function hoverSettings(item, hovered) {
+        if (hovered) {
+            settingsTarget = item
+            settingsBtnHovered = true
+            settingsClose.stop()
+            if (!settingsOpen) settingsDelay.restart()
+            return
+        }
+        if (item !== settingsTarget) return
+        settingsBtnHovered = false
+        settingsDelay.stop()
+        if (settingsOpen && !quickSettings.hovered) settingsClose.restart()
+    }
+    function toggleSettings(item) {
+        settingsTarget = item
+        settingsDelay.stop()
+        settingsClose.stop()
+        settingsOpen = !settingsOpen
+    }
+    function closeSettings(item) {
+        if (item !== settingsTarget) return
+        settingsDelay.stop(); settingsClose.stop()
+        settingsOpen = false
+        settingsTarget = null
+    }
+    Timer { id: settingsDelay; interval: dock.theme.tooltipDelayMs; onTriggered: dock.settingsOpen = dock.settingsTarget !== null && dock.settingsBtnHovered }
+    Timer {
+        id: settingsClose
+        interval: 250
+        onTriggered: if (!dock.settingsBtnHovered && !quickSettings.hovered) dock.settingsOpen = false
+    }
+
+    QuickSettings {
+        id: quickSettings
+        theme: dock.theme
+        st: dock.st
+        shell: dock.shell
+        z: 19
+        open: dock.settingsOpen && dock.settingsTarget !== null && dock.settingsTarget.visible && dock.shown
+        readonly property real gap: dock.theme.px(6)
+        onHoveredChanged: {
+            if (hovered) settingsClose.stop()
+            else if (!dock.settingsBtnHovered && dock.settingsOpen) settingsClose.restart()
+        }
+        onCloseRequested: { settingsClose.stop(); dock.settingsOpen = false }
+        // the gear's centre relative to the card's centre (wide enough a window to centre the
+        // panel on it; known from the start, so the first hover does not resize the surface)
+        readonly property real btnOffset: {
+            const b = dock.settingsBtn
+            card.width; dock.shownSections
+            if (!b || !b.visible) return 0
+            return b.mapToItem(card, b.width / 2, 0).x - card.width / 2
+        }
+        // the gear's horizontal span and the island edge, in window coordinates
+        readonly property rect anchorRect: {
+            const t = dock.settingsTarget || dock.settingsBtn
+            card.width; card.x; dock.width; dock.height; quickSettings.open; dock.shownSections
+            if (!t || !t.visible) return Qt.rect(0, 0, 0, 0)
+            const p = t.mapToItem(quickSettings.parent, 0, 0)
             return Qt.rect(p.x, card.y, t.width * t.scale, card.height)
         }
         below: dock.theme.atTop

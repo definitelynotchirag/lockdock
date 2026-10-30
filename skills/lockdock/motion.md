@@ -12,8 +12,8 @@ lockdock unpin          # back to an overlay (same as `pin off`)
 lockdock pin toggle     # flip; the dock's pin button sends this
 ```
 
-The pin button is an optional dock section, `"pin"`, not shown by default. Add it to the end of `sections` (it shares the island of its neighbour, like the pet):
-`lockdock theme set sections '["pet","modes","apps","agents","held","pin"]'`.
+The quick settings gear (section `"settings"`, in the default sections; see `theme.md`) has a Pin dock switch and shows an accent dot while pinned. A bare pin button is the optional section `"pin"`, not shown by default. Add it near the end of `sections` (it shares the island of its neighbour, like the pet):
+`lockdock theme set sections '["pet","modes","apps","agents","held","pin","settings"]'`.
 Pinned it shows `icons.pin` (filled map pin) on the accent container; unpinned `icons.pin_off` (outline). Swap either in `icons` (see `icons.md`).
 
 Check it: `hyprctl -j monitors` lists `reserved` per monitor (`[left, top, right, bottom]`); pinning at the bottom adds the dock height (66 px at the default scale) to the last number.

@@ -25,7 +25,7 @@ lockdock theme reset                 # back to the defaults
 | `accent_override` | `null` | colour instead of each mode's colour (and the palette accent) |
 | `font` | `{family: "Inter Display", size: 14}` | `""` or a family that is not installed = system font |
 | `icon_size` | 34 | app icon px; buttons, pills and islands grow with it |
-| `sections` | `["pet","modes","apps","agents","held"]` | what is shown, in order; unknown ids are ignored, missing ids are hidden. Optional: `"pin"` (pin button, see `motion.md`) |
+| `sections` | `["pet","modes","apps","agents","held","settings"]` | what is shown, in order; unknown ids are ignored, missing ids are hidden. `"settings"`: the quick settings gear (below); optional `"pin"`: a bare pin button (`motion.md`) |
 | `show_unpinned` | true | dimmed icons for running apps not pinned to the mode |
 | `autohide` | `{enabled: false, reveal_px: 4, hide_delay_ms: 600}` | slides away when idle; hover the screen edge to reveal. Stays up during a countdown, a nudge, or held notifications |
 | `nudge` | `{enabled: true}` | the "off task" bubble (palette `danger`) |
@@ -39,6 +39,8 @@ lockdock theme reset                 # back to the defaults
 | `icons` | Icona set | every icon the dock draws that is not an app icon: see `icons.md` |
 | `opacity` | 1.0 | whole dock |
 
+**Quick settings.** The gear (section `"settings"`, `icons.settings`, an accent dot while pinned) opens a small panel on hover (after `tooltips.delay_ms`; it closes 250 ms after the pointer leaves the gear and the panel) or on click. One switch per row: Pin dock (`pin toggle`), Auto-hide (`autohide.enabled`, dimmed while pinned), Position: Top (`position`), Tooltips, Window previews (`tooltips` / `previews.enabled`), Show other running apps (`show_unpinned`), Reduce motion (`reduced_motion`), Mute the pet (`pet mute` / `unmute`, only with a pet); a footer opens theme.json. The rows show the live file, so a change made here or by an agent shows at once.
+
 ## Palette (colours)
 
 The dock draws only with palette roles: `bg`, `bg_elevated`, `surface`, `surface_hover`, `text`, `text_muted`, `outline`, `accent`, `on_accent`, `accent_container`, `on_accent_container`, `secondary`, `tertiary`, `danger`, `on_danger`, `success`, `warning`, `bubble`, `bubble_text`, `shadow`. With `palette: "system"` they are mapped from the first existing of `~/.config/lockdock/colors.json` (your own drop-in) and `~/.local/state/quickshell/user/generated/colors.json` (end-4 / matugen, regenerated with the wallpaper), both flat `{material_role: "#rrggbb"}` dicts: `bg` = surface_container, `surface` = surface_container_highest, `text` = on_surface, `text_muted` = on_surface_variant, `outline` = outline_variant, `accent` = primary, `accent_container` = primary_container, `danger` = error, `bubble` = inverse_surface. The file is watched: a new wallpaper or a light/dark switch recolours the dock within a few seconds. Without the file the built-in dark or light palette is used, chosen by `gsettings get org.gnome.desktop.interface color-scheme` (dark if gsettings is unavailable). `lockdock theme` prints the resolved roles and where they came from.
@@ -50,11 +52,9 @@ Mode colours: in modes.json `"color": "auto"` (the default) gives the active mod
 ## Recipes
 
 - "Move the dock to the top": `lockdock theme set position '"top"'`; "autohide": `theme set autohide.enabled true`; "smaller": `theme set scale 0.8` (icons only: `icon_size`)
-- "Windows should not cover the dock": `lockdock pin`; "a pin button": add `"pin"` to `sections` (`motion.md`); "no tooltips": `theme set tooltips.enabled false`; "no window previews": `theme set previews.enabled false`; "bigger previews": `theme set previews.width 280` and `previews.height 170`
+- "Windows should not cover the dock": `lockdock pin`; "a pin button": the quick settings gear has a Pin switch, a bare button is section `"pin"` (`motion.md`); "no gear": drop `"settings"` from `sections`; "no tooltips": `theme set tooltips.enabled false`; "no window previews": `theme set previews.enabled false`; "bigger previews": `theme set previews.width 280` and `previews.height 170`
 - "Hide the held badge": `lockdock theme set sections '["pet","modes","apps","agents"]'`; "only apps, then modes": `'["apps","modes"]'`
-- "Force dark (or light) colours": `lockdock theme set palette '"dark"'`; back to the wallpaper: `'"system"'`
-- "Use my red as the accent but keep the wallpaper colours": `lockdock theme set palette '{"accent": "#e5484d", "accent_container": "#5c1a1d", "on_accent_container": "#ffdad8"}'` (set the whole object; a role is not a dotted key)
-- "The old single-card look": `lockdock theme set layout '"slab"'`; "glassier islands": `theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`; "a fixed background": `theme set background '"#FF1C1C21"'` (`null`: palette)
-- "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`; "no cards above the dock": `theme set prompts.enabled false`; "one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`; "one chip per agent again": `theme set agents.style '"chips"'` (back: `'"pill"'`)
+- "Force dark (or light) colours": `lockdock theme set palette '"dark"'`; back to the wallpaper: `'"system"'`. "Use my red as the accent but keep the wallpaper colours": `lockdock theme set palette '{"accent": "#e5484d", "accent_container": "#5c1a1d", "on_accent_container": "#ffdad8"}'` (set the whole object; a role is not a dotted key)
+- "The old single-card look": `lockdock theme set layout '"slab"'`; "glassier islands": `theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`; "a fixed background": `theme set background '"#FF1C1C21"'` (`null`: palette). "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`; "no cards above the dock": `theme set prompts.enabled false`; "one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`; "one chip per agent again": `theme set agents.style '"chips"'` (back: `'"pill"'`)
 
 Check the result with a screenshot (`grim`) before telling the user it is done.

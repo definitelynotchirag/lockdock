@@ -40,7 +40,8 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
 - Modes live in one JSON file and the look in another (`theme.json`: position,
   scale, sections, autohide, icons, ...); an agent edits them.
 - `lockdock pin` reserves the dock's row so maximised windows stop at it (`unpin` to
-  overlay again); hover any button for the dock's own tooltip (`skills/lockdock/motion.md`). Every icon is an
+  overlay again). The gear at the end of the dock opens quick settings (pin, auto-hide,
+  top / bottom, tooltips, previews, reduced motion, mute the pet); hover any button for the dock's own tooltip (`skills/lockdock/motion.md`). Every icon is an
   [Icona](https://icona.works/icons) line icon tinted with the palette; any of
   them (or an emoji) can be swapped in theme.json `icons` or a mode's `icon`. See `AGENTS.md` and
   `skills/lockdock/`.
@@ -108,7 +109,7 @@ shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.jso
   components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentsPill + AgentsPanel
                       (or AgentStrip), HeldBadge, Nudge, PromptStack + PromptCard (decision cards),
                       ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen),
-                      PinButton; Pressable (shared hover / press) and Tip (the one tooltip)
+                      PinButton, SettingsButton + QuickSettings (the gear's panel); Pressable (shared hover / press) and Tip (the one tooltip)
   components/Icon.qml one icon by name: icona:<slug>, brand:<slug>, a theme icon or a text glyph
   icons/icona/        Icona SVGs (MIT) + INDEX.md (slug -> name)
   icons/brand/        agent logos (Simple Icons, CC0) for the agents list

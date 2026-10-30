@@ -33,7 +33,7 @@ def test_defaults_are_the_islands_look():
     t = ThemeConfig.from_dict({"palette": "system"})
     assert (t.position, t.margin, t.scale, t.radius, t.icon_size, t.opacity) == ("bottom", 10, 1.0, 20, 34, 1.0)
     assert (t.layout, t.palette, t.gap, t.fill_opacity) == ("islands", "system", 8, 1.0)
-    assert t.sections == ["pet", "modes", "apps", "agents", "held"]
+    assert t.sections == ["pet", "modes", "apps", "agents", "held", "settings"]
     assert t.show_unpinned and t.nudge.enabled and not t.autohide.enabled and t.shadow.enabled
     assert (t.autohide.reveal_px, t.autohide.hide_delay_ms) == (4, 600)
     assert t.accent_override is None and t.font.family == "Inter Display" and t.font.size == 14
@@ -126,7 +126,7 @@ def test_unknown_and_missing_section_ids():
     assert t.sections == ["apps", "hologram", "modes"]  # unknown kept for the shell to skip, dupes/non-str dropped
     assert len(t.problems) == 1
     assert ThemeConfig.from_dict({"sections": []}).sections == []
-    assert ThemeConfig.from_dict({"sections": "apps"}).sections == ["pet", "modes", "apps", "agents", "held"]
+    assert ThemeConfig.from_dict({"sections": "apps"}).sections == ["pet", "modes", "apps", "agents", "held", "settings"]
 
 
 def test_parse_color_forms():
@@ -350,6 +350,17 @@ def test_icon_keys_validate_and_agent_kinds_merge():
     assert bad.icons == ThemeConfig().icons
     assert len(bad.problems) == 6
     assert any("icons.held" in p for p in bad.problems) and any("icons.bogus: unknown" in p for p in bad.problems)
+
+
+def test_settings_icon_and_section():
+    t = ThemeConfig()
+    assert t.icons.settings == "icona:settings" and (ICONA_DIR / "settings.svg").is_file()
+    assert "settings" in t.sections and t.sections[-1] == "settings"
+    ok = ThemeConfig.from_dict({"icons": {"settings": "icona:sliders"}, "sections": ["apps", "pin", "settings"]})
+    assert ok.problems == [] and ok.icons.settings == "icona:sliders" and ok.sections == ["apps", "pin", "settings"]
+    bad = ThemeConfig.from_dict({"icons": {"settings": 5}})
+    assert bad.icons.settings == "icona:settings" and any("icons.settings" in p for p in bad.problems)
+    assert ThemeConfig.from_dict({"icons": {"pack": "text"}}).icons.settings == "⚙"
 
 
 def test_text_pack_restores_glyphs_but_keeps_explicit_keys():

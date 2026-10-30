@@ -28,7 +28,8 @@
     "modes",
     "apps",
     "agents",
-    "held"
+    "held",
+    "settings"
   ],
   "show_unpinned": true,
   "autohide": {
@@ -92,7 +93,8 @@
     "app_fallback": "icona:layers",
     "pin": "icona:map-pin-fill",
     "pin_off": "icona:map-pin",
-    "close": "icona:x"
+    "close": "icona:x",
+    "settings": "icona:settings"
   },
   "opacity": 1.0
 }

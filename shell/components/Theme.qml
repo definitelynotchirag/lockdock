@@ -73,7 +73,7 @@ QtObject {
     readonly property string family: fontFamily !== "" && Qt.fontFamilies().indexOf(fontFamily) >= 0 ? fontFamily : Qt.application.font.family
     readonly property real fontSize: pick((t.font || {}).size, 14)
     readonly property real iconSize: pick(t.icon_size, 34)
-    readonly property var sections: Array.isArray(t.sections) ? t.sections : ["pet", "modes", "apps", "agents", "held"]
+    readonly property var sections: Array.isArray(t.sections) ? t.sections : ["pet", "modes", "apps", "agents", "held", "settings"]
     readonly property bool showUnpinned: pick(t.show_unpinned, true)
     readonly property bool autohide: pick((t.autohide || {}).enabled, false)
     readonly property real revealPx: pick((t.autohide || {}).reveal_px, 4)
