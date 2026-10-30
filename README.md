@@ -119,7 +119,12 @@ lockdock skill path         # the Claude Code skill (also linked at ~/.claude/sk
 
 ## Demo
 
-<img width="1180" height="216" alt="Demo" src="https://github.com/user-attachments/assets/f1062953-4237-421b-8ab0-3cd280c3914e" />
+
+
+https://github.com/user-attachments/assets/55a7c36c-4627-4bda-9702-a3a77536f057
+
+
+
 
 ## Configuration
 
