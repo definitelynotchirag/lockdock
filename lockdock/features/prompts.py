@@ -27,6 +27,7 @@ def install(daemon: Daemon) -> list[Awaitable[None]]:
                           daemon.classifier, daemon.clock, daemon.events, daemon.publish, daemon.spawn)
     daemon.activity_listeners.append(center.on_activity)
     daemon.gate.hold_listeners.append(center.on_held)
+    daemon.gate.release_listeners.append(center.on_released)
     daemon.switch_listeners.append(center.on_switch)
     daemon.register_section("prompts", center.snapshot)
     daemon.register_section("prompts_count", lambda: len(center.prompts))

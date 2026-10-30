@@ -140,7 +140,8 @@ PanelWindow {
 
     // ---- autohide ----
     property bool shown: true
-    readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown || (st.held_count || 0) > 0
+    readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown
+                                 || ((st.held_count || 0) > 0 && !(st.notifications || {}).dnd)
                                  || agentsOpen || promptStack.count > 0 || previews.visible
                                  || quickSettings.visible
     readonly property bool wantShown: !autohide || cardHover.hovered || edgeHover.hovered || busy

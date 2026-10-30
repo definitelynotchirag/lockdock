@@ -94,7 +94,10 @@
     "pin": "icona:map-pin-fill",
     "pin_off": "icona:map-pin",
     "close": "icona:x",
-    "settings": "icona:settings"
+    "settings": "icona:settings",
+    "dnd": "icona:moon-fill",
+    "step_down": "icona:minus",
+    "step_up": "icona:plus"
   },
   "opacity": 1.0
 }

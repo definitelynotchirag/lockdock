@@ -16,7 +16,12 @@
 | `exit_delay_s`, `per_press_s` | exit countdown when leaving this mode; each extra press cuts the wait |
 | `on_enter` / `on_exit` | shell commands (e.g. `hyprctl dispatch workspace 2`) |
 
-Top level: `default_mode`, `dwell_s` (how long a window must stay focused before it is judged), `llm` (the classifier, below), `browsers` (classes judged by tab title, never by being a mode app), `prompts` (decision cards, below).
+Top level: `default_mode`, `dwell_s` (how long a window must stay focused before it is judged), `llm` (the classifier, below), `browsers` (classes judged by tab title, never by being a mode app), `prompts` (decision cards, below), `notifications` and `dnd` (below).
+
+## Held notifications: time limit and do not disturb
+
+- `"notifications": {"release_after_min": 15}` (default 15; `0` = never): a held notification is re-delivered on its own after this many minutes, with "(held N min in Writing)" in its body; it leaves the held list and its decision card closes. Logged as `"kind": "release", "reason": "time limit"`. Set it with `lockdock held timeout <minutes>` (no number prints it); the quick settings gear has a "Release held after" stepper (never, 5, 10, 15, 30 min, 1 h, 2 h).
+- `"dnd": false`: do not disturb. While `true` every notification is held silently whatever the mode says (critical ones too): closed as it arrives, no card, the held badge hidden, the pet and nudge unaffected. The time limit above still applies (with `0` they wait). Turning it off re-delivers what DND held, "(while you were in do not disturb)"; what the mode held stays held. `lockdock dnd on|off|toggle` (no argument: the state), or the "Do not disturb" switch in quick settings (the gear then wears a moon). Logged as `"kind": "dnd"`. `lockdock status` shows both.
 
 ## Classifier provider
 
@@ -69,7 +74,7 @@ A line like `"verdict": "off", "reason": "matches off_task rule 'docs'"` tells y
 
 - Prefer a regex over a description change: rules are free and instant, the LLM costs a call per new window title.
 - Browsers are judged by title only. A site the mode needs goes in `on_task`.
-- Critical-urgency notifications always pass; do not try to hold them.
+- Critical-urgency notifications always pass (except under do not disturb); do not try to hold them with rules.
 - Keep `lockdock status` green after an edit: a JSON error logs `config_error` and the previous config stays active.
 
 ## Examples

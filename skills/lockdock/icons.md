@@ -21,7 +21,8 @@ emoji (`"☕"`), a freedesktop icon name (`"firefox"`, `"com.t3tools.T3Code"`), 
 | `icons.app_fallback` | `icona:layers` | an app in the strip with no desktop icon |
 | `icons.pin` / `icons.pin_off` | `icona:map-pin-fill` / `icona:map-pin` | the pin button (section `"pin"`): pinned / not pinned (`motion.md`) |
 | `icons.close` | `icona:x` | the close button on a window preview card (`motion.md`) |
-| `icons.settings` | `icona:settings` | the quick settings gear (section `"settings"`, see `theme.md`) |
+| `icons.settings` / `icons.dnd` | `icona:settings` / `icona:moon-fill` | the quick settings gear (section `"settings"`, see `theme.md`) / its badge and switch while do not disturb is on |
+| `icons.step_down` / `icons.step_up` | `icona:minus` / `icona:plus` | the stepper buttons in quick settings (pet timings, held-notification limit) |
 
 **Picking a slug.** `shell/icons/icona/INDEX.md` lists every slug with its name and style
 (596: outline, `-fill` and `-color` variants, pixel art `pixel-*`, doodles `doodle-*`). Grep it

@@ -1,5 +1,6 @@
 import QtQuick
 
+// Hidden while do not disturb is on (st.notifications.dnd): DND holds silently.
 // Bell (theme icons.held / held_muted) with the number of held notifications; click releases them.
 Pressable {
     id: badgeRoot
@@ -8,7 +9,7 @@ Pressable {
     signal releaseClicked()
 
     // sections report whether they have anything to show through `active` (see Dock.qml)
-    readonly property bool active: (st.held_count || 0) > 0
+    readonly property bool active: (st.held_count || 0) > 0 && !(st.notifications || {}).dnd
     readonly property int heldCount: st.held_count || 0
     visible: active
     implicitWidth: theme.ipx(40); implicitHeight: theme.ipx(40)

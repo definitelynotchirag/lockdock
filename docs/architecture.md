@@ -149,7 +149,16 @@ Control verbs may return an awaitable; `UnixSocketControl` awaits it before repl
 (`features/classify.py`: `classify {cls, title, mode?, url?, cached?}` runs the classifier once and
 returns `{mode, provider, verdict, reason, source, ms, rules}`).
 
-`features/theme.py` adds `pin` (arg `on` / `off` / `toggle`).
+`features/theme.py` adds `pin` (arg `on` / `off` / `toggle`). `features/pet.py`'s `pet` verb takes
+`set <key> <number>` (`core/pet.py` `pet_setting` validates; written through the pet.json loader).
+`features/notifications.py` runs `NotificationGate.expire(now)` once a second and adds
+`held_timeout <minutes>` and `dnd on|off|toggle`; both write modes.json through
+`Daemon.update_config(changes)` (`ConfigSource.update`, top-level keys) and so go through
+`apply_config`, which also syncs `gate.set_dnd(cfg.dnd)` (a hand edit of `dnd` works the same).
+The gate keeps a held-at time per notification (Clock port), holds everything without
+`hold_listeners` while `dnd` is on, and calls `release_listeners` with every batch it
+re-delivers (`PromptCenter.on_released` closes their cards). state.json has a core
+`notifications: {release_after_min, dnd}` section.
 Control verbs added by `features/agents.py`: `agent_event {kind, state, payload, pids}`,
 `agent_focus <id>`, `agents`. By `features/prompts.py`: `prompts` (the list) and
 `prompt_act {id, action}` with action `later` / `dismiss` (close), `stay` (close and
@@ -240,8 +249,12 @@ window and drives it like the window previews: open after `theme.tooltipDelayMs`
 the pointer is on the gear or the panel, closed 250 ms after both are left (a click toggles it
 at once); placed on the gear like the Tip, masked while visible, `settingsHeadroom` (and the
 width to centre it on the gear) reserved whenever the section is listed. Each row reads the
-live theme / `st.pet` and sends a CLI verb through `shell.send` (`theme set <key> <json>`,
-`pin toggle`, `pet mute|unmute`); the gear's tip is off while the panel shows.
+live theme / `st.pet` / `st.notifications` and sends a CLI verb through `shell.send` (`theme set <key> <json>`,
+`pin toggle`, `pet mute|unmute`, `pet set <key> <n>`, `dnd on|off`, `held timeout <min>`); the
+gear's tip is off while the panel shows. Below the switches come group headers (`GroupHeader`)
+with `SwitchRow` / `StepperRow` inline components (a stepper shows its new value at once until
+state.json catches up); the gear wears a moon (`icons.dnd`) while DND is on, and `HeldBadge`
+hides (and stops keeping an autohiding dock up) while DND is on.
 
 Do not position things with `anchors.x: cond ? a : undefined` in QML: an
 anchor, once set, is not reset by a later `undefined`. Bind `y`/`x` instead.

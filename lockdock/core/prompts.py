@@ -136,6 +136,7 @@ class PromptCenter:
     """Opens, publishes and resolves decision prompts.
 
     Inputs: `on_activity` (every final verdict), `on_held` (every held notification),
+    `on_released` (held notifications re-delivered: their cards close),
     `on_switch` (a mode switch clears the cards and the snoozes), `act` (a button press),
     `tick` (once a second: purge expired cards). `request(mode_id)` is ModeManager.request.
     """
@@ -198,6 +199,17 @@ class PromptCenter:
         self._open(p)
         if verdict is None and cfg.llm_enabled:
             self.spawn(self._fetch_tag(p.id, mode, n))
+
+    def on_released(self, notes: list[Notification]) -> None:
+        """Held notifications were re-delivered (time limit, release): their cards go."""
+        targets = {f"{n.app}|{n.summary}" for n in notes}
+        gone = [p for p in self.prompts if p.kind == "notification" and p.target in targets]
+        if not gone:
+            return
+        self._close_where(lambda p: p in gone)
+        for p in gone:
+            self.events.log("prompt", op="released", id=p.id, prompt_kind=p.kind, title=p.title)
+        self.on_change()
 
     def on_switch(self, old: Mode, new: Mode) -> None:
         """A new mode: every card is stale (held notifications were released) and snoozes reset."""

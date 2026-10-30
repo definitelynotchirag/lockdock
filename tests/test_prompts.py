@@ -328,3 +328,59 @@ def test_claude_notification_verdict(tmp_path, monkeypatch):
     assert v == NotificationVerdict("hold", "Maya waits", True, "3pm")
     v2 = asyncio.run(clf.notification(mode, slack(body="other body")))
     assert v2.cached and v2.time_sensitive and v2.deadline == "3pm" and len(calls) == 1
+
+
+def test_released_notification_closes_its_card():
+    h = Harness()
+    h.c.on_held(slack(), None)
+    h.c.on_held(slack(summary="other"), None)
+    h.c.on_released([slack()])
+    assert [p.title for p in h.c.prompts] == ["other"]
+    assert h.events.records[-1]["op"] == "released"
+    n = len(h.changes)
+    h.c.on_released([slack(summary="unknown")])
+    assert len(h.changes) == n
+    h.spawner.discard()
+
+
+def test_daemon_expire_dismisses_the_card(tmp_path):
+    cfg = social_config(llm_enabled=False)
+    d, pub, spawner = make_daemon(tmp_path, cfg)
+    d.modes.activate("writing")
+    d.gate.on_notify(slack())
+    assert pub.snapshots[-1]["prompts_count"] == 1
+    d.clock.t += 15 * 60
+    assert d.gate.expire(d.clock.now()) == 1
+    st = pub.snapshots[-1]
+    assert st["prompts"] == [] and st["held_count"] == 0
+    spawner.discard()
+
+
+def test_dnd_opens_no_card(tmp_path):
+    d, pub, spawner = make_daemon(tmp_path, social_config(llm_enabled=False, dnd=True))
+    d.modes.activate("writing")
+    d.gate.on_notify(slack())
+    assert pub.snapshots[-1]["held_count"] == 1 and pub.snapshots[-1]["prompts"] == []
+    spawner.discard()
+
+
+def test_config_notifications_block_and_dnd():
+    import pytest
+
+    base = {"modes": [{"id": "a"}]}
+    cfg = config_from_dict(base)
+    assert cfg.notifications.release_after_min == 15 and cfg.dnd is False
+    cfg = config_from_dict({**base, "notifications": {"release_after_min": 0}, "dnd": True})
+    assert cfg.notifications.release_after_min == 0 and cfg.dnd is True
+    with pytest.raises(ValueError):
+        config_from_dict({**base, "notifications": {"release_after_min": -5}})
+    with pytest.raises(ValueError):
+        config_from_dict({**base, "dnd": "yes"})
+
+
+def test_example_has_the_notifications_block():
+    import json
+    from lockdock.adapters.json_config import EXAMPLE
+
+    cfg = config_from_dict(json.loads(EXAMPLE.read_text()))
+    assert cfg.notifications.release_after_min == 15 and cfg.dnd is False

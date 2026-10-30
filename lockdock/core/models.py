@@ -138,6 +138,13 @@ class PromptsConfig:
 
 
 @dataclass
+class NotificationsConfig:
+    """The top-level `notifications` block: limits that apply in every mode."""
+
+    release_after_min: int = 15        # a held notification is re-delivered after this long; 0 = never
+
+
+@dataclass
 class Config:
     """The whole modes.json, parsed."""
 
@@ -153,6 +160,8 @@ class Config:
     browser_bridge: BrowserBridge = field(default_factory=BrowserBridge)
     agent_kinds: list[AgentKind] | None = None   # None = the built-in table (core.agents.DEFAULT_KINDS)
     prompts: PromptsConfig = field(default_factory=PromptsConfig)
+    notifications: NotificationsConfig = field(default_factory=NotificationsConfig)
+    dnd: bool = False                   # do not disturb: hold every notification silently
 
     def get(self, mode_id: str | None) -> Mode | None:
         """The mode with this id, or None."""

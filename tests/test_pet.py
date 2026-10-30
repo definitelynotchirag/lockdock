@@ -7,7 +7,8 @@ from lockdock.adapters.json_config import PET_EXAMPLE, JsonConfigLoader
 from lockdock.adapters.pet_packs import BUILTIN_PETS_DIR, DirPetPacks
 from lockdock.core.daemon import Daemon
 from lockdock.core.models import WindowInfo
-from lockdock.core.pet import DEFAULT_LINES, MOODS, PetBrain, PetConfig, pet_config_from_dict, render_line
+from lockdock.core.pet import (DEFAULT_LINES, MOODS, PetBrain, PetConfig, pet_config_from_dict, pet_setting,
+                               render_line)
 
 from .fakes import (FakeClassifier, FakeClock, FakeConfigSource, FakePetPacks, FakePublisher, FakeRunner,
                     FakeSink, FakeSpeaker, Spawner, make_config)
@@ -182,6 +183,8 @@ def test_snapshot_shape_and_change_spam():
     assert {"name", "mood", "scale", "line", "off_seconds", "pack", "pack_dir", "muted"} <= set(s)
     assert s["name"] == "Miso" and s["pack_dir"] == "/packs/cat" and s["position"] == "right"
     assert s["size"] == 48 and s["max_screen_fraction"] == 0.9
+    assert s["config"] == {"thresholds": {"suspicious": 45, "annoyed": 120, "furious": 300}, "grow_s": 240,
+                           "shrink_s": 4, "decay_per_s": 2, "nag_every_s": 60, "max_scale": 24}
     json.dumps(s)
     r.run(30, ON)
     assert r.changes == 0  # nothing changed, nothing published
@@ -284,3 +287,48 @@ def test_feature_commands(tmp_path, monkeypatch):
     assert d.handle("pet", ["dance"]).startswith("usage")
     d.activity_listeners[0](OFF)
     assert d.handle("pet", None)["off_seconds"] == 0
+
+
+def test_pet_setting_validation():
+    cfg = PetConfig()
+    assert pet_setting(cfg, "grow_s", 90) == {"grow_s": 90}
+    assert pet_setting(cfg, "shrink_s", 0.5) == {"shrink_s": 0.5}
+    assert pet_setting(cfg, "thresholds.annoyed", 60.0) == {"thresholds": {"suspicious": 45, "annoyed": 60,
+                                                                           "furious": 300}}
+    assert pet_setting(cfg, "thresholds.furious", 120)["thresholds"]["furious"] == 120   # equal is fine
+    for key, value, msg in (("grow_s", 0.5, "grow_s must be 1 or more"), ("nag_every_s", 4, "5 or more"),
+                            ("max_scale", 0, "1 or more"), ("decay_per_s", -1, "0 or more"),
+                            ("thresholds.annoyed", 30, "in order"), ("thresholds.furious", 100, "in order"),
+                            ("thresholds.suspicious", -5, "0 or more"), ("grow_s", "fast", "a number"),
+                            ("grow_s", True, "a number"), ("lines", 1, "unknown pet setting"),
+                            ("max_screen_fraction", 0.5, "unknown pet setting")):
+        with pytest.raises(ValueError, match=msg):
+            pet_setting(cfg, key, value)
+
+
+def test_set_timing_applies_live_and_publishes():
+    r = Rig()
+    before = r.changes
+    r.brain.apply_config(pet_config_from_dict(pet_setting(r.brain.cfg, "thresholds.suspicious", 10)))
+    assert r.changes == before + 1 and r.brain.snapshot()["config"]["thresholds"]["suspicious"] == 10
+    r.run(10, OFF)
+    assert r.brain.mood == "suspicious"
+
+
+def test_feature_pet_set(tmp_path, monkeypatch):
+    from lockdock.features import pet as feature
+    monkeypatch.setattr(feature, "PET_FILE", tmp_path / "pet.json")
+    pub = FakePublisher()
+    d = Daemon(config_source=FakeConfigSource(make_config()), classifier=FakeClassifier(), sink=FakeSink(),
+               publisher=pub, runner=FakeRunner(), clock=FakeClock(), spawn=Spawner())
+    for t in feature.install(d):
+        t.close()
+    assert d.handle("pet", ["set", "grow_s", "90"]) == "grow_s = 90"
+    assert d.handle("pet", "set thresholds.furious 600") == "thresholds.furious = 600"
+    raw = json.loads((tmp_path / "pet.json").read_text())
+    assert raw["grow_s"] == 90 and raw["thresholds"] == {"suspicious": 45, "annoyed": 120, "furious": 600}
+    assert pub.snapshots[-1]["pet"]["config"]["grow_s"] == 90
+    assert d.handle("pet", ["set", "grow_s", "0"]) == "grow_s must be 1 or more"
+    assert d.handle("pet", ["set", "grow_s", "x"]).startswith("Expecting value")
+    assert d.handle("pet", ["set", "grow_s"]).startswith("usage: pet set")
+    assert json.loads((tmp_path / "pet.json").read_text())["grow_s"] == 90

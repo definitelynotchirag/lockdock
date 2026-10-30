@@ -25,7 +25,8 @@ class Daemon:
     `register_command` (control socket verbs), `config_listeners` (reload hooks),
     `focus_listeners` (every focus change, after the judge saw it).
     `activity_listeners` (called with the activity dict + `mode` label after each verdict),
-    `switch_listeners` (called with (old, new) after every mode switch), `gate.hold_listeners`
+    `switch_listeners` (called with (old, new) after every mode switch), `gate.release_listeners`
+    (every batch of re-delivered notifications), `gate.hold_listeners`
     (every held notification). `classifier` and `spawn` are shared with features.
     """
 
@@ -51,7 +52,9 @@ class Daemon:
                                  self.publish, spawn)
         self.judge = ActivityJudge(lambda: self.cfg, lambda: self.modes.cur, classifier, clock, self.events,
                                    self.publish, self._nudge_by_notification, spawn, self._on_verdict)
-        self.gate = NotificationGate(lambda: self.modes.cur, classifier, sink, self.events, self.publish, spawn)
+        self.gate = NotificationGate(lambda: self.modes.cur, classifier, sink, self.events, self.publish, clock,
+                                     spawn, lambda: self.cfg.notifications.release_after_min * 60.0)
+        self.gate.dnd = self.cfg.dnd
         self._commands: dict[str, CommandFn] = {
             "mode": lambda arg: self.modes.request(arg),
             "cancel": lambda _: (self.modes.cancel(), "cancelled")[1],
@@ -96,6 +99,12 @@ class Daemon:
                                            activity=self.judge.activity, held=self.gate.held,
                                            now=self.clock.now())
 
+    def update_config(self, changes: dict[str, Any]) -> Config:
+        """Write top-level modes.json keys through the ConfigSource and apply the result."""
+        cfg = self.config_source.update(changes)
+        self.apply_config(cfg)
+        return cfg
+
     def publish(self) -> None:
         self.publisher.publish(self.snapshot())
 
@@ -104,6 +113,7 @@ class Daemon:
         """A new modes.json: keep the mode if it still exists, then re-judge."""
         self.cfg = cfg
         self.modes.config_changed()
+        self.gate.set_dnd(cfg.dnd)
         for listener in self.config_listeners:
             listener(cfg)
         self.events.log("reload", modes=[m.id for m in cfg.modes])

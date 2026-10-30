@@ -1,13 +1,14 @@
 """The mascot pet: wires PetBrain to pet.json, the sprite packs, activity verdicts and the `pet` command."""
 from __future__ import annotations
 
+import json
 from collections.abc import Awaitable
 from typing import TYPE_CHECKING, Any
 
 from ..adapters.claude_cli import ClaudeCliSpeaker, JsonFileCache
 from ..adapters.json_config import PET_EXAMPLE, JsonConfigLoader
 from ..adapters.pet_packs import BUILTIN_PETS_DIR, DirPetPacks
-from ..core.pet import MOODS, PetBrain, PetConfig, pet_config_from_dict
+from ..core.pet import MOODS, SETTABLE, PetBrain, PetConfig, pet_config_from_dict, pet_setting
 from ..paths import PET_CACHE_FILE, PET_FILE, USER_PETS_DIR
 
 if TYPE_CHECKING:
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
 PET_ERRORS = (ValueError, KeyError, TypeError, OSError)
 USAGE = ("usage: pet [status | calm | mood <" + "|".join(MOODS) + "|auto> | mute | unmute | pack <name> "
-         "| packs | say <text>]")
+         "| packs | say <text> | set <key> <number>]")
 
 
 class PetFeature:
@@ -54,11 +55,29 @@ class PetFeature:
     def on_error(self, e: Exception) -> None:
         self.daemon.events.log("pet_config_error", error=str(e))
 
-    def _persist(self, **changes: Any) -> None:
+    def _persist(self, **changes: Any) -> bool:
         try:
             self.apply(self.loader.update(changes))
         except PET_ERRORS as e:
             self.on_error(e)
+            return False
+        return True
+
+    def set_value(self, args: list[str]) -> str:
+        """`pet set <key> <json number>`: validate, write pet.json, apply live."""
+        args = " ".join(args).split()
+        if len(args) != 2:
+            return f"usage: pet set <key> <number>  (keys: {', '.join(SETTABLE)})"
+        key, text = args
+        try:
+            value = json.loads(text)
+            changes = pet_setting(self.brain.cfg, key, value)
+        except ValueError as e:   # json.JSONDecodeError is a ValueError
+            return str(e)
+        if not self._persist(**changes):
+            return f"could not write {self.loader.path} (see lockdock log)"
+        self.daemon.events.log("pet_set", key=key, value=value)
+        return f"{key} = {value}"
 
     def handle(self, arg: Any) -> Any:
         """`pet` control command; `arg` is a list of words (or one string)."""
@@ -87,6 +106,8 @@ class PetFeature:
             return f"pack {rest}"
         if sub == "packs":
             return self.packs.available()
+        if sub == "set":
+            return self.set_value(args[1:])
         if sub == "say":
             b.say(rest)
             return "said"

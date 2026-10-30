@@ -8,18 +8,26 @@ Everything lives in `~/.config/lockdock/pet.json` (seeded from `pet.example.json
 hot-reloaded within 2 s; a JSON error logs `pet_config_error` and keeps the old
 config). Check the result with `lockdock pet` (mood, scale, seconds off task, line).
 
+Timings have a verb that validates, writes pet.json and applies live:
+`lockdock pet set <key> <number>` with `thresholds.suspicious|annoyed|furious`, `grow_s`,
+`shrink_s`, `decay_per_s`, `nag_every_s` (seconds) or `max_scale` (sprites). It rejects values
+below the bounds in the table and thresholds out of order (suspicious <= annoyed <= furious).
+The user can do the same from the dock: the quick settings gear has a **Pet** group with
+steppers for Suspicious / Annoyed / Furious after, Grows to full in and Nags every
+(`st.pet.config` in state.json holds the effective timings).
+
 ## Keys
 
 | key | default | meaning |
 |---|---|---|
 | `persona` | grey cat, dramatic | one sentence; the voice for LLM lines |
 | `lines.<mood>` | 5 each | lines per mood: `content`, `suspicious`, `annoyed`, `furious` |
-| `thresholds` | `{suspicious: 45, annoyed: 120, furious: 300}` | seconds off task for each mood |
-| `decay_per_s` | 2.0 | off-task seconds forgiven per second on task |
-| `grow_s` / `shrink_s` | 240 / 4 | seconds of furious to reach full size / to shrink back |
-| `max_scale` | 24 | full size in dock sprites (48 px x 24) |
+| `thresholds` | `{suspicious: 45, annoyed: 120, furious: 300}` | seconds off task for each mood (0 or more, in order) |
+| `decay_per_s` | 2.0 | off-task seconds forgiven per second on task (0 or more) |
+| `grow_s` / `shrink_s` | 240 / 4 | seconds of furious to reach full size / to shrink back (at least 1 / 0.1) |
+| `max_scale` | 24 | full size in dock sprites (48 px x 24; at least 1) |
 | `max_screen_fraction` | 0.9 | the overlay never gets taller than this share of the screen |
-| `nag_every_s` | 60 | a fresh line this often while off task (never while content) |
+| `nag_every_s` | 60 | a fresh line this often while off task (never while content; at least 5) |
 | `llm_lines` | false | on a mood change, ask `claude -p` for a line in the persona's voice |
 | `muted` | false | keep the mood, drop lines and growth |
 | `pack`, `position`, `name` | `cat`, `left`, `""` | sprite pack, `left`/`right` of the mode strip, display name |
@@ -31,7 +39,7 @@ Tease the activity, never the person.
 ## Recipes
 
 - **Angrier faster:** lower `thresholds` (e.g. `{"suspicious": 20, "annoyed": 60, "furious": 120}`)
-  and `grow_s` (e.g. 90). Slower forgiveness: lower `decay_per_s` to 1.
+  and `grow_s` (e.g. `lockdock pet set grow_s 90`). Slower forgiveness: `pet set decay_per_s 1`.
 - **Gentler:** raise the thresholds, set `max_screen_fraction` to 0.4, or `lockdock pet mute`.
 - **New voice:** change `persona`, rewrite `lines`, optionally `"llm_lines": true`. LLM
   lines are cached per (mood, app) in `~/.local/state/lockdock/pet-lines-cache.json`;

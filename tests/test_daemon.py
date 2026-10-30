@@ -10,7 +10,7 @@ from lockdock.core.state import StateSnapshot
 from .fakes import (FakeClassifier, FakeClock, FakeConfigSource, FakePublisher, FakeRunner, FakeSink, Spawner,
                     make_config)
 
-KEYS = {"mode", "modes", "pending", "activity", "held", "held_count", "agents", "pet", "theme", "prompts",
+KEYS = {"mode", "modes", "pending", "activity", "held", "held_count", "notifications", "agents", "pet", "theme", "prompts",
         "prompts_count", "updated_ms"}
 
 
@@ -34,6 +34,7 @@ def test_snapshot_shape(tmp_path):
                               "apps": ["md.obsidian.Obsidian", "helium"], "description": "",
                               "notifications": "hold"}
     assert st["updated_ms"] == 1000000
+    assert st["notifications"] == {"release_after_min": 15, "dnd": False}
     json.dumps(st)
     spawner.drain()
     assert pub.snapshots[-1]["activity"]["verdict"] == "on"
@@ -115,3 +116,39 @@ def test_config_listeners_and_mode_fallback(tmp_path):
     d.apply_config(cfg)
     assert seen == ["sonnet"] and d.modes.mode == "free"
     spawner.discard()
+
+
+def test_dnd_and_held_timeout_verbs(tmp_path):
+    from lockdock.features import notifications as feature
+
+    d, pub, sink, spawner = make_daemon(tmp_path)
+    for coro in feature.install(d):
+        coro.close()
+    d.handle("mode", "writing")
+    d.gate.on_notify(Notification(app="Slack", summary="mode-held", body=""))
+    assert d.handle("dnd", "on") == "do not disturb on"
+    assert d.config_source.updates[-1] == {"dnd": True} and pub.snapshots[-1]["notifications"]["dnd"] is True
+    d.gate.on_notify(Notification(app="Calendar", summary="quiet", body=""))   # allowed in writing, held by DND
+    assert d.snapshot()["held_count"] == 2
+    assert d.handle("dnd", ["toggle"]) == "do not disturb off (released 1)"
+    assert sink.sent[-1]["body"] == "\n(while you were in do not disturb)" and d.snapshot()["held_count"] == 1
+    assert d.handle("dnd", "maybe") == "usage: dnd [on|off|toggle]"
+    assert d.handle("held_timeout", "30") == "held notifications are released after 30 min"
+    assert d.config_source.updates[-1] == {"notifications": {"release_after_min": 30}}
+    assert pub.snapshots[-1]["notifications"]["release_after_min"] == 30
+    assert d.handle("held_timeout", ["0"]) == "held notifications wait"
+    assert d.handle("held_timeout", "-1").startswith("usage")
+    d.handle("held_timeout", "1")
+    d.clock.t += 61
+    d.gate.expire(d.clock.now())
+    assert sink.sent[-1]["body"] == "\n(held 1 min in Writing)" and d.snapshot()["held_count"] == 0
+    kinds = [json.loads(line)["kind"] for line in (tmp_path / "events.jsonl").read_text().splitlines()]
+    assert "dnd" in kinds and "held_timeout" in kinds
+    spawner.discard()
+
+
+def test_dnd_from_config_at_start(tmp_path):
+    d, *_ = make_daemon(tmp_path, cfg=make_config(dnd=True))
+    assert d.gate.dnd is True
+    d.gate.on_notify(Notification(app="x", summary="y", body=""))
+    assert d.snapshot()["held_count"] == 1

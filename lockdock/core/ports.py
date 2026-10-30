@@ -56,9 +56,10 @@ class CommandRunner(Protocol):
 
 
 class ConfigSource(Protocol):
-    """Loads modes config and reports edits."""
+    """Loads modes config, writes top-level keys back, and reports edits."""
 
     def load(self) -> Config: ...
+    def update(self, changes: dict[str, Any]) -> Config: ...  # set top-level keys, return the parsed result
     async def watch(self, on_change: Callable[[Config], None],
                     on_error: Callable[[Exception], None] | None = None) -> None: ...
 

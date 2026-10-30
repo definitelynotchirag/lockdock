@@ -17,8 +17,12 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   `llm.provider: "jev"` with `TYPESAFE_API_KEY` in `~/.config/lockdock/.env`) for anything unknown. Off-task
   windows turn the dock red with a one-line reason.
 - Notifications that do not belong to the mode are **held** (closed as they
-  arrive, re-delivered when the mode ends). Keywords like "urgent" and
-  critical urgency always pass.
+  arrive, re-delivered when the mode ends, or after 15 minutes:
+  `notifications.release_after_min`, `lockdock held timeout <min>`, 0 = never).
+  Keywords like "urgent" and critical urgency always pass.
+- **Do not disturb** (`lockdock dnd on|off|toggle`, or the switch in quick
+  settings) holds every notification silently, with no cards and no badge;
+  turning it off re-delivers them.
 - **Decision cards**: when a window belongs to another mode ("x.com · belongs
   to Social"), the dock asks *Stay* or *Go to Social (30s wait)*; a held
   notification gets a card with *Later* / *Go to X* and a "Time-sensitive" tag
@@ -41,7 +45,8 @@ A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669
   scale, sections, autohide, icons, ...); an agent edits them.
 - `lockdock pin` reserves the dock's row so maximised windows stop at it (`unpin` to
   overlay again). The gear at the end of the dock opens quick settings (pin, auto-hide,
-  top / bottom, tooltips, previews, reduced motion, mute the pet); hover any button for the dock's own tooltip (`skills/lockdock/motion.md`). Every icon is an
+  top / bottom, tooltips, previews, reduced motion, mute the pet, do not disturb, the
+  held-notification time limit, and the pet's timings as steppers); hover any button for the dock's own tooltip (`skills/lockdock/motion.md`). Every icon is an
   [Icona](https://icona.works/icons) line icon tinted with the palette; any of
   them (or an emoji) can be swapped in theme.json `icons` or a mode's `icon`. See `AGENTS.md` and
   `skills/lockdock/`.
@@ -67,6 +72,8 @@ Or run the pieces by hand: `lockdock daemon` and `lockdock shell`.
 lockdock mode writing     # switch (press again during a countdown to shorten it)
 lockdock status           # mode, verdict for the current window, held count
 lockdock held / release   # see or re-deliver held notifications
+lockdock held timeout 30  # re-deliver a held notification after 30 min (0 = never)
+lockdock dnd on|off       # do not disturb: hold everything silently
 lockdock log -n 50        # every verdict with its reason
 lockdock classify helium "Home / X - Helium" --mode writing   # ask the classifier once (tuning)
 lockdock config           # path to modes.json
@@ -74,7 +81,7 @@ lockdock agents           # running coding agents and whether they need you
 lockdock agents install-hooks --dry-run   # show the hook changes, then run without --dry-run
 lockdock agent focus <id> # focus an agent's window
 lockdock pet              # the pet's mood; also: calm, mood <m>|auto, mute, unmute,
-                          #   pack <name>, packs, say "<text>"
+                          #   pack <name>, packs, say "<text>", set <key> <number>
 lockdock theme            # effective theme; `theme set <key> <json>`, `theme reset`, `theme path`
 lockdock pin / unpin      # windows stop at the dock / cover it again (`pin toggle` flips)
 lockdock skill path       # the agent skill (also linked to ~/.claude/skills/lockdock)

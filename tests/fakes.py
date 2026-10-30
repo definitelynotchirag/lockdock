@@ -103,9 +103,19 @@ class FakeRunner:
 
 
 class FakeConfigSource:
+    """Holds a Config; `update` sets top-level attributes (dicts become their dataclass) and records them."""
+
     def __init__(self, cfg: Config, error: Exception | None = None) -> None:
         self.cfg = cfg
         self.error = error
+        self.updates: list[dict] = []
+
+    def update(self, changes: dict[str, Any]) -> Config:
+        self.updates.append(changes)
+        for key, value in changes.items():
+            current = getattr(self.cfg, key)
+            setattr(self.cfg, key, type(current)(**value) if isinstance(value, dict) else value)
+        return self.cfg
 
     def load(self) -> Config:
         if self.error:

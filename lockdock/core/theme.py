@@ -94,7 +94,7 @@ TEXT_ICONS: dict[str, Any] = {
     "timer": "", "stay": "", "nudge": "", "tag_urgent": "✦", "tag_info": "✦", "tag_ok": "✅",
     "card_notification": "🔔", "card_site": "🌐", "card_verdict": "✦",
     "app_fallback": "application-x-executable", "pin": "📌", "pin_off": "📍",
-    "close": "✕", "settings": "⚙",
+    "close": "✕", "settings": "⚙", "dnd": "🌙", "step_down": "−", "step_up": "+",
 }
 
 
@@ -207,6 +207,9 @@ class IconsTheme:
     pin_off: str = "icona:map-pin"
     close: str = "icona:x"
     settings: str = "icona:settings"
+    dnd: str = "icona:moon-fill"
+    step_down: str = "icona:minus"
+    step_up: str = "icona:plus"
 
 
 _ICON_WANT = '"icona:<slug>", "brand:<slug>", a glyph, an icon name or ""'

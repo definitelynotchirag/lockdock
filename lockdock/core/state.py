@@ -9,7 +9,7 @@ from .models import Config, Notification, PendingSwitch
 SectionProvider = Callable[[], "dict | list | int"]
 
 CORE_SECTIONS: frozenset[str] = frozenset(
-    {"mode", "modes", "pending", "activity", "held", "held_count", "updated_ms"})
+    {"mode", "modes", "pending", "activity", "held", "held_count", "notifications", "updated_ms"})
 # reserved extension points and their empty defaults
 RESERVED_SECTIONS: dict[str, Callable[[], Any]] = {"agents": list, "pet": dict, "theme": dict,
                                                    "prompts": list, "prompts_count": int}
@@ -40,6 +40,7 @@ class StateSnapshot:
             "activity": activity,
             "held": [n.short() for n in held[-HELD_IN_SNAPSHOT:]],
             "held_count": len(held),
+            "notifications": {"release_after_min": cfg.notifications.release_after_min, "dnd": cfg.dnd},
         }
         for name, empty in RESERVED_SECTIONS.items():
             st[name] = empty()

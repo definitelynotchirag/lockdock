@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 from ..core.agents import DEFAULT_KINDS, merge_kinds
-from ..core.models import DEFAULT_BROWSERS, BrowserBridge, Config, Mode, NotificationRules, PromptsConfig
+from ..core.models import (DEFAULT_BROWSERS, BrowserBridge, Config, Mode, NotificationRules, NotificationsConfig,
+                           PromptsConfig)
 
 ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE = ROOT / "modes.example.json"
@@ -51,7 +52,21 @@ def config_from_dict(raw: dict) -> Config:
                   browsers=raw.get("browsers", list(DEFAULT_BROWSERS)), browser_bridge=bridge,
                   agent_kinds=(merge_kinds(DEFAULT_KINDS, raw["agents"].get("kinds", []))
                                if isinstance(raw.get("agents"), dict) else None),
-                  prompts=prompts)
+                  prompts=prompts, notifications=_notifications(raw.get("notifications", {})),
+                  dnd=_bool(raw.get("dnd", False), "dnd"))
+
+
+def _notifications(raw: dict) -> NotificationsConfig:
+    minutes = int(raw.get("release_after_min", 15))
+    if minutes < 0:
+        raise ValueError(f"notifications.release_after_min must be 0 (never) or more, not {minutes}")
+    return NotificationsConfig(release_after_min=minutes)
+
+
+def _bool(value: object, key: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{key} must be true or false, not {value!r}")
+    return value
 
 
 def _provider(name: object) -> str:

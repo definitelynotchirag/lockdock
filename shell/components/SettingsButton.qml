@@ -4,17 +4,19 @@ import QtQuick
 // panel (components/QuickSettings.qml). The Dock (theme.host) owns the one panel per window:
 // hovering the gear opens it after the tooltip delay (host.hoverSettings), a click toggles it
 // (host.toggleSettings). icons.settings on a soft pill (the accent container while the panel is
-// open); a small accent dot while the dock is pinned. Its tooltip hides while the panel shows.
+// open); a small accent dot while the dock is pinned, a moon badge (icons.dnd) instead while do
+// not disturb is on (st.notifications.dnd; the moon wins). Its tooltip hides while the panel shows.
 Pressable {
     id: btn
     required property var st          // state.json
     readonly property bool pinned: theme.pinned
+    readonly property bool dnd: !!(st.notifications || {}).dnd
     readonly property bool open: theme.host ? theme.host.settingsOpen === true && theme.host.settingsTarget === btn : false
 
     implicitWidth: theme.ipx(40); implicitHeight: theme.ipx(40)
     scale: pressScale
     tip: ({ icon: theme.icon("settings", "icona:settings"), title: "Quick settings · click or hover",
-            detail: pinned ? "the dock is pinned" : "" })
+            detail: [dnd ? "do not disturb is on" : "", pinned ? "the dock is pinned" : ""].filter(x => x).join(" · ") })
     tipEnabled: !open
     onClicked: if (theme.host && theme.host.toggleSettings) theme.host.toggleSettings(btn)
 
@@ -41,12 +43,28 @@ Pressable {
     }
     // pinned: a small accent dot on the top-right
     Rectangle {
-        visible: btn.pinned
+        visible: btn.pinned && !btn.dnd
         readonly property real s: btn.theme.px(10)
         width: s; height: s; radius: s / 2
         x: btn.width - s - btn.theme.px(2); y: btn.theme.px(2)
         color: btn.theme.paletteAccent
         border.width: btn.theme.px(1.5)
         border.color: btn.theme.background
+    }
+    // do not disturb: a moon on a small disc in the dock's colour, same corner
+    Rectangle {
+        visible: btn.dnd
+        readonly property real s: btn.theme.px(15)
+        width: s; height: s; radius: s / 2
+        x: btn.width - s + btn.theme.px(1); y: -btn.theme.px(1)
+        color: btn.theme.background
+        Icon {
+            anchors.centerIn: parent
+            name: btn.theme.icon("dnd", "icona:moon-fill")
+            size: btn.theme.fpx(11)
+            stroke: btn.theme.iconStroke
+            family: btn.theme.family
+            color: btn.theme.paletteAccent
+        }
     }
 }

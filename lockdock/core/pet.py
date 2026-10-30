@@ -67,6 +67,37 @@ class PetConfig:
     position: str = "left"               # left | right of the mode strip
 
 
+# lower bounds of the timing keys (pet.json values below them are raised to them; `pet set` rejects them)
+TIMING_MIN: Mapping[str, float] = MappingProxyType(
+    {"decay_per_s": 0.0, "grow_s": 1.0, "shrink_s": 0.1, "nag_every_s": 5.0, "max_scale": 1.0})
+SETTABLE: tuple[str, ...] = tuple(f"thresholds.{m}" for m in MOODS[1:]) + tuple(TIMING_MIN)
+
+
+def pet_setting(cfg: PetConfig, key: str, value: object) -> dict[str, Any]:
+    """The pet.json changes for `pet set <key> <value>` (a number of seconds, or of sprites for
+    max_scale). Thresholds stay in order: suspicious <= annoyed <= furious. Raises ValueError."""
+    if key not in SETTABLE:
+        raise ValueError(f"unknown pet setting {key!r} (one of {', '.join(SETTABLE)})")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{key} must be a number, not {value!r}")
+    v = float(value)
+    if key.startswith("thresholds."):
+        if v < 0:
+            raise ValueError(f"{key} must be 0 or more")
+        t = {**DEFAULT_THRESHOLDS, **cfg.thresholds, key.split(".", 1)[1]: v}
+        if not t["suspicious"] <= t["annoyed"] <= t["furious"]:
+            raise ValueError("thresholds must stay in order: suspicious <= annoyed <= furious")
+        return {"thresholds": {m: _plain(x) for m, x in t.items()}}
+    if v < TIMING_MIN[key]:
+        raise ValueError(f"{key} must be {TIMING_MIN[key]:g} or more")
+    return {key: _plain(v)}
+
+
+def _plain(v: float) -> float | int:
+    """45.0 -> 45, so pet.json stays as people write it."""
+    return int(v) if v.is_integer() else v
+
+
 def pet_config_from_dict(raw: dict) -> PetConfig:
     """Build a PetConfig from parsed pet.json. Raises ValueError/TypeError on bad values."""
     d = PetConfig()
@@ -76,12 +107,12 @@ def pet_config_from_dict(raw: dict) -> PetConfig:
     return PetConfig(
         name=str(raw.get("name", d.name)), pack=str(raw.get("pack", d.pack)),
         persona=str(raw.get("persona", d.persona)), thresholds=thresholds,
-        decay_per_s=float(raw.get("decay_per_s", d.decay_per_s)),
-        grow_s=max(1.0, float(raw.get("grow_s", d.grow_s))),
-        shrink_s=max(0.1, float(raw.get("shrink_s", d.shrink_s))),
-        max_scale=max(1.0, float(raw.get("max_scale", d.max_scale))),
+        decay_per_s=max(TIMING_MIN["decay_per_s"], float(raw.get("decay_per_s", d.decay_per_s))),
+        grow_s=max(TIMING_MIN["grow_s"], float(raw.get("grow_s", d.grow_s))),
+        shrink_s=max(TIMING_MIN["shrink_s"], float(raw.get("shrink_s", d.shrink_s))),
+        max_scale=max(TIMING_MIN["max_scale"], float(raw.get("max_scale", d.max_scale))),
         max_screen_fraction=min(1.0, max(0.05, float(raw.get("max_screen_fraction", d.max_screen_fraction)))),
-        nag_every_s=max(5.0, float(raw.get("nag_every_s", d.nag_every_s))),
+        nag_every_s=max(TIMING_MIN["nag_every_s"], float(raw.get("nag_every_s", d.nag_every_s))),
         lines=lines, llm_lines=bool(raw.get("llm_lines", d.llm_lines)), muted=bool(raw.get("muted", d.muted)),
         position=position if position in ("left", "right") else "left",
     )
@@ -229,7 +260,14 @@ class PetBrain:
                 "off_seconds": int(self.off_seconds), "pack": self.cfg.pack, "pack_dir": self.pack_dir,
                 "manifest": manifest, "size": int(manifest.get("size", 48)), "muted": self.cfg.muted,
                 "forced": self.forced, "position": self.cfg.position,
-                "max_screen_fraction": self.cfg.max_screen_fraction}
+                "max_screen_fraction": self.cfg.max_screen_fraction, "config": self._timings()}
+
+    def _timings(self) -> dict:
+        """The effective timing values (`st.pet.config`), for the quick settings rows."""
+        c = self.cfg
+        return {"thresholds": {m: c.thresholds.get(m, DEFAULT_THRESHOLDS[m]) for m in MOODS[1:]},
+                "grow_s": c.grow_s, "shrink_s": c.shrink_s, "decay_per_s": c.decay_per_s,
+                "nag_every_s": c.nag_every_s, "max_scale": c.max_scale}
 
     # ---------- internals ----------
     def _resolve_pack(self) -> None:
@@ -239,7 +277,7 @@ class PetBrain:
     def _key(self) -> tuple:
         return (self._mood, self.scale, self.line, self.line_id, int(self.off_seconds), self.cfg.pack,
                 self.pack_dir, self.cfg.muted, self.forced, self.cfg.position, self.cfg.max_screen_fraction,
-                self.cfg.name)
+                self.cfg.name, repr(self._timings()))
 
     def _update(self, speak: bool, nag: bool = False) -> None:
         mood = self.mood

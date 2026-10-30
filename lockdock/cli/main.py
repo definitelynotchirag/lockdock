@@ -8,7 +8,11 @@
   lockdock modes             list modes from modes.json
   lockdock url               last browser URL and bridge health (browser extension)
   lockdock held              list held notifications
+  lockdock held timeout [<minutes>]
+                             re-deliver a held notification after this long (0 = never, default 15)
   lockdock release           re-deliver held notifications now
+  lockdock dnd [on|off|toggle]
+                             do not disturb: hold every notification silently; off re-delivers them
   lockdock prompts [--json]  open decision cards (site / notification / verdict)
   lockdock prompt <id> <action>
                              press a card button: later | dismiss | stay | switch
@@ -30,6 +34,8 @@
   lockdock pet mute|unmute   keep the mood, drop the lines and the growth
   lockdock pet pack <name>   switch sprite pack (lockdock pet packs lists them)
   lockdock pet say "<text>"  show a line now
+  lockdock pet set <key> <n> set a timing in pet.json: thresholds.suspicious|annoyed|furious, grow_s,
+                             shrink_s, decay_per_s, nag_every_s (seconds), max_scale (sprites)
   lockdock theme             print the effective theme, the resolved palette and its source (and problems)
   lockdock theme set K V     set a dotted key to a JSON value, e.g. theme set position '"top"'
   lockdock theme reset       restore the default theme
@@ -64,7 +70,11 @@ def _status(rest: list[str]) -> None:
         print(f"pending: -> {st['pending']['mode']}")
     a = st.get("activity") or {}
     print(f"activity: {a.get('verdict')}  {a.get('app')}: {a.get('title', '')[:60]}\n  why: {a.get('reason')}")
-    print(f"held notifications: {st.get('held_count', 0)}")
+    nt = st.get("notifications") or {}
+    limit = nt.get("release_after_min")
+    print(f"held notifications: {st.get('held_count', 0)}"
+          + (f"  (released after {limit} min)" if limit else "  (kept until the mode ends)" if limit == 0 else "")
+          + ("  do not disturb: on" if nt.get("dnd") else ""))
 
 
 def _url(b: dict) -> None:
@@ -196,8 +206,20 @@ def main(argv: list[str] | None = None) -> None:
     elif cmd == "url":
         _url(call("url"))
     elif cmd == "held":
-        for n in call("status").get("held", []):
+        if rest[:1] == ["timeout"]:
+            if len(rest) > 2:
+                sys.exit("usage: lockdock held timeout [<minutes>]   (0 = never)")
+            print(call("held_timeout", rest[1] if len(rest) == 2 else None))
+            return
+        st = call("status")
+        if (st.get("notifications") or {}).get("dnd"):
+            print("do not disturb is on")
+        for n in st.get("held", []):
             print(f"[{n['app']}] {n['summary']} — {n['body'][:80]}")
+    elif cmd == "dnd":
+        if len(rest) > 1 or (rest and rest[0] not in ("on", "off", "toggle")):
+            sys.exit("usage: lockdock dnd [on|off|toggle]")
+        print(call("dnd", rest[0] if rest else None))
     elif cmd == "prompts":
         _prompts(rest)
     elif cmd == "prompt":
