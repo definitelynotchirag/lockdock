@@ -17,7 +17,7 @@ description: Tune and debug lockdock, the mode-aware Hyprland dock. Use when the
 |---|---|---|---|
 | `~/.config/lockdock/modes.json` | modes, rules, notification policy, held time limit, do not disturb, LLM (`llm.provider`) | `lockdock config` (path), `modes`, `mode <id>`, `reload`, `classify <class> "<title>" [--mode <id>]`, `held`, `held timeout <min>`, `release`, `dnd on\|off\|toggle` | `modes.md` |
 | `~/.config/lockdock/theme.json` | every visual knob of the dock | `lockdock theme`, `theme set <key> <json>`, `theme reset`, `theme path`, `pin` / `unpin` / `pin toggle` | `theme.md`, `motion.md` |
-| `~/.config/lockdock/pet.json` | the dock pet: persona, lines, thresholds, growth, sprite pack | `lockdock pet`, `pet calm`, `pet mood <m>\|auto`, `pet mute\|unmute`, `pet pack <name>`, `pet packs`, `pet say "<text>"`, `pet set <key> <number>` | `pet.md` |
+| `~/.config/lockdock/pet.json` | the dock pet: persona, lines, thresholds, growth, sprite pack | `lockdock pet`, `pet calm`, `pet mood <m>\|auto`, `pet mute\|unmute`, `pet pack <name>`, `pet packs`, `pet say "<text>"`, `pet set <key> <number>`, `pet on\|off` | `pet.md` |
 | `modes.json` → `agents.kinds` | coding agents shown in the dock (Claude Code, Codex, OpenCode, Aider, Gemini, T3) | `lockdock agents`, `agents install-hooks [--dry-run]`, `agent focus <id>` | `agents.md` |
 
 Browser tab URLs reach the dock through the extension in `browser-extension/` and `modes.json` → `browser_bridge`; `lockdock url` shows the bridge state: `browser.md`.

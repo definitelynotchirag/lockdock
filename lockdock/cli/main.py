@@ -32,6 +32,7 @@
   lockdock pet calm          reset the pet (also: click it)
   lockdock pet mood <m>      preview content|suspicious|annoyed|furious, or `auto`
   lockdock pet mute|unmute   keep the mood, drop the lines and the growth
+  lockdock pet on|off        show the pet at all (off: no sprite, lines, growth or overlay)
   lockdock pet pack <name>   switch sprite pack (lockdock pet packs lists them)
   lockdock pet say "<text>"  show a line now
   lockdock pet set <key> <n> set a timing in pet.json: thresholds.suspicious|annoyed|furious, grow_s,
@@ -139,7 +140,8 @@ def _pet(rest: list[str]) -> None:
         for p in res:
             print(f"{p['name']:<14} {p['source']:<9} {p['title']} by {p['author']}  {p['dir']}")
     elif isinstance(res, dict):
-        flags = " ".join(f for f, on in (("forced", res.get("forced")), ("muted", res.get("muted"))) if on)
+        flags = " ".join(f for f, on in (("forced", res.get("forced")), ("muted", res.get("muted")),
+                                         ("off", res.get("enabled") is False)) if on)
         print(f"{res['name']} ({res['pack']}): {res['mood']}  scale {res['scale']}  "
               f"off task {res['off_seconds']}s  {flags}".rstrip())
         if res.get("line"):

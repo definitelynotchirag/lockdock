@@ -332,3 +332,27 @@ def test_feature_pet_set(tmp_path, monkeypatch):
     assert d.handle("pet", ["set", "grow_s", "x"]).startswith("Expecting value")
     assert d.handle("pet", ["set", "grow_s"]).startswith("usage: pet set")
     assert json.loads((tmp_path / "pet.json").read_text())["grow_s"] == 90
+
+
+def test_disabled_pet_hides_and_never_grows():
+    h = Rig(PetConfig(enabled=False))
+    h.run(400, OFF)
+    snap = h.brain.snapshot()
+    assert snap["enabled"] is False and snap["pack_dir"] == "" and snap["scale"] == 1.0
+    assert snap["mood"] == "content" and snap["line"] == ""
+    h.brain.apply_config(PetConfig(enabled=True))
+    assert h.brain.snapshot()["pack_dir"] != ""
+
+
+def test_feature_pet_on_off(tmp_path, monkeypatch):
+    from lockdock.features import pet as feature
+    monkeypatch.setattr(feature, "PET_FILE", tmp_path / "pet.json")
+    monkeypatch.setattr(feature, "USER_PETS_DIR", tmp_path / "pets")
+    d = Daemon(config_source=FakeConfigSource(make_config()), classifier=FakeClassifier(), sink=FakeSink(),
+               publisher=FakePublisher(), runner=FakeRunner(), clock=FakeClock(), spawn=Spawner())
+    for t in feature.install(d):
+        t.close()
+    assert d.handle("pet", ["off"]).startswith("pet off")
+    assert json.loads((tmp_path / "pet.json").read_text())["enabled"] is False
+    assert d.snapshot()["pet"]["pack_dir"] == ""
+    assert d.handle("pet", ["on"]) == "pet on" and d.snapshot()["pet"]["pack_dir"] != ""

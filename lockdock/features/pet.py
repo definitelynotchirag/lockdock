@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 PET_ERRORS = (ValueError, KeyError, TypeError, OSError)
 USAGE = ("usage: pet [status | calm | mood <" + "|".join(MOODS) + "|auto> | mute | unmute | pack <name> "
-         "| packs | say <text> | set <key> <number>]")
+         "| packs | say <text> | set <key> <number> | on | off]")
 
 
 class PetFeature:
@@ -95,6 +95,9 @@ class PetFeature:
             except ValueError as e:
                 return str(e)
             return f"mood {b.mood}" + (" (forced)" if b.forced else " (auto)")
+        if sub in ("on", "off"):
+            self._persist(enabled=sub == "on")
+            return "pet on" if sub == "on" else "pet off (no sprite, lines or growth; `lockdock pet on` brings it back)"
         if sub in ("mute", "unmute"):
             b.set_muted(sub == "mute")
             self._persist(muted=sub == "mute")

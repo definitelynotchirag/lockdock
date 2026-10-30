@@ -64,6 +64,7 @@ class PetConfig:
     lines: dict[str, list[str]] = field(default_factory=lambda: {m: list(v) for m, v in DEFAULT_LINES.items()})
     llm_lines: bool = False
     muted: bool = False
+    enabled: bool = True                 # false: no pet at all (no sprite, no lines, no growth, no overlay)
     position: str = "left"               # left | right of the mode strip
 
 
@@ -114,6 +115,7 @@ def pet_config_from_dict(raw: dict) -> PetConfig:
         max_screen_fraction=min(1.0, max(0.05, float(raw.get("max_screen_fraction", d.max_screen_fraction)))),
         nag_every_s=max(TIMING_MIN["nag_every_s"], float(raw.get("nag_every_s", d.nag_every_s))),
         lines=lines, llm_lines=bool(raw.get("llm_lines", d.llm_lines)), muted=bool(raw.get("muted", d.muted)),
+        enabled=bool(raw.get("enabled", d.enabled)),
         position=position if position in ("left", "right") else "left",
     )
 
@@ -173,8 +175,11 @@ class PetBrain:
         """A new pet.json (hot reload)."""
         self.cfg = cfg
         self._resolve_pack()
-        if cfg.muted:
+        if cfg.muted or not cfg.enabled:
             self.line = ""
+        if not cfg.enabled:
+            self.off_seconds = 0.0
+            self.growth = 0.0
         self._update(speak=False)
 
     def on_activity(self, activity: Mapping[str, Any]) -> None:
@@ -190,6 +195,8 @@ class PetBrain:
         now = self.clock.now()
         dt = min(MAX_TICK_S, max(0.0, now - self._last_tick))
         self._last_tick = now
+        if not self.cfg.enabled:
+            return
         if self.verdict == "off":
             self.off_seconds += dt
         else:
@@ -255,9 +262,11 @@ class PetBrain:
     def snapshot(self) -> dict:
         """The `pet` section of state.json."""
         manifest = self.manifest
+        # disabled: pack_dir is "" so the shell shows no sprite, no bubble and no overlay
         return {"name": self.cfg.name or manifest.get("name", self.cfg.pack), "mood": self._mood,
-                "scale": self.scale, "line": self.line, "line_id": self.line_id,
-                "off_seconds": int(self.off_seconds), "pack": self.cfg.pack, "pack_dir": self.pack_dir,
+                "scale": self.scale, "line": self.line, "line_id": self.line_id, "enabled": self.cfg.enabled,
+                "off_seconds": int(self.off_seconds), "pack": self.cfg.pack,
+                "pack_dir": self.pack_dir if self.cfg.enabled else "",
                 "manifest": manifest, "size": int(manifest.get("size", 48)), "muted": self.cfg.muted,
                 "forced": self.forced, "position": self.cfg.position,
                 "max_screen_fraction": self.cfg.max_screen_fraction, "config": self._timings()}
@@ -276,14 +285,14 @@ class PetBrain:
 
     def _key(self) -> tuple:
         return (self._mood, self.scale, self.line, self.line_id, int(self.off_seconds), self.cfg.pack,
-                self.pack_dir, self.cfg.muted, self.forced, self.cfg.position, self.cfg.max_screen_fraction,
+                self.pack_dir, self.cfg.muted, self.cfg.enabled, self.forced, self.cfg.position, self.cfg.max_screen_fraction,
                 self.cfg.name, repr(self._timings()))
 
     def _update(self, speak: bool, nag: bool = False) -> None:
         mood = self.mood
         changed_mood = mood != self._mood
         self._mood = mood
-        if speak and (changed_mood or nag) and not self.cfg.muted:
+        if speak and (changed_mood or nag) and not self.cfg.muted and self.cfg.enabled:
             self._speak(mood, ask_llm=changed_mood)
         key = self._key()
         if key != self._published:

@@ -30,6 +30,7 @@ steppers for Suspicious / Annoyed / Furious after, Grows to full in and Nags eve
 | `nag_every_s` | 60 | a fresh line this often while off task (never while content; at least 5) |
 | `llm_lines` | false | on a mood change, ask `claude -p` for a line in the persona's voice |
 | `muted` | false | keep the mood, drop lines and growth |
+| `enabled` | true | `false`: no pet at all (no sprite, bubble, growth or overlay); `lockdock pet off` / `pet on`, or the "Show the pet" switch in quick settings |
 | `pack`, `position`, `name` | `cat`, `left`, `""` | sprite pack, `left`/`right` of the mode strip, display name |
 
 Lines are templates: `{app}`, `{mode}` (mode label), `{reason}` (why the verdict

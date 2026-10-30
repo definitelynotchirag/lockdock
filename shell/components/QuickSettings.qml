@@ -62,7 +62,8 @@ Item {
 
     // ---- the switch rows: {id, icon, label, on, enabled, shown, note} ----
     readonly property var pet: st.pet || ({})
-    readonly property bool hasPet: !!pet.pack_dir
+    readonly property bool hasPet: !!pet.pack_dir            // enabled and a pack resolved
+    readonly property bool petConfigured: pet.enabled !== undefined   // the pet feature exists
     readonly property var allRows: [
         { id: "pin", icon: theme.pinned ? theme.icon("pin", "icona:map-pin-fill") : theme.icon("pin_off", "icona:map-pin"),
           label: "Pin dock", on: theme.pinned, enabled: true, shown: true, note: "" },
@@ -78,7 +79,9 @@ Item {
           shown: true, note: "" },
         { id: "hover", icon: "icona:cursor", label: "Open panels on hover", on: theme.hoverOpens, enabled: true,
           shown: true, note: theme.hoverOpens ? "" : "click opens" },
-        { id: "pet", icon: "icona:sketch-cat", label: "Mute the pet", on: !!pet.muted, enabled: true, shown: hasPet, note: "" },
+        { id: "petShow", icon: "icona:sketch-cat", label: "Show the pet", on: pet.enabled !== false, enabled: true,
+          shown: petConfigured, note: "" },
+        { id: "pet", icon: "icona:volume", label: "Mute the pet", on: !!pet.muted, enabled: true, shown: hasPet, note: "" },
     ]
     function themeSet(key, value) { panel.shell.send(["theme", "set", key, JSON.stringify(value)]) }
     function toggle(row) {
@@ -94,6 +97,7 @@ Item {
         case "motion": themeSet("reduced_motion", !row.on); break
         case "hover": themeSet("popups.open_on_hover", !row.on); break
         case "pet": panel.shell.send(["pet", row.on ? "unmute" : "mute"]); break
+        case "petShow": panel.shell.send(["pet", row.on ? "off" : "on"]); break
         }
     }
 
