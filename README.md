@@ -4,7 +4,7 @@ An AI-native dock for Hyprland with focus **modes** (Writing, Building, …).
 A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669881939).
 
 - The dock shows the active mode, the other modes as small buttons, and the
-  apps that belong to the mode (plus anything else running, dimmed).
+  apps that belong to the mode (plus anything else running, after a divider).
 - Leaving a mode has an **exit countdown**; every extra press cuts the wait.
   While it runs the dock shows a timer pill ("Social 0:10") and a **Stay**
   button that cancels the switch.

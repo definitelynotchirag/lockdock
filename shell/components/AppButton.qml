@@ -10,7 +10,6 @@ Pressable {
     property string appId
     property var windows: []
     property color accent: theme.paletteAccent
-    property bool dim: false
 
     // DesktopEntries loads asynchronously; depending on .applications re-runs the lookup when it lands
     readonly property var entry: { const _ = DesktopEntries.applications.values; return DesktopEntries.heuristicLookup(appId) }
@@ -84,7 +83,6 @@ Pressable {
         anchors.horizontalCenter: parent.horizontalCenter
         y: btn.iconTop
         width: btn.iconPx; height: width
-        opacity: btn.dim ? 0.7 + 0.3 * btn.hoverProgress : 1
 
         IconImage {
             visible: btn.iconSource !== ""

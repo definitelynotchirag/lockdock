@@ -26,7 +26,7 @@ lockdock theme reset                 # back to the defaults
 | `font` | `{family: "Inter Display", size: 14}` | `""` or a family that is not installed = system font |
 | `icon_size` | 34 | app icon px; buttons, pills and islands grow with it |
 | `sections` | `["pet","modes","apps","agents","held","settings"]` | what is shown, in order; unknown ids are ignored, missing ids are hidden. `"settings"`: the quick settings gear (below); optional `"pin"`: a bare pin button (`motion.md`) |
-| `show_unpinned` | true | dimmed icons for running apps not pinned to the mode |
+| `show_unpinned` | true | running apps not pinned to the mode, after a divider (same look as pinned ones) |
 | `autohide` | `{enabled: false, reveal_px: 4, hide_delay_ms: 600}` | slides away when idle; hover the screen edge to reveal. Stays up during a countdown, a nudge, or held notifications |
 | `nudge` | `{enabled: true}` | the "off task" bubble (palette `danger`) |
 | `agents` | `{style: "pill", max_rows: 8}` | agent inbox: `"pill"` = one pill (count, red dot + "N need you" when an agent waits) that opens a list, `max_rows` rows (1-50) before it scrolls; `"chips"` = one chip per agent. See `agents.md` |

@@ -32,4 +32,4 @@ Hovering a running app for `delay_ms` opens a panel of live window thumbnails ab
 
 ## The interaction language (what the user sees)
 
-Hover fades a `surface_hover` background in behind a button or pill (180 ms in, 240 ms out); app icons get a soft rounded halo, and dimmed running apps brighten. Nothing moves on hover. A press shrinks the item to 0.96 and springs back on release. No colours here are configurable beyond the palette roles in `theme.md`.
+Hover fades a `surface_hover` background in behind a button or pill (180 ms in, 240 ms out); app icons get a soft rounded halo. Nothing moves on hover. A press shrinks the item to 0.96 and springs back on release. No colours here are configurable beyond the palette roles in `theme.md`.

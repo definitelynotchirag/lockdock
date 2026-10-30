@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Wayland
 
-// The mode's pinned apps, then anything else running (dimmed) after a thin divider.
+// The mode's pinned apps, then anything else running after a thin divider (same look).
 RowLayout {
     id: strip
     required property var activeMode
@@ -62,7 +62,6 @@ RowLayout {
             windows: strip.runningFor(modelData)
             accent: strip.accent
             theme: strip.theme
-            dim: true
         }
     }
 }
