@@ -1,149 +1,179 @@
 # lockdock
 
-An AI-native dock for Hyprland with focus **modes** (Writing, Building, …).
-A Linux take on [this macOS prototype](https://x.com/trq212/status/2115135857669881939).
+A dock for Hyprland with focus modes, a cat that scolds you, and an inbox of
+the coding agents running on your machine. A Linux build of
+[the macOS dock trq212 showed](https://x.com/trq212/status/2115135857669881939),
+with a few things added.
 
-- The dock shows the active mode, the other modes as small buttons, and the
-  apps that belong to the mode (plus anything else running, after a divider).
-- Leaving a mode has an **exit countdown**; every extra press cuts the wait.
-  While it runs the dock shows a timer pill ("Social 0:10") and a **Stay**
-  button that cancels the switch.
-- **Decision cards** float above the dock when something needs a choice: a
-  held message that looks urgent, a site that belongs to another mode
-  ([Stay] / [Go to Social (15s wait)]), or a short toast with the verdict on an
-  unknown site. Theme key `prompts` (see `skills/lockdock/theme.md`).
-- The daemon watches the focused window and judges it against the mode:
-  rules first, then `claude -p --model haiku` (or the hosted Jev decision model,
-  `llm.provider: "jev"` with `TYPESAFE_API_KEY` in `~/.config/lockdock/.env`) for anything unknown. Off-task
-  windows turn the dock red with a one-line reason.
-- Notifications that do not belong to the mode are **held** (closed as they
-  arrive, re-delivered when the mode ends, or after 15 minutes:
-  `notifications.release_after_min`, `lockdock held timeout <min>`, 0 = never).
-  Keywords like "urgent" and critical urgency always pass.
-- **Do not disturb** (`lockdock dnd on|off|toggle`, or the switch in quick
-  settings) holds every notification silently, with no cards and no badge;
-  turning it off re-delivers them.
-- **Decision cards**: when a window belongs to another mode ("x.com · belongs
-  to Social"), the dock asks *Stay* or *Go to Social (30s wait)*; a held
-  notification gets a card with *Later* / *Go to X* and a "Time-sensitive" tag
-  when the classifier sees someone waiting; a fresh LLM verdict on a site no
-  mode knows shows as a toast that fades. "Go to X" is the normal exit
-  countdown. `lockdock prompts`, `lockdock prompt <id> <action>`.
-- **Agent inbox**: one pill for every running coding agent (Claude Code, Codex,
-  OpenCode, Aider, Gemini CLI, cursor-agent, T3 Code threads). Red and
-  pulsing when one waits for you, green while they work, grey when done; click
-  it for the list, click a row to focus that agent's window (theme
-  `agents.style: "chips"`: one chip per agent instead). `lockdock agents install-hooks` wires Claude Code and
-  Codex so the state is exact rather than guessed. See `skills/lockdock/agents.md`.
-- A **pixel cat** lives in the dock. It is content while you are on task, then
-  suspicious, annoyed and furious the longer you stay off task, and says so in
-  a speech bubble. Keep ignoring it and it grows into a click-through overlay
-  that fills most of the screen; go back to the task and it shrinks right away.
-  Click it to calm it. Lines, thresholds, growth and sprite packs live in
-  `pet.json` (see `skills/lockdock/pet.md`).
-- Modes live in one JSON file and the look in another (`theme.json`: position,
-  scale, sections, autohide, icons, ...); an agent edits them.
-- `lockdock pin` reserves the dock's row so maximised windows stop at it (`unpin` to
-  overlay again). The gear at the end of the dock opens quick settings (pin, auto-hide,
-  top / bottom, tooltips, previews, reduced motion, mute the pet, do not disturb, the
-  held-notification time limit, and the pet's timings as steppers); hover any button for the dock's own tooltip (`skills/lockdock/motion.md`). Every icon is an
-  [Icona](https://icona.works/icons) line icon tinted with the palette; any of
-  them (or an emoji) can be swapped in theme.json `icons` or a mode's `icon`. See `AGENTS.md` and
-  `skills/lockdock/`.
+## What it does
+
+**Modes.** You define modes in a JSON file (Writing, Building, Free, anything).
+Each mode has its own apps, its own on-task and off-task rules, and its own
+notification policy. The dock shows the active mode, the other modes as small
+buttons, and the mode's apps. Running apps that are not part of the mode sit
+after a divider.
+
+**Leaving costs time.** Switching out of a mode starts a countdown. Each extra
+press makes it shorter, so you can still leave, but not by reflex. A Stay
+button cancels the switch.
+
+**It knows what you are doing.** The daemon watches the focused window (and the
+active browser tab, through a small extension) and judges it against the mode.
+Rules run first. Anything the rules do not cover goes to a classifier: the
+hosted [Jev](https://typesafe.ai) decision model, or `claude -p` through your
+Claude Code login. An off-task window turns the dock red with a one-line reason
+such as "x.com is off task in Writing".
+
+**The cat.** A pixel cat lives in the dock. It is content while you work, then
+suspicious, annoyed and furious the longer you stay off task, and says so in a
+speech bubble. Past furious it grows into a click-through overlay until it
+covers most of the screen. Go back to the task and it shrinks in four seconds.
+Click it to calm it. Everything about it lives in `pet.json`: the lines, the
+timings, the sprite pack, or `enabled: false` for no cat at all.
+
+**Notifications.** A notification that does not belong to the mode is held:
+closed as it arrives, re-delivered when the mode ends or after 15 minutes
+(configurable, 0 for never). Keywords like "urgent" and critical urgency pass
+through. Do not disturb holds everything silently, with no cards and no badge,
+and re-delivers it when you turn it off.
+
+**Decision cards.** When something needs a choice, a card floats above the
+dock. A held message that looks time-sensitive gets Later and Go to Building.
+A site that belongs to another mode gets Stay and Go to Social (30 s wait). A
+fresh verdict on a site no mode knows shows as a toast that fades.
+
+**Agent inbox.** One pill lists every coding agent running on the machine:
+Claude Code, Codex, OpenCode, Aider, Gemini CLI, cursor-agent, T3 Code. Red and
+pulsing when one is waiting for you, green while they work. Hover it for the
+list, each row with the agent's own logo, and click a row to focus its window.
+`lockdock agents install-hooks` wires Claude Code and Codex hooks so the state
+is exact instead of guessed from the process tree.
+
+**A normal dock too.** Hover a running app for live window previews. Pin the
+dock so windows stop at it, or let it autohide. Quick settings behind the gear:
+pin, autohide, top or bottom, tooltips, previews, hover-to-open, reduced motion,
+do not disturb, the held time limit, and the cat's timings as steppers.
+
+**An agent configures it.** Modes, theme and pet are three JSON files, and the
+repo ships a Claude Code skill that knows them. "Add a Research mode with
+Zotero and the browser, hold Slack" edits the config and the dock changes live.
+The CLI covers the same ground for humans.
+
+**Looks like your desktop.** The palette follows the wallpaper through the
+Material You colors.json that end-4 and matugen write. Icons are
+[Icona](https://icona.works/icons) line icons tinted with the palette, and any
+of them can be swapped for another Icona slug, an emoji, or a theme icon.
 
 ## Requirements
 
-Hyprland, [Quickshell](https://quickshell.org) 0.3+, Python 3.11+, `busctl`
-(systemd), and the `claude` CLI logged in (optional: set `llm.enabled: false`).
-No API key: classification runs through your Claude Code login.
+- Hyprland (window focus comes from its event socket)
+- [Quickshell](https://quickshell.org) 0.3 or newer
+- Python 3.11 or newer, standard library only
+- `busctl` from systemd, for watching notifications
+- One of: a `TYPESAFE_API_KEY` in `~/.config/lockdock/.env` for Jev, the
+  `claude` CLI logged in, or `llm.enabled: false` to run on rules alone
 
 ## Install
 
 ```
-./scripts/install.sh      # links ~/.local/bin/lockdock, enables two user units
+git clone <this repo> ~/Projects/lockdock
+cd ~/Projects/lockdock
+./scripts/install.sh      # links ~/.local/bin/lockdock, installs two user units, links the skill
 lockdock status
 ```
 
-Or run the pieces by hand: `lockdock daemon` and `lockdock shell`.
+The installer copies `modes.example.json`, `theme.example.json` and
+`pet.example.json` to `~/.config/lockdock/` on first run and never overwrites
+them. For the browser tab URL, load `browser-extension/` as an unpacked
+extension; its README has the steps.
+
+To run the pieces by hand instead of the units: `lockdock daemon` and
+`lockdock shell`.
 
 ## Use
 
 ```
-lockdock mode writing     # switch (press again during a countdown to shorten it)
-lockdock status           # mode, verdict for the current window, held count
-lockdock held / release   # see or re-deliver held notifications
-lockdock held timeout 30  # re-deliver a held notification after 30 min (0 = never)
-lockdock dnd on|off       # do not disturb: hold everything silently
-lockdock log -n 50        # every verdict with its reason
-lockdock classify helium "Home / X - Helium" --mode writing   # ask the classifier once (tuning)
-lockdock config           # path to modes.json
-lockdock agents           # running coding agents and whether they need you
-lockdock agents install-hooks --dry-run   # show the hook changes, then run without --dry-run
-lockdock agent focus <id> # focus an agent's window
-lockdock pet              # the pet's mood; also: calm, mood <m>|auto, mute, unmute,
-                          #   pack <name>, packs, say "<text>", set <key> <number>
-lockdock theme            # effective theme; `theme set <key> <json>`, `theme reset`, `theme path`
-lockdock pin / unpin      # windows stop at the dock / cover it again (`pin toggle` flips)
-lockdock skill path       # the agent skill (also linked to ~/.claude/skills/lockdock)
+lockdock mode writing       # switch; press again during the countdown to shorten it
+lockdock status             # mode, verdict for the current window, held count
+lockdock log -n 50          # every verdict with its reason
+lockdock classify helium "Home / X - Helium" --mode writing   # ask the classifier once
+
+lockdock held               # held notifications; `release` re-delivers them now
+lockdock held timeout 30    # re-deliver on their own after 30 min (0 = never)
+lockdock dnd on|off|toggle  # do not disturb
+
+lockdock agents             # running coding agents and whether they need you
+lockdock agents install-hooks --dry-run
+
+lockdock pet                # mood, size, last line; also calm, mute, on|off, pack, say, set
+lockdock pet set thresholds.furious 120
+
+lockdock theme              # the effective theme; `theme set <key> <json>`, `theme reset`
+lockdock pin | unpin        # windows stop at the dock, or cover it again
+lockdock skill path         # the Claude Code skill (also linked at ~/.claude/skills/lockdock)
 ```
 
-## Layout
+`lockdock --help` lists every verb.
+
+## Configuration
+
+Three files in `~/.config/lockdock/`, all hot-reloaded:
+
+| file | what | documented in |
+|---|---|---|
+| `modes.json` | modes, their apps and rules, notification policy, the classifier, agent kinds | `skills/lockdock/modes.md`, `agents.md`, `browser.md` |
+| `theme.json` | position, scale, sections, autohide, palette, icons, tooltips, previews, popups, pinned | `skills/lockdock/theme.md`, `icons.md`, `motion.md` |
+| `pet.json` | persona, lines, thresholds, growth, sprite pack, enabled | `skills/lockdock/pet.md` |
+
+The skill pages are written for an agent but read fine for a person. Each has
+a key table and a list of recipes.
+
+## How it is built
+
+A Python daemon and a Quickshell dock. The daemon is ports and adapters: the
+core has no I/O, the adapters wrap Hyprland, busctl, the classifiers and the
+JSON files, and features such as the pet, the agent inbox and the theme plug in
+through `install(daemon)`. The daemon writes `state.json`; the dock watches that
+file and draws. `docs/architecture.md` has the ports, the state sections and a
+recipe for adding a feature.
 
 ```
-lockdock/             Python daemon + CLI (stdlib only), ports and adapters
-  app.py              composition root: builds adapters, wires the Daemon, runs the loop
-  core/               pure logic, no I/O besides events.jsonl
-    models.py         Mode, Config, Verdict, WindowInfo, Notification, PendingSwitch
-    ports.py          Protocol interfaces the adapters implement
-    daemon.py         thin orchestrator; register_section / register_command
-    modes.py          ModeManager: switching and the exit countdown
-    activity.py       ActivityJudge: dwell, rules, classifier fallback
-    notifications.py  NotificationGate: pass / hold / ask, release
-    prompts.py        PromptCenter: site / notification / verdict decision cards
-    state.py          state.json snapshot (+ agents / pet / theme sections)
-    agents.py         AgentRegistry: agent kinds table, scan + hook merge, window walk
-    agent_hooks.py    install-hooks merge for Claude Code settings.json / Codex config.toml
-    pet.py            PetBrain: mood, growth and speech lines of the dock pet
-    theme.py          ThemeConfig (validated theme.json) and ThemeService
-    rules.py events.py
-  adapters/           hyprland, dbus_notifications (busctl), claude_cli (+cache, pet speaker),
-                      json_config, pet_packs, file_state, control_socket, shell_commands, clock,
-                      proc_scan, http_url_source
-  features/           optional features, auto-discovered (install(daemon)): agents, pet, browser_urls, prompts, theme
-  cli/                main.py (verbs), agents.py (agent verbs), client.py (control socket client)
-shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.json)
-  Dock.qml            the panel window; builds the row from theme.sections (sectionMap)
-  components/         Theme (st.theme helper), ModeStrip, AppStrip, AgentsPill + AgentsPanel
-                      (or AgentStrip), HeldBadge, Nudge, PromptStack + PromptCard (decision cards),
-                      ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen),
-                      PinButton, SettingsButton + QuickSettings (the gear's panel); Pressable (shared hover / press) and Tip (the one tooltip)
-  components/Icon.qml one icon by name: icona:<slug>, brand:<slug>, a theme icon or a text glyph
-  icons/icona/        Icona SVGs (MIT) + INDEX.md (slug -> name)
-  icons/brand/        agent logos (Simple Icons, CC0) for the agents list
-  pets/cat/           the built-in sprite pack (pack.json + SVG frames)
-  pets/icona-cat/     a second pack, drawn from Icona's Black Cat
-browser-extension/    WebExtension that reports the active tab URL to the daemon
-tests/                pytest with fakes for every port
-docs/architecture.md  ports, adapters, state.json sections, how to add a feature
-skills/lockdock/      the Claude Code skill: pages for modes, theme, pet, agents, browser
-modes.example.json    default modes; copied to ~/.config/lockdock/modes.json
-pet.example.json      default pet config; copied to ~/.config/lockdock/pet.json
-theme.example.json    default theme; copied to ~/.config/lockdock/theme.json
-skills/lockdock/      agent skill: SKILL.md index + modes.md, theme.md, ...
+lockdock/
+  core/        models, daemon, modes, activity, notifications, prompts, agents, pet, theme, state
+  adapters/    hyprland, dbus_notifications, claude_cli, jev, json_config, pet_packs, proc_scan, ...
+  features/    agents, pet, theme, prompts, browser_urls, notifications, classify
+  cli/         the lockdock command
+shell/
+  Dock.qml     the panel window; builds its row from theme.sections
+  components/  ModeStrip, AppStrip, AgentsPill, AgentsPanel, HeldBadge, PromptStack, Pet,
+               PetOverlay, WindowPreviews, QuickSettings, Tip, Pressable, Icon, ...
+  icons/       icona/ (Icona SVGs) and brand/ (agent logos)
+  pets/        sprite packs: cat, icona-cat
+browser-extension/   reports the active tab URL to the daemon
+skills/lockdock/     the Claude Code skill
+tests/               pytest with fakes for every port
 ```
 
-Tests: `uv run --no-project --python 3.14 --with pytest pytest -q`
+Tests:
 
-## Credits
-
-Icons: [Icona](https://icona.works/icons) by Komal Verma
-([github.com/komalverma22/Icona](https://github.com/komalverma22/Icona)), MIT; the
-licence is in `shell/icons/icona/LICENSE`. The `icona-cat` pet is drawn from its Black Cat.
+```
+uv run --no-project --python 3.14 --with pytest pytest -q
+```
 
 ## Known limits
 
-- A held notification is closed right after the daemon receives it, so the
+- A held notification is closed right after the daemon sees it, so the
   notification daemon may flash it for a frame. Owning the Notifications bus
-  name ourselves would fix that but would replace your notification daemon.
-- Window focus comes from Hyprland's event socket, so this does not work on
-  other compositors yet (the dock itself is compositor-agnostic Quickshell).
+  name would fix that, at the cost of replacing your notification daemon.
+- Window focus comes from Hyprland's event socket. The dock itself is plain
+  Quickshell, but the daemon does not know other compositors yet.
+- Window previews need the compositor's toplevel capture. Hyprland has it.
+
+## Credits
+
+The idea and the interaction design are from
+[trq212's macOS dock](https://x.com/trq212/status/2115135857669881939).
+Icons are [Icona](https://icona.works/icons) by Komal Verma, MIT, licence in
+`shell/icons/icona/LICENSE`. Agent logos come from
+[Simple Icons](https://simpleicons.org), CC0, see `shell/icons/brand/LICENSE`.
+The `icona-cat` pet is drawn from Icona's Black Cat.
