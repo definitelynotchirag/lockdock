@@ -7,7 +7,8 @@ with a few things added.
 
 <!-- <img width="914" height="177" alt="image" src="https://github.com/user-attachments/assets/82afaa66-2196-473e-b3f5-da04b06b3aa0" /> -->
 
-<img width="1180" height="216" alt="compressO-Recording_10_30_2026_6_45_48_PM (2)" src="https://github.com/user-attachments/assets/a77283d7-4e1a-484f-b318-09952ca784d9" />
+<img width="1180" height="216" alt="Demo" src="https://github.com/user-attachments/assets/f1062953-4237-421b-8ab0-3cd280c3914e" />
+
 
 
 
