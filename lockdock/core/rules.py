@@ -19,6 +19,17 @@ def matches(patterns: list[str], text: str) -> str | None:
     return None
 
 
+def hit(pattern: str, text: str) -> str:
+    """What `pattern` matched in `text` (case-insensitive), for a human-readable reason; the
+    pattern itself when it matched nothing visible (e.g. `.*` matching "") or is invalid."""
+    try:
+        m = re.search(pattern, text, re.I)
+    except re.error:
+        return pattern
+    found = (m.group(0) if m else "").strip(" |").split("|")[0].strip()
+    return found[:40] if found else pattern
+
+
 def norm_title(title: str) -> str:
     """Normalise a title for caching: drop unread counters and digits, collapse spaces."""
     t = re.sub(r"\(\d+\)", "", title)          # unread counters

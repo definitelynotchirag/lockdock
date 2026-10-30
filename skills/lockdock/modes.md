@@ -68,7 +68,7 @@ lockdock status           # current mode, verdict, held count
 lockdock held             # what is being held right now
 ```
 
-A line like `"verdict": "off", "reason": "matches off_task rule 'docs'"` tells you exactly which rule to loosen. Verdicts from the LLM are cached in `~/.local/state/lockdock/classify-cache.json`; delete a key there if you changed a description and want it re-judged (or run `lockdock classify <class> "<title>"` for that window, or `lockdock reclassify`).
+A line like `"verdict": "off", "reason": "docs is off task in Writing"` names what the `off_task` rule matched, so you know which rule to loosen. Verdicts from the LLM are cached in `~/.local/state/lockdock/classify-cache.json`; delete a key there if you changed a description and want it re-judged (or run `lockdock classify <class> "<title>"` for that window, or `lockdock reclassify`).
 
 ## Rules of thumb
 

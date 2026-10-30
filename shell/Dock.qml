@@ -30,8 +30,15 @@ PanelWindow {
     property Item agentsPill: null
     readonly property bool agentsOpen: agentsPill !== null && agentsPill.open
     readonly property bool petAfterModes: theme.sections.indexOf("pet") > theme.sections.indexOf("modes")
-    // the pet's bubble clears the nudge row while off task
-    readonly property real petLift: theme.px(nudgeShown ? 48 : 12)
+    // the pet's bubble clears the nudge row only when the nudge sits over the bubble's span
+    readonly property bool petUnderNudge: {
+        if (!nudgeShown || !petItem) return false
+        card.x; card.width; nudgeBox.width; nudgeBox.x
+        const p = petItem.mapToItem(dock, 0, 0)
+        const left = petItem.bubbleLeftward ? p.x + petItem.width - theme.px(260) : p.x
+        return nudgeBox.x < left + theme.px(260) && nudgeBox.x + nudgeBox.width > left
+    }
+    readonly property real petLift: theme.px(petUnderNudge ? 48 : 6)
     readonly property real islandHeight: theme.ipx(theme.islands ? 56 : 62)
 
     // section id -> component. Unknown ids in theme.sections are skipped.

@@ -9,7 +9,7 @@ Pressable {
     required property var st           // state.json
     required property var shell        // for shell.send
     property bool shown: true          // the Dock hides the copy that is not in the configured position
-    property real bubbleLift: 14       // gap between the pet's top and the bubble's bottom
+    property real bubbleLift: 6        // gap between the pet's top and the bubble tail
     property bool bubbleLeftward: false // grow the bubble to the left (pet at the right end of the dock)
     property bool bubbleBelow: false    // dock at the top: the bubble hangs below the pet
     readonly property var info: st.pet || {}

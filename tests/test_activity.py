@@ -21,7 +21,7 @@ def test_rules_helpers():
 
 def test_off_beats_on():
     v, why = rule_activity(WRITING, WindowInfo("helium", "obsidian tips - YouTube"), BROWSERS)
-    assert v == Verdict.OFF and "youtube" in why
+    assert v == Verdict.OFF and why == "YouTube is off task in Writing"
 
 
 def test_on_task_rule():
@@ -78,7 +78,7 @@ def test_judge_notify_action_fires_once():
     j.focus = WindowInfo("helium", "cats - YouTube")
     asyncio.run(j.judge())
     asyncio.run(j.judge())
-    assert nudges == ["matches off_task rule 'youtube'"]
+    assert nudges == ["YouTube is off task in Writing"]
 
 
 def test_judge_llm_disabled():

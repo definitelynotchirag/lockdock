@@ -8,7 +8,7 @@ from dataclasses import replace
 from .events import EventSink
 from .models import Config, Mode, Verdict, WindowInfo
 from .ports import Classifier, Clock
-from .rules import matches
+from .rules import hit, matches
 from .tasks import Spawn, spawn_task
 
 
@@ -18,9 +18,10 @@ def rule_activity(mode: Mode, window: WindowInfo, browsers: list[str] | tuple[st
     cls = window.cls
     text = f"{cls}|{window.title}|{window.url or ''}"
     if p := matches(mode.off_task, text):
-        return Verdict.OFF, f"matches off_task rule '{p}'"
+        return Verdict.OFF, f"{hit(p, text)} is off task in {mode.label}"
     if p := matches(mode.on_task, text):
-        return Verdict.ON, f"matches on_task rule '{p}'"
+        return Verdict.ON, (f"everything is on task in {mode.label}" if p == ".*"
+                            else f"{hit(p, text)} is on task in {mode.label}")
     is_browser = any(b.lower() in cls.lower() for b in browsers)
     is_mode_app = bool(cls) and any(cls.lower() == a.lower() or cls.lower() in a.lower() for a in mode.apps)
     if is_mode_app and not is_browser:

@@ -254,7 +254,7 @@ def test_daemon_activity_listeners(tmp_path):
     d.activity_listeners.append(seen.append)
     d.start(WindowInfo("kitty", "zsh"))
     spawner.drain()
-    assert seen == [{"verdict": "on", "reason": "matches on_task rule '.*'", "app": "kitty", "title": "zsh",
+    assert seen == [{"verdict": "on", "reason": "everything is on task in Free", "app": "kitty", "title": "zsh",
                      "source": "rule", "mode": "Free"}]
 
 
