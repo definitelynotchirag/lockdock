@@ -439,15 +439,24 @@ PanelWindow {
     property bool previewsOpen: false
     property bool previewBtnHovered: false
     function showPreviews(item, windows) {
-        if (!theme.previews || !windows || windows.length === 0) return
+        if (!theme.previews || !theme.hoverOpens || !windows || windows.length === 0) return
         previewClose.stop()
         previewTarget = item
         previewBtnHovered = true
         if (previewsOpen) return
         previewDelay.restart()
     }
+    // popups.open_on_hover false: a click on a running app opens / closes its previews
+    function togglePreviews(item, windows) {
+        if (!theme.previews || !windows || windows.length === 0) return
+        previewDelay.stop(); previewClose.stop()
+        const same = previewTarget === item
+        previewTarget = item
+        previewsOpen = !(same && previewsOpen)
+    }
     function hidePreviews(item, immediate) {
         if (item !== previewTarget) return
+        if (!theme.hoverOpens && !immediate) return   // click-opened: stays until a click or a card
         previewBtnHovered = false
         previewDelay.stop()
         if (immediate) { previewClose.stop(); previewsOpen = false }
@@ -499,6 +508,7 @@ PanelWindow {
     property bool settingsBtnHovered: false
     function hoverSettings(item, hovered) {
         if (hovered) {
+            if (!theme.hoverOpens) return
             settingsTarget = item
             settingsBtnHovered = true
             settingsClose.stop()

@@ -33,3 +33,7 @@ Hovering a running app for `delay_ms` opens a panel of live window thumbnails ab
 ## The interaction language (what the user sees)
 
 Hover fades a `surface_hover` background in behind a button or pill (180 ms in, 240 ms out); app icons get a soft rounded halo. Nothing moves on hover. A press shrinks the item to 0.96 and springs back on release. No colours here are configurable beyond the palette roles in `theme.md`.
+
+## `popups` (default `{open_on_hover: true}`)
+
+The agents list, a running app's window previews and the quick settings panel open after `tooltips.delay_ms` of hovering their pill and close 250 ms (the agents list: 700 ms) after the pointer has left the pill and the panel. `open_on_hover: false` makes every popup click-only: the agents pill and the gear toggle on click, a running app with several windows opens its previews on click (one window: the click focuses it) and the previews stay until a click on a card, the app or elsewhere; hover then shows plain tooltips again. The "Open panels on hover" switch in quick settings flips the same key.

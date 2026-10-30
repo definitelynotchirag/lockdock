@@ -76,6 +76,8 @@ Item {
           shown: true, note: "" },
         { id: "motion", icon: "icona:reduce-motion", label: "Reduce motion", on: theme.reducedMotion, enabled: true,
           shown: true, note: "" },
+        { id: "hover", icon: "icona:cursor", label: "Open panels on hover", on: theme.hoverOpens, enabled: true,
+          shown: true, note: theme.hoverOpens ? "" : "click opens" },
         { id: "pet", icon: "icona:sketch-cat", label: "Mute the pet", on: !!pet.muted, enabled: true, shown: hasPet, note: "" },
     ]
     function themeSet(key, value) { panel.shell.send(["theme", "set", key, JSON.stringify(value)]) }
@@ -90,6 +92,7 @@ Item {
         case "previews": themeSet("previews.enabled", !row.on); break
         case "unpinned": themeSet("show_unpinned", !row.on); break
         case "motion": themeSet("reduced_motion", !row.on); break
+        case "hover": themeSet("popups.open_on_hover", !row.on); break
         case "pet": panel.shell.send(["pet", row.on ? "unmute" : "mute"]); break
         }
     }

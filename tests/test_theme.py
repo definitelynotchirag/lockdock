@@ -144,7 +144,7 @@ def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
     assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
                          "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
-                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "tooltips", "previews",
+                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "popups", "tooltips", "previews",
                          "pinned", "reduced_motion", "icons", "opacity",
                          "colors", "palette_source"}
     assert snap["background"] is None
@@ -466,3 +466,12 @@ def test_feature_registers_pin(tmp_path):
     assert json.loads((tmp_path / "theme.json").read_text())["pinned"] is True
     d.handle("pin", "off")
     assert d.snapshot()["theme"]["pinned"] is False
+
+
+def test_popups_open_on_hover():
+    t = ThemeConfig()
+    assert t.popups.open_on_hover is True and t.snapshot()["popups"] == {"open_on_hover": True}
+    t = ThemeConfig.from_dict({"popups": {"open_on_hover": False}})
+    assert t.popups.open_on_hover is False and not t.problems
+    bad = ThemeConfig.from_dict({"popups": {"open_on_hover": "yes"}})
+    assert bad.popups.open_on_hover is True and bad.problems

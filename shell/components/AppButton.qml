@@ -23,11 +23,12 @@ Pressable {
 
     tip: ({
         title: appName,
-        detail: running ? windows.length + (windows.length === 1 ? " window" : " windows") + " · click to focus"
+        detail: running ? windows.length + (windows.length === 1 ? " window · click to focus"
+                                             : " windows · click to " + (theme.previews && !theme.hoverOpens ? "choose" : "focus"))
                         : "click to launch"
     })
     // a running app shows live window previews (theme.previews) instead of its tooltip
-    readonly property bool previewsOn: running && theme.previews
+    readonly property bool previewsOn: running && theme.previews && theme.hoverOpens
     tipEnabled: !previewsOn
 
     // ---- window previews: the Dock (theme.host) owns one WindowPreviews per window ----
@@ -52,7 +53,10 @@ Pressable {
     Component.onDestruction: if (btn.theme.host && btn.theme.host.hidePreviews) btn.theme.host.hidePreviews(btn, true)
 
     onClicked: {
-        if (btn.windows.length > 0) {
+        const host = btn.theme.host
+        if (btn.windows.length > 1 && btn.theme.previews && !btn.theme.hoverOpens && host && host.togglePreviews) {
+            host.togglePreviews(btn, btn.windows)      // pick the window from the previews
+        } else if (btn.windows.length > 0) {
             // cycle: focus the first non-active window, else the first
             const w = btn.windows.find(x => !x.activated) || btn.windows[0]
             w.activate()

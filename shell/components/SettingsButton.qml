@@ -15,7 +15,7 @@ Pressable {
 
     implicitWidth: theme.ipx(40); implicitHeight: theme.ipx(40)
     scale: pressScale
-    tip: ({ icon: theme.icon("settings", "icona:settings"), title: "Quick settings · click or hover",
+    tip: ({ icon: theme.icon("settings", "icona:settings"), title: "Quick settings · click" + (theme.hoverOpens ? " or hover" : ""),
             detail: [dnd ? "do not disturb is on" : "", pinned ? "the dock is pinned" : ""].filter(x => x).join(" · ") })
     tipEnabled: !open
     onClicked: if (theme.host && theme.host.toggleSettings) theme.host.toggleSettings(btn)

@@ -52,6 +52,9 @@
   "mode_strip": {
     "stay_button": true
   },
+  "popups": {
+    "open_on_hover": true
+  },
   "tooltips": {
     "enabled": true,
     "delay_ms": 350

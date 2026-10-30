@@ -153,6 +153,13 @@ class PromptsTheme:
 
 
 @dataclass
+class PopupsTheme:
+    """The dock's popups (the agents list, window previews, quick settings): `open_on_hover`
+    opens them after the tooltip delay of hovering their pill; false = a click opens them."""
+    open_on_hover: bool = True
+
+
+@dataclass
 class TooltipsTheme:
     """The dock's own tooltips (components/Tip.qml): shown after hovering `delay_ms`."""
     enabled: bool = True
@@ -244,6 +251,7 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "prompts.max_visible": (_int(1, 10), "an integer 1..10"),
     "prompts.width": (_num(200, 1000), "a number 200..1000"),
     "mode_strip.stay_button": (_is_bool, "true or false"),
+    "popups.open_on_hover": (_is_bool, "true or false"),
     "tooltips.enabled": (_is_bool, "true or false"),
     "tooltips.delay_ms": (_int(0, 5000), "an integer 0..5000"),
     "previews.enabled": (_is_bool, "true or false"),
@@ -258,8 +266,8 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "icons.agent_kinds": (_is_icon_map, "an object of agent kind -> " + _ICON_WANT),
     **{f"icons.{k}": (is_icon, _ICON_WANT) for k in TEXT_ICONS if k != "agent_kinds"},
 }
-_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip", "tooltips",
-           "previews", "icons")
+_GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip", "popups",
+           "tooltips", "previews", "icons")
 
 
 @dataclass
@@ -287,6 +295,7 @@ class ThemeConfig:
     agents: AgentsTheme = field(default_factory=AgentsTheme)
     prompts: PromptsTheme = field(default_factory=PromptsTheme)
     mode_strip: ModeStripTheme = field(default_factory=ModeStripTheme)
+    popups: PopupsTheme = field(default_factory=PopupsTheme)
     tooltips: TooltipsTheme = field(default_factory=TooltipsTheme)
     previews: PreviewsTheme = field(default_factory=PreviewsTheme)
     pinned: bool = False

@@ -35,8 +35,14 @@ Pressable {
         detail: (needs ? needCount + (needCount === 1 ? " needs you" : " need you")
                        : workingCount > 0 ? workingCount + " working" : "all idle") + " · click for the list"
     })
-    tipEnabled: !open
+    tipEnabled: !open && !theme.hoverOpens
     onClicked: pill.open = !pill.open
+    // popups.open_on_hover: open after the tooltip delay of hovering the pill
+    Timer {
+        interval: pill.theme.tooltipDelayMs
+        running: pill.theme.hoverOpens && pill.hovered && !pill.open
+        onTriggered: pill.open = true
+    }
 
     readonly property real rest: theme.dark ? 0.85 : 0.6
     Rectangle {

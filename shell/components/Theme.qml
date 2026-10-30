@@ -96,6 +96,8 @@ QtObject {
     // reduced_motion: every interaction animation (Pressable, Tip, hover fades) takes 0 ms
     readonly property bool reducedMotion: pick(t.reduced_motion, false)
     function dur(ms) { return reducedMotion ? 0 : ms }
+    // popups (agents list, window previews, quick settings) open on hover, or only on click
+    readonly property bool hoverOpens: pick((t.popups || {}).open_on_hover, true)
     readonly property bool tooltips: pick((t.tooltips || {}).enabled, true)
     readonly property int tooltipDelayMs: pick((t.tooltips || {}).delay_ms, 350)
     // live window thumbnails over a hovered running app (components/WindowPreviews.qml)
