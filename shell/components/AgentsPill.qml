@@ -18,9 +18,8 @@ Pressable {
     readonly property int workingCount: agents.filter(a => a.state === "working").length
     readonly property bool needs: needCount > 0
     readonly property bool active: count > 0
-    // the kind's icon when every agent is the same kind, else the generic icons.agents
-    readonly property string glyph: count > 0 && agents.every(a => a.kind === agents[0].kind)
-                                    ? theme.agentIcon(agents[0]) : theme.icon("agents", "icona:sparkles")
+    // always the generic icons.agents (the robot); each agent's own logo shows in the list
+    readonly property string glyph: theme.icon("agents", "icona:sketch-robot")
     readonly property color dotColor: needs ? theme.danger : workingCount > 0 ? theme.success : theme.textMuted
     property real pulse: 1
 

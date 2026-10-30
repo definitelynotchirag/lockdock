@@ -109,8 +109,9 @@ shell/                Quickshell dock (reads $XDG_RUNTIME_DIR/lockdock/state.jso
                       (or AgentStrip), HeldBadge, Nudge, PromptStack + PromptCard (decision cards),
                       ModePill, AppButton, Pet, PetSprite, PetOverlay (the grown pet, one per screen),
                       PinButton; Pressable (shared hover / press) and Tip (the one tooltip)
-  components/Icon.qml one icon by name: icona:<slug>, a theme icon or a text glyph
+  components/Icon.qml one icon by name: icona:<slug>, brand:<slug>, a theme icon or a text glyph
   icons/icona/        Icona SVGs (MIT) + INDEX.md (slug -> name)
+  icons/brand/        agent logos (Simple Icons, CC0) for the agents list
   pets/cat/           the built-in sprite pack (pack.json + SVG frames)
   pets/icona-cat/     a second pack, drawn from Icona's Black Cat
 browser-extension/    WebExtension that reports the active tab URL to the daemon

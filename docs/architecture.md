@@ -177,7 +177,8 @@ property named `onX`, which QML reads as a signal handler). `theme.modeColor(mod
 resolves a mode's `"auto"` colour.
 
 Icons: `components/Icon.qml` (`name`, `color`, `size`, `stroke`, `family`) draws
-`icona:<slug>` from `shell/icons/icona/<slug>.svg` (read with `FileView`,
+`icona:<slug>` from `shell/icons/icona/<slug>.svg` or `brand:<slug>` (an agent logo) from
+`shell/icons/brand/<slug>.svg` (read with `FileView`,
 `currentColor` and the stroke width replaced, passed to an `Image` as a `data:` URL,
 rasterised at the drawn size), a freedesktop icon name (`IconImage`), or a text
 glyph / emoji (`Text`); an unknown slug draws a dot and logs once. Never hard-code

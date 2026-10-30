@@ -5,6 +5,7 @@ import Quickshell.Widgets
 
 // One icon, by name:
 //   "icona:<slug>"  an Icona SVG from shell/icons/icona/ (see INDEX.md there), tinted with `color`
+//   "brand:<slug>"  a logo from shell/icons/brand/ (claude, openai, gemini, copilot, opencode), tinted
 //   a theme icon    a freedesktop icon name ("firefox", "dialog-warning"), drawn as is
 //   anything else   a text glyph or emoji ("☕", "✻"), drawn as Text in `color`
 // The Icona SVGs stroke with currentColor: the file is read once, currentColor replaced by the
@@ -18,8 +19,10 @@ Item {
     property string family: ""        // font for text glyphs ("" = default)
     property real stroke: 1.75         // line width on the 24 px grid (Icona draws 1.5); theme.iconStroke
 
-    readonly property bool isIcona: name.indexOf("icona:") === 0
+    readonly property bool isBrand: name.indexOf("brand:") === 0
+    readonly property bool isIcona: name.indexOf("icona:") === 0 || isBrand   // both are tinted SVG files
     readonly property string slug: isIcona ? name.slice(6) : ""
+    readonly property string svgDir: isBrand ? "brand" : "icona"
     // a bare freedesktop icon name (letters, digits, - _ .; 3+ chars) that the icon theme has
     readonly property string themePath: !isIcona && /^[A-Za-z0-9][A-Za-z0-9._-]{2,}$/.test(name)
                                         ? Quickshell.iconPath(name, true) : ""
@@ -34,7 +37,7 @@ Item {
 
     FileView {
         id: file
-        path: icon.isIcona ? Quickshell.shellDir + "/icons/icona/" + icon.slug + ".svg" : ""
+        path: icon.isIcona ? Quickshell.shellDir + "/icons/" + icon.svgDir + "/" + icon.slug + ".svg" : ""
         blockLoading: true
         printErrors: false
         onLoaded: { icon.svg = text(); icon.missing = false }

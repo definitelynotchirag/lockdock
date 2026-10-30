@@ -2,16 +2,17 @@
 
 The dock's icons are [Icona](https://icona.works/icons) line icons (MIT), shipped as SVGs in
 `shell/icons/icona/` and tinted with the palette. An icon value is any of:
-`"icona:<slug>"` (a file `shell/icons/icona/<slug>.svg`), a text glyph or emoji (`"☕"`), a
-freedesktop icon name (`"firefox"`), or `""` for no icon.
+`"icona:<slug>"` (a file `shell/icons/icona/<slug>.svg`), `"brand:<slug>"` (an agent's logo from
+`shell/icons/brand/`: `claude`, `openai`, `gemini`, `copilot`, `opencode`), a text glyph or
+emoji (`"☕"`), a freedesktop icon name (`"firefox"`, `"com.t3tools.T3Code"`), or `""` for no icon.
 
 | key | default | where |
 |---|---|---|
 | `icons.pack` | `"icona"` | `"text"`: every icon key you do not set falls back to the old text glyphs (●, ◆, 🔕, 🔔, 🌐, ✦, ✅) |
 | `icons.stroke` | 1.75 | Icona line width on the 24 px grid (0.5 - 3; Icona's own is 1.5, thin at 16 px) |
 | `icons.mode_fallback` | `icona:target` | a mode without an `icon` in modes.json |
-| `icons.agents` | `icona:sparkles` | the agents pill when agents of several kinds run; a kind with no icon |
-| `icons.agent_kinds` | claude `sparkles`, codex `terminal`, t3 `zap`, opencode `code`, aider `git-branch`, gemini `star`, cursor-agent `cursor` (all `icona:`) | kind -> icon; merges over the defaults. Wins over the kind's `glyph` in modes.json unless that glyph is itself `icona:...` |
+| `icons.agents` | `icona:sketch-robot` | the agents pill (always this robot; the list shows each agent's own logo); a kind with no icon |
+| `icons.agent_kinds` | claude `brand:claude`, codex `brand:openai`, gemini `brand:gemini`, opencode `brand:opencode`, t3 `com.t3tools.T3Code` (the app icon), aider `icona:git-branch`, cursor-agent `icona:cursor` | kind -> icon in the agents list; merges over the defaults. Wins over the kind's `glyph` in modes.json unless that glyph is itself `icona:...` / `brand:...` |
 | `icons.held` / `icons.held_muted` | `icona:bell` / `icona:snooze` | held badge; `held_muted` while the active mode's `notifications.default` is `"hold"` |
 | `icons.timer` / `icons.stay` | `icona:hourglass` / `icona:target` | countdown pill / Stay pill (`timer: ""` shows the target mode's icon) |
 | `icons.nudge` | `icona:alert` | the off-task bubble |

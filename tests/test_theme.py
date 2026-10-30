@@ -324,7 +324,7 @@ def _icon_names(icons) -> list[str]:
 def test_icon_defaults_are_icona_and_every_slug_exists():
     icons = ThemeConfig().icons
     assert (icons.pack, icons.stroke, icons.held, icons.timer) == ("icona", 1.75, "icona:bell", "icona:hourglass")
-    assert icons.agent_kinds["claude"] == "icona:sparkles" and icons.agent_kinds["codex"] == "icona:terminal"
+    assert icons.agent_kinds["claude"] == "brand:claude" and icons.agent_kinds["codex"] == "brand:openai"
     names = [n for n in _icon_names(icons) if n.startswith("icona:")]
     assert len(names) > 15
     assert [n for n in names if not (ICONA_DIR / (n[6:] + ".svg")).is_file()] == []
@@ -344,7 +344,7 @@ def test_icon_keys_validate_and_agent_kinds_merge():
     assert t.problems == []
     assert (t.icons.held, t.icons.timer, t.icons.stay) == ("🔔", "icona:clock", "")
     assert t.icons.agent_kinds["goose"] == "icona:rocket" and t.icons.agent_kinds["claude"] == "C"
-    assert t.icons.agent_kinds["codex"] == "icona:terminal"   # defaults kept
+    assert t.icons.agent_kinds["codex"] == "brand:openai"   # defaults kept
     bad = ThemeConfig.from_dict({"icons": {"held": "icona:Bad Slug", "nudge": 3, "pack": "material",
                                            "stroke": 9, "agent_kinds": {"x": 1}, "bogus": "x"}})
     assert bad.icons == ThemeConfig().icons
@@ -365,7 +365,7 @@ def test_icons_set_through_the_service_and_snapshot():
     svc.set({"key": "icons.agent_kinds.claude", "value": "icona:ghost"})
     assert doc.raw["icons"] == {"agent_kinds": {"claude": "icona:ghost"}}
     snap = svc.snapshot()
-    assert snap["icons"]["agent_kinds"]["claude"] == "icona:ghost" and snap["icons"]["agent_kinds"]["t3"] == "icona:zap"
+    assert snap["icons"]["agent_kinds"]["claude"] == "icona:ghost" and snap["icons"]["agent_kinds"]["t3"] == "com.t3tools.T3Code"
     with pytest.raises(ValueError):
         svc.set({"key": "icons.timer", "value": "icona:NOPE"})
 

@@ -1,0 +1,8 @@
+Brand logos used for the agents list, drawn single-colour on a 24 px grid.
+
+claude.svg (Anthropic), openai.svg, gemini.svg (Google Gemini) and copilot.svg (GitHub Copilot)
+are from Simple Icons (https://simpleicons.org, CC0 1.0 Universal). opencode.svg is redrawn
+after the opencode favicon (https://github.com/sst/opencode, MIT).
+
+The logos are trademarks of their respective owners and are used here only to identify the
+agent they belong to.

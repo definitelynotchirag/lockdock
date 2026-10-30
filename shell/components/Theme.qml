@@ -117,15 +117,16 @@ QtObject {
     function icon(key, fallback) { const v = icons[key]; return (v === undefined || v === null) ? fallback : v }
     // a mode's icon (modes.json `icon`, emoji or icona:<slug>), else icons.mode_fallback
     function modeIcon(mode) { return (mode && mode.icon) ? mode.icon : icon("mode_fallback", "icona:target") }
-    // an agent's icon: an icona glyph from modes.json agents.kinds, else icons.agent_kinds[kind],
-    // else its own glyph, else the generic icons.agents
+    // an agent's icon: an icona:/brand: name from modes.json agents.kinds, else icons.agent_kinds[kind]
+    // (the kind's logo by default: brand:claude, brand:openai, ...), else its own glyph, else
+    // the generic icons.agents
     function agentIcon(a) {
-        if (!a) return icon("agents", "icona:sparkles")
+        if (!a) return icon("agents", "icona:sketch-robot")
         const g = a.glyph || ""
-        if (g.indexOf("icona:") === 0) return g
+        if (g.indexOf("icona:") === 0 || g.indexOf("brand:") === 0) return g
         const k = (icons.agent_kinds || {})[a.kind]
         if (k) return k
-        return g && g !== "◆" ? g : icon("agents", "icona:sparkles")
+        return g && g !== "◆" ? g : icon("agents", "icona:sketch-robot")
     }
 
     // icon_size grows or shrinks everything that wraps an icon by the same delta

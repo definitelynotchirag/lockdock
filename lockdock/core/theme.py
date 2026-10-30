@@ -19,7 +19,7 @@ LAYOUTS = ("islands", "slab")
 AGENT_STYLES = ("pill", "chips")
 DEFAULT_SECTIONS = ("pet", "modes", "apps", "agents", "held")
 ICON_PACKS = ("icona", "text")
-ICONA_NAME = re.compile(r"icona:[a-z0-9]+(-[a-z0-9]+)*")
+ICONA_NAME = re.compile(r"(icona|brand):[a-z0-9]+(-[a-z0-9]+)*")
 
 # Values the pre-palette theme.example.json wrote into every theme.json. A file without a
 # `palette` or `layout` key is from then: these values were seeded, not chosen, so they are
@@ -70,20 +70,22 @@ def _color_or_null(v: Any) -> bool:
 
 
 def is_icon(v: Any) -> bool:
-    """An icon name: "icona:<slug>" (shell/icons/icona/<slug>.svg), a freedesktop icon name, a
-    text glyph / emoji, or "" (no icon). Whether an icona slug exists is checked by the shell."""
+    """An icon name: "icona:<slug>" (shell/icons/icona/<slug>.svg), "brand:<slug>" (a logo from
+    shell/icons/brand/), a freedesktop icon name, a text glyph / emoji, or "" (no icon). Whether
+    a slug exists is checked by the shell."""
     if not isinstance(v, str) or len(v) > 64:
         return False
-    return ICONA_NAME.fullmatch(v) is not None if v.startswith("icona:") else True
+    return ICONA_NAME.fullmatch(v) is not None if v.startswith(("icona:", "brand:")) else True
 
 
 def _is_icon_map(v: Any) -> bool:
     return isinstance(v, dict) and all(isinstance(k, str) and is_icon(i) for k, i in v.items())
 
 
-# icons.agent_kinds: one icon per built-in agent kind (core/agents.py DEFAULT_KINDS)
-DEFAULT_AGENT_ICONS = {"claude": "icona:sparkles", "codex": "icona:terminal", "t3": "icona:zap",
-                       "opencode": "icona:code", "aider": "icona:git-branch", "gemini": "icona:star",
+# icons.agent_kinds: one icon per built-in agent kind (core/agents.py DEFAULT_KINDS): the agent's
+# own logo (shell/icons/brand/), the T3 Code app icon, or an Icona glyph where there is no logo
+DEFAULT_AGENT_ICONS = {"claude": "brand:claude", "codex": "brand:openai", "t3": "com.t3tools.T3Code",
+                       "opencode": "brand:opencode", "aider": "icona:git-branch", "gemini": "brand:gemini",
                        "cursor-agent": "icona:cursor"}
 # what `"pack": "text"` uses for every key theme.json leaves unset: the pre-Icona glyphs. "" is no
 # icon; an empty `timer` shows the pending mode's own icon, an empty `agent_kinds` the kind's glyph.
@@ -187,7 +189,7 @@ class IconsTheme:
     pack: str = "icona"
     stroke: float = 1.75
     mode_fallback: str = "icona:target"
-    agents: str = "icona:sparkles"
+    agents: str = "icona:sketch-robot"
     agent_kinds: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_AGENT_ICONS))
     held: str = "icona:bell"
     held_muted: str = "icona:snooze"
@@ -206,7 +208,7 @@ class IconsTheme:
     close: str = "icona:x"
 
 
-_ICON_WANT = '"icona:<slug>", a glyph, an icon name or ""'
+_ICON_WANT = '"icona:<slug>", "brand:<slug>", a glyph, an icon name or ""'
 
 _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "position": (lambda v: v in POSITIONS, '"bottom" or "top"'),
