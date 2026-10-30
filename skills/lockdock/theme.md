@@ -34,6 +34,7 @@ lockdock theme reset                 # back to the defaults
 | `mode_strip` | `{stay_button: true}` | while a switch is pending the mode strip shows a timer pill (`icons.timer`, label, m:ss; click to shorten the wait) and a Stay pill that cancels; `false` drops the Stay pill |
 | `pinned` | false | reserve the dock's row so windows stop at it (`lockdock pin` / `unpin` / `pin toggle`); never autohides. See `motion.md` |
 | `tooltips` | `{enabled: true, delay_ms: 350}` | the dock's own tooltips; `delay_ms` 0-5000 before the first one. See `motion.md` |
+| `previews` | `{enabled: true, delay_ms: 350, width: 200, height: 120, max: 6}` | live window thumbnails when hovering a running app (replace its tooltip): `delay_ms` 0-5000, each thumbnail fitted into `width` (80-800) x `height` (50-600) px before `scale`, at most `max` (1-20) cards then "+N more". `enabled: false` brings back the app tooltip. See `motion.md` |
 | `reduced_motion` | false | hover, press, tooltip and slide animations become instant. See `motion.md` |
 | `icons` | Icona set | every icon the dock draws that is not an app icon: see `icons.md` |
 | `opacity` | 1.0 | whole dock |
@@ -49,12 +50,11 @@ Mode colours: in modes.json `"color": "auto"` (the default) gives the active mod
 ## Recipes
 
 - "Move the dock to the top": `lockdock theme set position '"top"'`; "autohide": `theme set autohide.enabled true`; "smaller": `theme set scale 0.8` (icons only: `icon_size`)
-- "Windows should not cover the dock": `lockdock pin`; "a pin button": add `"pin"` to `sections` (`motion.md`); "no tooltips": `theme set tooltips.enabled false`
+- "Windows should not cover the dock": `lockdock pin`; "a pin button": add `"pin"` to `sections` (`motion.md`); "no tooltips": `theme set tooltips.enabled false`; "no window previews": `theme set previews.enabled false`; "bigger previews": `theme set previews.width 280` and `previews.height 170`
 - "Hide the held badge": `lockdock theme set sections '["pet","modes","apps","agents"]'`; "only apps, then modes": `'["apps","modes"]'`
 - "Force dark (or light) colours": `lockdock theme set palette '"dark"'`; back to the wallpaper: `'"system"'`
 - "Use my red as the accent but keep the wallpaper colours": `lockdock theme set palette '{"accent": "#e5484d", "accent_container": "#5c1a1d", "on_accent_container": "#ffdad8"}'` (set the whole object; a role is not a dotted key)
 - "The old single-card look": `lockdock theme set layout '"slab"'`; "glassier islands": `theme set fill_opacity 0.9`; "no shadows": `theme set shadow.enabled false`; "a fixed background": `theme set background '"#FF1C1C21"'` (`null`: palette)
-- "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`; "no cards above the dock": `theme set prompts.enabled false`; "one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`
-- "One chip per agent again": `lockdock theme set agents.style '"chips"'` (back: `'"pill"'`)
+- "No off-task bubble": `lockdock theme set nudge.enabled false`; "no Stay button during a countdown": `theme set mode_strip.stay_button false`; "no cards above the dock": `theme set prompts.enabled false`; "one card at a time": `theme set prompts.max_visible 1`; "wider cards": `theme set prompts.width 420`; "one chip per agent again": `theme set agents.style '"chips"'` (back: `'"pill"'`)
 
 Check the result with a screenshot (`grim`) before telling the user it is done.

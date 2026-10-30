@@ -215,6 +215,15 @@ islands points at the island edge), adds it to the `mask` only while visible, an
 reserves `tipHeadroom` (and a tip's height over the agents list) so hovering never resizes
 the layer surface. Never use `QtQuick.Controls` `ToolTip`.
 
+Window previews: a running `AppButton` sets `tipEnabled: false` (under `theme.previews`) and
+calls `theme.host.showPreviews(item, windows)` / `hidePreviews(item, immediate)` from its own
+hover and press changes (a `Connections` on itself, so Pressable's handlers still run). The
+Dock owns one `components/WindowPreviews.qml` (a `ScreencopyView` per Toplevel, captured only
+while visible), opens it after `theme.previewsDelayMs` (switching at once while open), keeps it
+while the pointer is on the button or the panel (its `hovered`), closes it 250 ms after both
+are left, places it like the Tip, masks it while visible, and reserves `previewsHeadroom` (and
+the width for the app with the most windows) whenever previews are on and any app runs.
+
 Pinning: `theme.pinned` sets `exclusiveZone` to `reservedZone` (`islandHeight + margin`:
 the island row only, never the transparent headroom for cards, bubbles and tips), else 0
 (or -1 with autohide). Pinned forces autohide off (`Dock.autohide`). The `pin` control verb

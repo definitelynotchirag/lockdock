@@ -144,8 +144,8 @@ def test_snapshot_shape():
     snap = ThemeConfig().snapshot()
     assert set(snap) == {"palette", "layout", "position", "margin", "scale", "radius", "gap", "fill_opacity",
                          "background", "border", "shadow", "accent_override", "font", "icon_size", "sections",
-                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "tooltips", "pinned",
-                             "reduced_motion", "icons", "opacity",
+                         "show_unpinned", "autohide", "nudge", "agents", "prompts", "mode_strip", "tooltips", "previews",
+                         "pinned", "reduced_motion", "icons", "opacity",
                          "colors", "palette_source"}
     assert snap["background"] is None
     assert snap["border"] == {"color": None, "width": 1, "off_task_color": None}
@@ -393,6 +393,38 @@ def test_tooltips_reduced_motion_and_pinned_validate():
                                                        "pinned", "reduced_motion"}
     assert ThemeConfig.from_dict({"tooltips": {"delay_ms": 6000}}).tooltips.delay_ms == 350
     assert ThemeConfig.from_dict({"tooltips": True}).problems
+
+
+def test_previews_defaults():
+    t = ThemeConfig()
+    p = t.previews
+    assert (p.enabled, p.delay_ms, p.width, p.height, p.max) == (True, 350, 200, 120, 6)
+    assert t.icons.close == "icona:x"
+    assert t.snapshot()["previews"] == {"enabled": True, "delay_ms": 350, "width": 200, "height": 120, "max": 6}
+
+
+def test_previews_validate():
+    t = ThemeConfig.from_dict({"previews": {"enabled": False, "delay_ms": 0, "width": 320, "height": 180.5,
+                                            "max": 1}})
+    assert t.problems == []
+    p = t.previews
+    assert (p.enabled, p.delay_ms, p.width, p.height, p.max) == (False, 0, 320, 180.5, 1)
+    bad = ThemeConfig.from_dict({"previews": {"enabled": "yes", "delay_ms": 2.5, "width": 10, "height": 9000,
+                                              "max": 0, "style": "x"}})
+    assert bad.previews == ThemeConfig().previews
+    assert {p.split(":")[0] for p in bad.problems} == {"previews.enabled", "previews.delay_ms", "previews.width",
+                                                       "previews.height", "previews.max", "previews.style"}
+    assert ThemeConfig.from_dict({"previews": {"max": 21}}).previews.max == 6
+    assert ThemeConfig.from_dict({"previews": {"delay_ms": 6000}}).previews.delay_ms == 350
+    assert ThemeConfig.from_dict({"previews": True}).problems
+
+
+def test_service_sets_previews_keys():
+    svc, doc, _, _ = make_service({"palette": "system"})
+    svc.set({"key": "previews.width", "value": 260})
+    assert doc.raw["previews"]["width"] == 260 and svc.snapshot()["previews"]["width"] == 260
+    with pytest.raises(ValueError):
+        svc.set({"key": "previews.max", "value": 0})
 
 
 def test_text_pack_has_pin_glyphs():

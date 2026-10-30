@@ -1,6 +1,6 @@
 # Pinning, tooltips and motion
 
-Three theme.json keys (`lockdock theme set <key> <json>`); all hot-reload.
+Four theme.json keys (`lockdock theme set <key> <json>`); all hot-reload.
 
 ## `pinned` (default `false`)
 
@@ -22,9 +22,13 @@ Check it: `hyprctl -j monitors` lists `reserved` per monitor (`[left, top, right
 
 The dock draws its own tooltips (an island-style bubble with an icon, a bold title and a muted detail) above the hovered item, or below it when the dock is at the top. `delay_ms` (0-5000) is the hover time before the first tip; moving to the next item while one shows switches at once. A click hides the tip until the pointer leaves. `enabled: false` turns them all off.
 
+## `previews` (default `{enabled: true, delay_ms: 350, width: 200, height: 120, max: 6}`)
+
+Hovering a running app for `delay_ms` opens a panel of live window thumbnails above it (below it at the top), one card per window: the live picture fitted into `width` x `height` px, the window title (bold for the focused one) and the app icon. Click a card to focus that window; the x in its corner (`icons.close`) closes it. More than `max` windows shows "+N more". The panel stays open while the pointer is on the app or the panel and closes 250 ms after it leaves both; moving to another running app switches at once. It fades and slides in over 140 ms, out over 100 ms (instant with `reduced_motion`). A running app shows previews instead of its tooltip; `enabled: false` brings the tooltip back. Thumbnails need the compositor's toplevel capture (Hyprland has it); a window that cannot be captured shows "no preview".
+
 ## `reduced_motion` (default `false`)
 
-`true` makes every interaction animation instant: hover fades, press springs, tooltips, the agents list opening, the slide of an autohiding dock. Status animations stay (the countdown fill, the pulsing "needs you" outline, the pet's speech bubble pop).
+`true` makes every interaction animation instant: hover fades, press springs, tooltips, window previews, the agents list opening, the slide of an autohiding dock. Status animations stay (the countdown fill, the pulsing "needs you" outline, the pet's speech bubble pop).
 
 ## The interaction language (what the user sees)
 

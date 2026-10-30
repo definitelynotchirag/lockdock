@@ -55,6 +55,13 @@
     "enabled": true,
     "delay_ms": 350
   },
+  "previews": {
+    "enabled": true,
+    "delay_ms": 350,
+    "width": 200,
+    "height": 120,
+    "max": 6
+  },
   "pinned": false,
   "reduced_motion": false,
   "icons": {
@@ -84,7 +91,8 @@
     "card_verdict": "icona:check-circle",
     "app_fallback": "icona:layers",
     "pin": "icona:map-pin-fill",
-    "pin_off": "icona:map-pin"
+    "pin_off": "icona:map-pin",
+    "close": "icona:x"
   },
   "opacity": 1.0
 }

@@ -79,12 +79,13 @@ PanelWindow {
     implicitWidth: Math.max(card.implicitWidth + theme.px(56),
                             theme.tooltips ? tip.maxTextWidth + theme.px(60) : 0,
                             agentsPill ? 2 * (Math.abs(agentsPanel.pillOffset) + agentsPanel.width / 2 + theme.px(12)) : 0,
-                            promptStack.count > 0 ? promptStack.width + theme.px(48) : 0)
+                            promptStack.count > 0 ? promptStack.width + theme.px(48) : 0,
+                            previewsHeadroom > 0 ? previews.widthFor(previewsMaxCards, previewsMaxMore) + theme.px(24) : 0)
     // card, gap to the edge, headroom for the nudge; more while the pet's speech bubble, the
     // agents list or decision cards show
     implicitHeight: card.implicitHeight + theme.margin
                     + Math.max(theme.px(14 + 28 + 12), (petItem ? petItem.headroom : 0) - 4, agentsHeadroom, promptsHeadroom,
-                               tipHeadroom)
+                               tipHeadroom, previewsHeadroom)
     readonly property real panelGap: theme.px(10) + (nudgeShown ? nudgeBox.height + theme.px(8) : 0)
     // reserved while the pill shows, not only while the list is open: resizing the layer surface
     // on every open makes Hyprland redraw the whole dock squashed for a frame
@@ -93,6 +94,23 @@ PanelWindow {
         ? agentsPanel.height + panelGap + theme.px(14) + (theme.tooltips ? tipHeadroom : 0) : 0
     // a tooltip over the islands: always reserved while tooltips are on (no resize on hover)
     readonly property real tipHeadroom: theme.tooltips ? Math.ceil(tip.maxHeight) + theme.px(16) : 0
+    // window previews: reserved while previews are on and any app runs (not only while open, so
+    // hovering never resizes the layer surface); wide enough for the app with the most windows
+    readonly property var toplevels: ToplevelManager.toplevels.values
+    readonly property int mostWindows: {
+        const n = {}
+        let most = 0
+        for (const t of toplevels) {
+            const id = (t.appId || "").toLowerCase()
+            n[id] = (n[id] || 0) + 1
+            most = Math.max(most, n[id])
+        }
+        return most
+    }
+    readonly property int previewsMaxCards: Math.min(mostWindows, theme.previewsMax)
+    readonly property bool previewsMaxMore: mostWindows > theme.previewsMax
+    readonly property real previewsHeadroom: theme.previews && mostWindows > 0 && theme.sections.indexOf("apps") >= 0
+        ? Math.ceil(previews.maxHeight) + theme.px(16) : 0
     // decision cards: while any card is up, reserve room for max_visible tall cards (or the real
     // stack, if taller) so the surface does not resize as cards come and go
     readonly property real promptCardReserve: theme.px(14 + 32 + 10 + 3 * 17 + 10 + 28 + 12 + 32 + 14 + 8)
@@ -106,6 +124,7 @@ PanelWindow {
         Region { item: agentsPanel.visible ? agentsPanel : null }
         Region { item: promptStack.count > 0 ? promptStack : null }
         Region { item: tip.visible ? tip : null }
+        Region { item: previews.visible ? previews : null }
     }
 
     // countdown clock
@@ -115,7 +134,7 @@ PanelWindow {
     // ---- autohide ----
     property bool shown: true
     readonly property bool busy: (st.pending !== null && st.pending !== undefined) || nudgeShown || (st.held_count || 0) > 0
-                                 || agentsOpen || promptStack.count > 0
+                                 || agentsOpen || promptStack.count > 0 || previews.visible
     readonly property bool wantShown: !autohide || cardHover.hovered || edgeHover.hovered || busy
     onWantShownChanged: { if (wantShown) { hideTimer.stop(); shown = true } else hideTimer.restart() }
     Component.onCompleted: if (!wantShown) hideTimer.start()
@@ -391,6 +410,64 @@ PanelWindow {
         x: Math.round(Math.max(dock.theme.px(4), Math.min(dock.width - width - dock.theme.px(4),
                                                          anchorRect.x + anchorRect.width / 2 - width / 2)))
         y: Math.round(below ? yBelow : yAbove)
+        tailX: anchorRect.x + anchorRect.width / 2 - x
+    }
+
+    // ---- window previews: one per window, for whichever running AppButton is hovered ----
+    // showPreviews(item, windows) after theme.previewsDelayMs (switching at once while open);
+    // they stay open while the pointer is on the button or the panel and close 250 ms after it
+    // has left both. hidePreviews(item, immediate) only acts for the item that owns them.
+    property Item previewTarget: null
+    property bool previewsOpen: false
+    property bool previewBtnHovered: false
+    function showPreviews(item, windows) {
+        if (!theme.previews || !windows || windows.length === 0) return
+        previewClose.stop()
+        previewTarget = item
+        previewBtnHovered = true
+        if (previewsOpen) return
+        previewDelay.restart()
+    }
+    function hidePreviews(item, immediate) {
+        if (item !== previewTarget) return
+        previewBtnHovered = false
+        previewDelay.stop()
+        if (immediate) { previewClose.stop(); previewsOpen = false }
+        else if (previewsOpen && !previews.hovered) previewClose.restart()
+    }
+    onPreviewTargetChanged: if (!previewTarget) { previewDelay.stop(); previewClose.stop(); previewsOpen = false; previewBtnHovered = false }
+    Timer { id: previewDelay; interval: dock.theme.previewsDelayMs; onTriggered: dock.previewsOpen = dock.previewTarget !== null && dock.previewBtnHovered }
+    Timer {
+        id: previewClose
+        interval: 250
+        onTriggered: if (!dock.previewBtnHovered && !previews.hovered) dock.previewsOpen = false
+    }
+
+    WindowPreviews {
+        id: previews
+        theme: dock.theme
+        z: 19
+        windows: dock.previewTarget ? dock.previewTarget.windows : []
+        iconSource: dock.previewTarget ? dock.previewTarget.iconSource : ""
+        open: dock.previewsOpen && dock.previewTarget !== null && dock.shown && windows.length > 0 && dock.theme.previews
+        readonly property real gap: dock.theme.px(6)
+        onHoveredChanged: {
+            if (hovered) previewClose.stop()
+            else if (!dock.previewBtnHovered && dock.previewsOpen) previewClose.restart()
+        }
+        onActivated: { previewClose.stop(); dock.previewsOpen = false }
+        // the target's horizontal span and the island edge, in window coordinates
+        readonly property rect anchorRect: {
+            const t = dock.previewTarget
+            card.width; card.x; dock.width; dock.height; previews.open
+            if (!t) return Qt.rect(0, 0, 0, 0)
+            const p = t.mapToItem(previews.parent, 0, 0)
+            return Qt.rect(p.x, card.y, t.width * t.scale, card.height)
+        }
+        below: dock.theme.atTop
+        x: Math.round(Math.max(dock.theme.px(4), Math.min(dock.width - width - dock.theme.px(4),
+                                                         anchorRect.x + anchorRect.width / 2 - width / 2)))
+        y: Math.round(below ? anchorRect.y + anchorRect.height + gap : anchorRect.y - height - gap)
         tailX: anchorRect.x + anchorRect.width / 2 - x
     }
 }

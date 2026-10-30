@@ -92,6 +92,7 @@ TEXT_ICONS: dict[str, Any] = {
     "timer": "", "stay": "", "nudge": "", "tag_urgent": "✦", "tag_info": "✦", "tag_ok": "✅",
     "card_notification": "🔔", "card_site": "🌐", "card_verdict": "✦",
     "app_fallback": "application-x-executable", "pin": "📌", "pin_off": "📍",
+    "close": "✕",
 }
 
 
@@ -157,6 +158,18 @@ class TooltipsTheme:
 
 
 @dataclass
+class PreviewsTheme:
+    """Live window thumbnails (components/WindowPreviews.qml) shown after hovering a running app
+    `delay_ms`: one card per window, each thumbnail fitted into `width` x `height` px (before
+    `scale`); more than `max` windows adds a "+N more" label."""
+    enabled: bool = True
+    delay_ms: int = 350
+    width: float = 200
+    height: float = 120
+    max: int = 6
+
+
+@dataclass
 class ModeStripTheme:
     """The mode pills: stay_button shows a Stay pill (cancel) next to the countdown pill while a
     switch is pending."""
@@ -190,6 +203,7 @@ class IconsTheme:
     app_fallback: str = "icona:layers"
     pin: str = "icona:map-pin-fill"
     pin_off: str = "icona:map-pin"
+    close: str = "icona:x"
 
 
 _ICON_WANT = '"icona:<slug>", a glyph, an icon name or ""'
@@ -226,6 +240,11 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     "mode_strip.stay_button": (_is_bool, "true or false"),
     "tooltips.enabled": (_is_bool, "true or false"),
     "tooltips.delay_ms": (_int(0, 5000), "an integer 0..5000"),
+    "previews.enabled": (_is_bool, "true or false"),
+    "previews.delay_ms": (_int(0, 5000), "an integer 0..5000"),
+    "previews.width": (_num(80, 800), "a number 80..800"),
+    "previews.height": (_num(50, 600), "a number 50..600"),
+    "previews.max": (_int(1, 20), "an integer 1..20"),
     "pinned": (_is_bool, "true or false"),
     "reduced_motion": (_is_bool, "true or false"),
     "icons.pack": (lambda v: v in ICON_PACKS, '"icona" or "text"'),
@@ -234,7 +253,7 @@ _VALIDATORS: dict[str, tuple[Callable[[Any], bool], str]] = {
     **{f"icons.{k}": (is_icon, _ICON_WANT) for k in TEXT_ICONS if k != "agent_kinds"},
 }
 _GROUPS = ("border", "font", "autohide", "nudge", "shadow", "agents", "prompts", "mode_strip", "tooltips",
-           "icons")
+           "previews", "icons")
 
 
 @dataclass
@@ -263,6 +282,7 @@ class ThemeConfig:
     prompts: PromptsTheme = field(default_factory=PromptsTheme)
     mode_strip: ModeStripTheme = field(default_factory=ModeStripTheme)
     tooltips: TooltipsTheme = field(default_factory=TooltipsTheme)
+    previews: PreviewsTheme = field(default_factory=PreviewsTheme)
     pinned: bool = False
     reduced_motion: bool = False
     icons: IconsTheme = field(default_factory=IconsTheme)

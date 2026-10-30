@@ -98,8 +98,16 @@ QtObject {
     function dur(ms) { return reducedMotion ? 0 : ms }
     readonly property bool tooltips: pick((t.tooltips || {}).enabled, true)
     readonly property int tooltipDelayMs: pick((t.tooltips || {}).delay_ms, 350)
+    // live window thumbnails over a hovered running app (components/WindowPreviews.qml)
+    readonly property var previewsT: t.previews || ({})
+    readonly property bool previews: pick(previewsT.enabled, true)
+    readonly property int previewsDelayMs: pick(previewsT.delay_ms, 350)
+    readonly property real previewsWidth: pick(previewsT.width, 200)
+    readonly property real previewsHeight: pick(previewsT.height, 120)
+    readonly property int previewsMax: Math.max(1, pick(previewsT.max, 6))
     // the Dock that owns this theme: Pressable calls host.showTip(item, {icon, title, detail}) /
-    // host.hideTip(item) on it (one Tip per dock window, drawn outside the islands)
+    // host.hideTip(item) on it (one Tip per dock window, drawn outside the islands); AppButton
+    // calls host.showPreviews(item, windows) / host.hidePreviews(item)
     property var host: null
 
     // ---- icons (theme.json `icons`, core/theme.py IconsTheme): names for components/Icon.qml ----

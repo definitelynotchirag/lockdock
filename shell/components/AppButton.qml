@@ -27,6 +27,31 @@ Pressable {
         detail: running ? windows.length + (windows.length === 1 ? " window" : " windows") + " · click to focus"
                         : "click to launch"
     })
+    // a running app shows live window previews (theme.previews) instead of its tooltip
+    readonly property bool previewsOn: running && theme.previews
+    tipEnabled: !previewsOn
+
+    // ---- window previews: the Dock (theme.host) owns one WindowPreviews per window ----
+    // a press hides them until the pointer leaves and comes back (like the tip)
+    property bool previewsSuppressed: false
+    function syncPreviews(immediate) {
+        const host = btn.theme.host
+        if (!host || !host.showPreviews) return
+        if (btn.hovered && btn.visible && btn.previewsOn && !btn.previewsSuppressed)
+            host.showPreviews(btn, btn.windows)
+        else
+            host.hidePreviews(btn, immediate === true)
+    }
+    Connections {
+        target: btn
+        function onHoveredChanged() { if (!btn.hovered) btn.previewsSuppressed = false; btn.syncPreviews(false) }
+        function onPressedChanged() { if (btn.pressed) { btn.previewsSuppressed = true; btn.syncPreviews(true) } }
+        function onPreviewsOnChanged() { btn.syncPreviews(false) }
+        function onVisibleChanged() { btn.syncPreviews(true) }
+    }
+    Component.onCompleted: syncPreviews(false)
+    Component.onDestruction: if (btn.theme.host && btn.theme.host.hidePreviews) btn.theme.host.hidePreviews(btn, true)
+
     onClicked: {
         if (btn.windows.length > 0) {
             // cycle: focus the first non-active window, else the first
