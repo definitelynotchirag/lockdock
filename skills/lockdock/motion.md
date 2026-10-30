@@ -24,8 +24,8 @@ The dock draws its own tooltips (an island-style bubble with an icon, a bold tit
 
 ## `reduced_motion` (default `false`)
 
-`true` makes every interaction animation instant: hover fades, the icon lift, press springs, tooltips, the agents list opening, the slide of an autohiding dock. Status animations stay (the countdown fill, the pulsing "needs you" outline, the pet's speech bubble pop).
+`true` makes every interaction animation instant: hover fades, press springs, tooltips, the agents list opening, the slide of an autohiding dock. Status animations stay (the countdown fill, the pulsing "needs you" outline, the pet's speech bubble pop).
 
 ## The interaction language (what the user sees)
 
-Hover fades a `surface_hover` background in behind a button or pill (180 ms in, 240 ms out) and lifts its icon 1.5 px; app icons lift 2 px over a soft rounded halo, and dimmed running apps brighten. A press shrinks the item to 0.96 and springs back on release. No colours here are configurable beyond the palette roles in `theme.md`.
+Hover fades a `surface_hover` background in behind a button or pill (180 ms in, 240 ms out); app icons get a soft rounded halo, and dimmed running apps brighten. Nothing moves on hover. A press shrinks the item to 0.96 and springs back on release. No colours here are configurable beyond the palette roles in `theme.md`.

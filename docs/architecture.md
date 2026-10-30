@@ -202,8 +202,8 @@ one `sectionMap` entry; also add its id to `DEFAULT_SECTIONS` in
 Interaction: every clickable thing is a `components/Pressable.qml` (use it as the root
 of a button or pill, like a MouseArea that animates). It exposes `hovered`, `pressed`,
 `clicked()`, `hoverProgress` (0..1, 180 ms OutCubic in, 240 ms out), `pressProgress`
-(80 ms in, 160 ms OutBack out), `pressScale` (bind `scale: pressScale`) and `lift(px)` (an
-icon's hover translate). Draw hover as a `surface_hover` fill at `hoverProgress`, not with a
+(80 ms in, 160 ms OutBack out) and `pressScale` (bind `scale: pressScale`). Nothing moves on
+hover (no lift, no scale). Draw hover as a `surface_hover` fill at `hoverProgress`, not with a
 `Behavior` on a colour (it would chase every frame). Durations go through
 `theme.dur(ms)`, which is 0 under `theme.reduced_motion`. Its `tip: {icon, title,
 detail}` is the tooltip: Pressable calls `theme.host.showTip(item, tip)` /

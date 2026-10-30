@@ -256,7 +256,6 @@ Item {
                         font.family: card.theme.family
                         font.weight: btn.primary ? Font.DemiBold : Font.Medium
                         color: btn.ink
-                        transform: Translate { y: btn.lift(1) }
                     }
                 }
             }

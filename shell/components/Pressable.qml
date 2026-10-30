@@ -3,7 +3,7 @@ import QtQuick
 // The dock's one interaction language. Use it as the root of a button (or a pill) and draw
 // with its progress values instead of a MouseArea's raw flags:
 //   hoverProgress  0..1, 180 ms OutCubic in, 240 ms out: fade in a surface_hover background,
-//                  lift the icon (lift(px)), brighten dimmed content
+//                  brighten dimmed content (nothing moves on hover: no lift, no scale pop)
 //   pressProgress  0..1, 80 ms in, 160 ms OutBack out: pressScale (0.96 while held) springs back
 // `tip` ({icon, title, detail}) is shown by the Dock's single Tip (theme.host) after the hover
 // delay; it hides on press and stays hidden until the pointer leaves and comes back.
@@ -22,8 +22,6 @@ Item {
     property real hoverProgress: 0
     property real pressProgress: 0
     readonly property real pressScale: 1 - 0.04 * pressProgress
-    // the icon's hover lift: translate y by -px * hoverProgress
-    function lift(px) { return -px * root.theme.scale * hoverProgress }
 
     NumberAnimation { id: hoverAnim; target: root; property: "hoverProgress" }
     NumberAnimation { id: pressAnim; target: root; property: "pressProgress" }

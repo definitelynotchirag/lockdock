@@ -2,8 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Widgets
 
-// One app: its icon on a soft halo that grows in on hover (Pressable: hoverProgress), lifting
-// 2 px; press scales it to 0.96. Running dot (text_muted) / focused pill (accent) below.
+// One app: its icon on a soft halo that grows in on hover (Pressable: hoverProgress);
+// press scales it to 0.96. Running dot (text_muted) / focused pill (accent) below.
 // Click focuses a window (cycling) or launches the app.
 Pressable {
     id: btn
@@ -60,7 +60,6 @@ Pressable {
         y: btn.iconTop
         width: btn.iconPx; height: width
         opacity: btn.dim ? 0.7 + 0.3 * btn.hoverProgress : 1
-        transform: Translate { y: btn.lift(2) }
 
         IconImage {
             visible: btn.iconSource !== ""

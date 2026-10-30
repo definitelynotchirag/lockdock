@@ -22,7 +22,6 @@ Pressable {
     }
     Icon {
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: btn.lift(1.5)
         name: btn.pinned ? btn.theme.icon("pin", "icona:map-pin-fill") : btn.theme.icon("pin_off", "icona:map-pin")
         size: btn.theme.fpx(18)
         stroke: btn.theme.iconStroke

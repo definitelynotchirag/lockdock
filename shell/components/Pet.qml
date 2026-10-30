@@ -3,7 +3,7 @@ import QtQuick
 // The mascot in the dock: its mood sprite, plus a speech bubble that pops up when
 // st.pet.line changes and hides after 6 s. Click to calm it. The Dock adds `bubble`
 // to its input mask and grows its headroom by `headroom` while the bubble shows.
-// Hover (Pressable): a soft surface_hover halo, the sprite lifts 1.5 px; press scales to 0.96.
+// Hover (Pressable): a soft surface_hover halo; press scales to 0.96.
 Pressable {
     id: pet
     required property var st           // state.json
@@ -28,7 +28,7 @@ Pressable {
     })
     onClicked: pet.shell.send(["pet", "calm"])
 
-    // the sprite's halo, and the sprite: lifts on hover, springs on press
+    // the sprite's halo, and the sprite: springs on press
     Rectangle {
         anchors.fill: parent
         radius: height / 2
@@ -42,7 +42,6 @@ Pressable {
         pet: pet.info
         renderSize: pet.theme.ipx(40)
         scale: pet.pressScale
-        transform: Translate { y: pet.lift(1.5) }
     }
 
     // ---- speech bubble: pops when the line changes ----

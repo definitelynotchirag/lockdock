@@ -32,7 +32,6 @@ Pressable {
     }
     Icon {
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: badgeRoot.lift(1.5)
         name: badgeRoot.glyph
         size: badgeRoot.theme.fpx(18)
         stroke: badgeRoot.theme.iconStroke

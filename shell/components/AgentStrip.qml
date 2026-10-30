@@ -66,7 +66,6 @@ RowLayout {
                     color: strip.theme.text
                     opacity: chip.quiet ? 0.6 + 0.4 * chip.hoverProgress : 1
                     Layout.alignment: Qt.AlignVCenter
-                    transform: Translate { y: chip.lift(1.5) }
                 }
                 Text {
                     text: chip.modelData.label

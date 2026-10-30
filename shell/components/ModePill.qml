@@ -5,8 +5,7 @@ import QtQuick.Layouts
 // sets one) with a small accent dot, icon (Icon.qml: icona:<slug> or a glyph) and label.
 // Inactive: the icon only, muted; a
 // pending switch widens it and fills it left to right as the countdown runs.
-// Hover (Pressable): surface_hover fades in behind an inactive pill and the icon lifts 1.5 px;
-// press scales it to 0.96.
+// Hover (Pressable): surface_hover fades in behind an inactive pill; press scales it to 0.96.
 Pressable {
     id: pill
     property var mode
@@ -80,7 +79,6 @@ Pressable {
             color: pill.active ? pill.ink : (pill.pending ? pill.theme.text
                                                           : Qt.tint(pill.theme.textMuted, pill.theme.alpha(pill.theme.text, pill.hoverProgress)))
             Layout.alignment: Qt.AlignVCenter
-            transform: Translate { y: pill.lift(1.5) }
         }
         Text {
             visible: pill.wide

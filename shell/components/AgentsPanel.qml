@@ -180,7 +180,6 @@ Item {
                         family: panel.theme.family
                         color: panel.theme.text
                         opacity: row.quiet ? 0.6 + 0.4 * row.hoverProgress : 1
-                        transform: Translate { y: row.lift(1.5) }
                     }
                 }
                 ColumnLayout {

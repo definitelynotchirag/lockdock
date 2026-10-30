@@ -74,7 +74,6 @@ Pressable {
             family: pill.theme.family
             color: pill.theme.text
             Layout.alignment: Qt.AlignVCenter
-            transform: Translate { y: pill.lift(1.5) }
         }
         Text {
             text: pill.count

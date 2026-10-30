@@ -90,7 +90,6 @@ RowLayout {
                 family: strip.theme.family
                 color: strip.theme.text
                 Layout.alignment: Qt.AlignVCenter
-                transform: Translate { y: timer.lift(1.5) }
             }
             Text {
                 text: strip.pendingMode ? strip.pendingMode.label : ""
@@ -144,7 +143,6 @@ RowLayout {
                 stroke: strip.theme.iconStroke
                 family: strip.theme.family
                 color: strip.theme.text
-                transform: Translate { y: stay.lift(1.5) }
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
