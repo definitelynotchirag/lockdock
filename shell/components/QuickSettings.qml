@@ -66,8 +66,8 @@ Item {
     readonly property var allRows: [
         { id: "pin", icon: theme.pinned ? theme.icon("pin", "icona:map-pin-fill") : theme.icon("pin_off", "icona:map-pin"),
           label: "Pin dock", on: theme.pinned, enabled: true, shown: true, note: "" },
-        { id: "autohide", icon: "icona:eye-off", label: "Auto-hide", on: theme.autohide, enabled: !theme.pinned,
-          shown: true, note: theme.pinned ? "pinned" : "" },
+        { id: "autohide", icon: "icona:eye-off", label: "Auto-hide", on: theme.autohide && !theme.pinned, enabled: true,
+          shown: true, note: theme.pinned ? "unpins" : "show on hover" },
         { id: "position", icon: "icona:scroll-to-top", label: "Position: Top", on: theme.atTop, enabled: true, shown: true, note: "" },
         { id: "tooltips", icon: "icona:tooltip", label: "Tooltips", on: theme.tooltips, enabled: true, shown: true, note: "" },
         { id: "previews", icon: "icona:picture-in-picture", label: "Window previews", on: theme.previews, enabled: true,
@@ -82,7 +82,9 @@ Item {
     function toggle(row) {
         switch (row.id) {
         case "pin": panel.shell.send(["pin", "toggle"]); break
-        case "autohide": themeSet("autohide.enabled", !row.on); break
+        case "autohide":
+            if (!row.on && panel.theme.pinned) panel.shell.send(["unpin"])   // pinned never hides
+            themeSet("autohide.enabled", !row.on); break
         case "position": themeSet("position", row.on ? "bottom" : "top"); break
         case "tooltips": themeSet("tooltips.enabled", !row.on); break
         case "previews": themeSet("previews.enabled", !row.on); break
@@ -189,117 +191,6 @@ Item {
             startX: 0; startY: panel.below ? tailShape.height : 0
             PathLine { x: tailShape.half; y: panel.below ? 0 : tailShape.height }
             PathLine { x: tailShape.width; y: panel.below ? tailShape.height : 0 }
-        }
-    }
-
-    Column {
-        id: content
-        x: panel.pad
-        y: body.y + panel.pad
-        width: panel.width - 2 * panel.pad
-
-        // header: "Dock" and the position / pinned state
-        Item {
-            width: parent.width; height: panel.headerH
-            Text {
-                x: panel.theme.px(10)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Dock"
-                font.pixelSize: panel.theme.fpx(13.5)
-                font.family: panel.theme.family
-                font.weight: Font.Bold
-                color: panel.theme.text
-            }
-            Text {
-                anchors.right: parent.right; anchors.rightMargin: panel.theme.px(10)
-                anchors.verticalCenter: parent.verticalCenter
-                text: (panel.theme.atTop ? "Top" : "Bottom") + " · "
-                      + (panel.theme.pinned ? "pinned" : panel.theme.autohide ? "auto-hides" : "overlay")
-                font.pixelSize: panel.theme.fpx(11.5)
-                font.family: panel.theme.family
-                color: panel.theme.textMuted
-            }
-        }
-        Separator {}
-
-        Repeater {
-            model: panel.allRows.filter(r => r.shown)
-            delegate: SwitchRow {
-                required property var modelData
-                icon: modelData.icon
-                label: modelData.label
-                note: modelData.note
-                on: modelData.on
-                enabled: modelData.enabled
-                onClicked: panel.toggle(modelData)
-            }
-        }
-
-        // ---- Notifications ----
-        Separator {}
-        GroupHeader { label: "Notifications" }
-        SwitchRow {
-            icon: panel.dnd ? panel.theme.icon("dnd", "icona:moon-fill") : "icona:moon"
-            label: "Do not disturb"
-            note: panel.dnd && (panel.st.held_count || 0) > 0 ? panel.st.held_count + " held" : ""
-            on: panel.dnd
-            onClicked: panel.shell.send(["dnd", panel.dnd ? "off" : "on"])
-        }
-        Repeater {
-            model: panel.notifSteppers
-            delegate: StepperRow { required property var modelData; spec: modelData }
-        }
-
-        // ---- Pet ----
-        Separator { visible: panel.hasPet }
-        GroupHeader { label: "Pet"; visible: panel.hasPet }
-        Repeater {
-            model: panel.hasPet ? panel.petSteppers : []
-            delegate: StepperRow { required property var modelData; spec: modelData }
-        }
-
-        Separator {}
-
-        // footer: open theme.json in the default editor
-        Pressable {
-            id: edit
-            theme: panel.theme
-            width: content.width; height: panel.rowH
-            onClicked: { Quickshell.execDetached(["xdg-open", panel.themePath]); panel.closeRequested() }
-            Rectangle {
-                anchors.fill: parent
-                radius: panel.theme.px(9)
-                color: panel.theme.surfaceHover
-                opacity: edit.hoverProgress
-                visible: opacity > 0
-            }
-            Icon {
-                id: editIcon
-                x: panel.theme.px(10)
-                anchors.verticalCenter: parent.verticalCenter
-                name: "icona:edit"
-                size: panel.theme.fpx(16)
-                stroke: panel.theme.iconStroke
-                family: panel.theme.family
-                color: panel.theme.textMuted
-            }
-            Text {
-                anchors.left: editIcon.right; anchors.leftMargin: panel.theme.px(10)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Edit theme.json"
-                font.pixelSize: panel.theme.fpx(12.5)
-                font.family: panel.theme.family
-                color: panel.theme.textMuted
-            }
-            Icon {
-                anchors.right: parent.right; anchors.rightMargin: panel.theme.px(12)
-                anchors.verticalCenter: parent.verticalCenter
-                name: "icona:external-link"
-                size: panel.theme.fpx(14)
-                stroke: panel.theme.iconStroke
-                family: panel.theme.family
-                color: panel.theme.textMuted
-            }
         }
     }
 
@@ -495,4 +386,116 @@ Item {
             color: panel.mix(panel.theme.textMuted, panel.theme.paletteAccent, sb.hoverProgress)
         }
     }
+
+    Column {
+        id: content
+        x: panel.pad
+        y: body.y + panel.pad
+        width: panel.width - 2 * panel.pad
+
+        // header: "Dock" and the position / pinned state
+        Item {
+            width: parent.width; height: panel.headerH
+            Text {
+                x: panel.theme.px(10)
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Dock"
+                font.pixelSize: panel.theme.fpx(13.5)
+                font.family: panel.theme.family
+                font.weight: Font.Bold
+                color: panel.theme.text
+            }
+            Text {
+                anchors.right: parent.right; anchors.rightMargin: panel.theme.px(10)
+                anchors.verticalCenter: parent.verticalCenter
+                text: (panel.theme.atTop ? "Top" : "Bottom") + " · "
+                      + (panel.theme.pinned ? "pinned" : panel.theme.autohide ? "auto-hides" : "overlay")
+                font.pixelSize: panel.theme.fpx(11.5)
+                font.family: panel.theme.family
+                color: panel.theme.textMuted
+            }
+        }
+        Separator {}
+
+        Repeater {
+            model: panel.allRows.filter(r => r.shown)
+            delegate: SwitchRow {
+                required property var modelData
+                icon: modelData.icon
+                label: modelData.label
+                note: modelData.note
+                on: modelData.on
+                enabled: modelData.enabled
+                onClicked: panel.toggle(modelData)
+            }
+        }
+
+        // ---- Notifications ----
+        Separator {}
+        GroupHeader { label: "Notifications" }
+        SwitchRow {
+            icon: panel.dnd ? panel.theme.icon("dnd", "icona:moon-fill") : "icona:moon"
+            label: "Do not disturb"
+            note: panel.dnd && (panel.st.held_count || 0) > 0 ? panel.st.held_count + " held" : ""
+            on: panel.dnd
+            onClicked: panel.shell.send(["dnd", panel.dnd ? "off" : "on"])
+        }
+        Repeater {
+            model: panel.notifSteppers
+            delegate: StepperRow { required property var modelData; spec: modelData }
+        }
+
+        // ---- Pet ----
+        Separator { visible: panel.hasPet }
+        GroupHeader { label: "Pet"; visible: panel.hasPet }
+        Repeater {
+            model: panel.hasPet ? panel.petSteppers : []
+            delegate: StepperRow { required property var modelData; spec: modelData }
+        }
+
+        Separator {}
+
+        // footer: open theme.json in the default editor
+        Pressable {
+            id: edit
+            theme: panel.theme
+            width: content.width; height: panel.rowH
+            onClicked: { Quickshell.execDetached(["xdg-open", panel.themePath]); panel.closeRequested() }
+            Rectangle {
+                anchors.fill: parent
+                radius: panel.theme.px(9)
+                color: panel.theme.surfaceHover
+                opacity: edit.hoverProgress
+                visible: opacity > 0
+            }
+            Icon {
+                id: editIcon
+                x: panel.theme.px(10)
+                anchors.verticalCenter: parent.verticalCenter
+                name: "icona:edit"
+                size: panel.theme.fpx(16)
+                stroke: panel.theme.iconStroke
+                family: panel.theme.family
+                color: panel.theme.textMuted
+            }
+            Text {
+                anchors.left: editIcon.right; anchors.leftMargin: panel.theme.px(10)
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Edit theme.json"
+                font.pixelSize: panel.theme.fpx(12.5)
+                font.family: panel.theme.family
+                color: panel.theme.textMuted
+            }
+            Icon {
+                anchors.right: parent.right; anchors.rightMargin: panel.theme.px(12)
+                anchors.verticalCenter: parent.verticalCenter
+                name: "icona:external-link"
+                size: panel.theme.fpx(14)
+                stroke: panel.theme.iconStroke
+                family: panel.theme.family
+                color: panel.theme.textMuted
+            }
+        }
+    }
+
 }
